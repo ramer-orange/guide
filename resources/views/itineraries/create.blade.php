@@ -6,6 +6,17 @@
     <title>しおり作成ページ</title>
 </head>
 <body>
+<header>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+
+        <x-dropdown-link :href="route('logout')"
+                         onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+            {{ __('Log Out') }}
+        </x-dropdown-link>
+    </form>
+</header>
 <main>
     <h1>しおりを作成</h1>
 </main>

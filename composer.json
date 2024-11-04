@@ -12,6 +12,7 @@
         "livewire/volt": "^1.0"
     },
     "require-dev": {
+        "askdkc/breezejp": "^1.8",
         "fakerphp/faker": "^1.23",
         "laravel/breeze": "^2.2",
         "laravel/pail": "^1.1",
