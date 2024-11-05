@@ -32,6 +32,9 @@ Route::get('/itineraries/{overview}/edit', [ItinerariesController::class, 'edit'
     ->name('itineraries.edit');
 Route::put('/itineraries/{overview}', [ItinerariesController::class, 'update'])
     ->name('itineraries.update');
+Route::delete('/itineraries/index/{overview}', [ItinerariesController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('itineraries.index.destroy');
 
 
 
