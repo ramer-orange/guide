@@ -49,4 +49,11 @@ class ItinerariesController extends Controller
         $overview->update($validatedData);
         return redirect()->route('itineraries.edit', $overview);
     }
+
+    public function destroy(TravelOverview $overview)
+    {
+        $overview->delete();
+
+        return redirect()->route('itineraries.index');
+    }
 }

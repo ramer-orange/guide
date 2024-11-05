@@ -30,6 +30,11 @@
                         <td>{{ $overview->created_at->format('Y-m-d') }}</td>
                         <td>
                             <a href="{{ route('itineraries.edit', $overview->id) }}">編集する</a>
+                            <form action="{{ route('itineraries.index.destroy', $overview->id) }}" method="post">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit">削除する</button>
+                            </form>
                         </td>
                     </tr>
                 @endforeach
