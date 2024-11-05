@@ -19,9 +19,11 @@ require __DIR__.'/auth.php';
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/create', [ItinerariesController::class, 'create'])
+Route::get('/itineraries/create', [ItinerariesController::class, 'create'])
     ->middleware('auth')
     ->name('itineraries.create');
+Route::post('/itineraries', [ItinerariesController::class, 'store'])
+    ->name('itineraries.store');
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
