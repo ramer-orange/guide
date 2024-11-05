@@ -40,6 +40,8 @@
 
         <button type="submit">更新する</button>
     </form>
+
+    <a href="{{ route('itineraries.index') }}">一覧を見る</a>
 </main>
 </body>
 </html>

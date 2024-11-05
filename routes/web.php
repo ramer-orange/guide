@@ -19,6 +19,9 @@ require __DIR__.'/auth.php';
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+Route::get('/itineraries/index', [ItinerariesController::class, 'index'])
+    ->middleware('auth')
+    ->name('itineraries.index');
 Route::get('/itineraries/create', [ItinerariesController::class, 'create'])
     ->middleware('auth')
     ->name('itineraries.create');
@@ -29,6 +32,10 @@ Route::get('/itineraries/{overview}/edit', [ItinerariesController::class, 'edit'
     ->name('itineraries.edit');
 Route::put('/itineraries/{overview}', [ItinerariesController::class, 'update'])
     ->name('itineraries.update');
+
+
+
+
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')

@@ -39,6 +39,7 @@
 
         <button type="submit">作成する</button>
     </form>
+    <a href="{{ route('itineraries.index') }}">一覧を見る</a>
 </main>
 </body>
 </html>
