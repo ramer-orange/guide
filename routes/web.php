@@ -24,6 +24,11 @@ Route::get('/itineraries/create', [ItinerariesController::class, 'create'])
     ->name('itineraries.create');
 Route::post('/itineraries', [ItinerariesController::class, 'store'])
     ->name('itineraries.store');
+Route::get('/itineraries/{overview}/edit', [ItinerariesController::class, 'edit'])
+    ->middleware('auth')
+    ->name('itineraries.edit');
+Route::put('/itineraries/{overview}', [ItinerariesController::class, 'update'])
+    ->name('itineraries.update');
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
