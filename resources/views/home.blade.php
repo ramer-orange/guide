@@ -32,6 +32,7 @@
                 <div>
                     <a href="{{ route('itineraries.create')  }}">しおりの作成</a>
                 </div>
+                <a href="{{ route('itineraries.index') }}">一覧を見る</a>
             </main>
 
             <footer class="py-16 text-center text-sm text-black dark:text-white/70">

@@ -7,6 +7,12 @@ use Illuminate\Http\Request;
 
 class ItinerariesController extends Controller
 {
+    public function index()
+    {
+        $overviews  = TravelOverview::where('user_id', auth()->id())->get();
+
+        return view('itineraries.index', compact('overviews'));
+    }
     public function create(Request $request)
     {
         return view('itineraries.create');
