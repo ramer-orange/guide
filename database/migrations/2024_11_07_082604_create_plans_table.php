@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->date('date');
             $table->time('time')->nullable();
-            $table->string('title')->nullable();
+            $table->string('plans_title')->nullable();
             $table->text('content')->nullable();
             $table->integer('order')->nullable();
             $table->timestamps();
