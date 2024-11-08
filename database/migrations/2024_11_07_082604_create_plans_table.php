@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
-            $table->date('date');
+            $table->date('date')->nullable();
             $table->time('time')->nullable();
-            $table->string('title')->nullable();
+            $table->string('plans_title')->nullable();
             $table->text('content')->nullable();
             $table->integer('order')->nullable();
             $table->timestamps();

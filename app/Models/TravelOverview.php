@@ -11,4 +11,9 @@ class TravelOverview extends Model
         'title',
         'overview'
     ];
+
+    public function plans()
+    {
+        return $this->hasMany(Plan::class, 'travel_id');
+    }
 }

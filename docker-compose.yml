@@ -102,8 +102,7 @@ services:
         networks:
             - sail
     phpmyadmin:
-        image: phpmyadmin/phpmyadmin
-        platform: linux/amd64
+        image: arm64v8/phpmyadmin
         ports:
             - '8080:80'
         environment:
@@ -113,6 +112,7 @@ services:
             - mysql
         networks:
             - sail
+
 networks:
     sail:
         driver: bridge

@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Plan extends Model
+{
+    protected $fillable = [
+        'travel_id',
+        'date',
+        'time',
+        'plans_title',
+        'content',
+    ];
+
+    public function travelOverview()
+    {
+        return $this->belongsTo(TravelOverview::class, 'travel_id');
+    }
+}
