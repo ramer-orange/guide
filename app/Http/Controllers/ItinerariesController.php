@@ -18,35 +18,6 @@ class ItinerariesController extends Controller
     {
         return view('itineraries.create');
     }
-
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'title' => 'required | string | max:255',
-            'overview' => 'nullable | string',
-            'date' => 'nullable | date',
-            'time' => 'nullable | date_format:H:i',
-            'plans_title' => 'nullable | string | max:255',
-            'content' => 'nullable | string',
-        ]);
-
-        $overview = TravelOverview::create([
-            'user_id' => auth()->id(),
-            'title' => $validatedData['title'],
-            'overview' => $validatedData['overview'],
-        ]);
-
-        $plans = Plan::create([
-            'travel_id' => $overview->id,
-            'date' => $validatedData['date'],
-            'time' => $validatedData['time'],
-            'plans_title' => $validatedData['plans_title'],
-            'content' => $validatedData['content'],
-        ]);
-
-        return redirect()->route('itineraries.edit', [$overview->id, $plans->id]);
-    }
-
     public function edit(TravelOverview $overview)
     {
         $overview = TravelOverview::with(['plans'])->findOrFail($overview->id);
