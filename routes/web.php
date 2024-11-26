@@ -25,8 +25,6 @@ Route::get('/itineraries/index', [ItinerariesController::class, 'index'])
 Route::get('/itineraries/create', [ItinerariesController::class, 'create'])
     ->middleware('auth')
     ->name('itineraries.create');
-Route::post('/itineraries', [ItinerariesController::class, 'store'])
-    ->name('itineraries.store');
 Route::get('/itineraries/{overview}/edit', [ItinerariesController::class, 'edit'])
     ->middleware('auth')
     ->name('itineraries.edit');
