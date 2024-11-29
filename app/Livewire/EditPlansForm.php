@@ -8,23 +8,25 @@ use Livewire\Component;
 class EditPlansForm extends Component
 {
     public $title;
+    public $overviewText;
     public $overview;
     public $plans = [];
 
     public function mount(TravelOverview $overview)
     {
+        $this->overview = $overview;
         $this->title = $overview->title;
-        $this->overview = $overview->overview;
+        $this->overviewText = $overview->overview;
 
-//        $this->plans = $overview->plans->map(function ($plan) {
-//            return[
-//                'id' => $plan->id,
-//                'date' => $plan->date,
-//                'time' => $plan->time,
-//                'plans_title' => $plan->plans_title,
-//                'content' => $plan->content,
-//            ];
-//        })->toArray();
+        $this->plans = $overview->plans->map(function ($plan) {
+            return[
+                'id' => $plan->id,
+                'date' => $plan->date,
+                'time' => $plan->time,
+                'plans_title' => $plan->plans_title,
+                'content' => $plan->content,
+            ];
+        })->toArray();
     }
 
     public function addPlan()
@@ -41,7 +43,7 @@ class EditPlansForm extends Component
     {
         $this->validate([
             'title' => 'required | string | max:255',
-            'overview' => 'nullable | string',
+            'overviewText' => 'nullable | string',
             'plans' => 'required | array',
             'plans.*.date' => 'nullable | date',
             'plans.*.time' => 'nullable | date_format:H:i',
@@ -49,22 +51,35 @@ class EditPlansForm extends Component
             'plans.*.content' => 'nullable | string',
         ]);
 
-        $overview = TravelOverview::findOrFail($this->overview->id);
-
-        $overview->update([
+        $this->overview->update([
             'title' => $this->title,
-            'overview' => $this->overview,
+            'overview' => $this->overviewText,
         ]);
-        foreach ($this->plans as $plan) {
-            $overview->plans()->update([
-                'date' => $plan['date'] ?: null,
-                'time' => $plan['time'] ?: null,
-                'plans_title' => $plan['plans_title'],
-                'content' => $plan['content'],
-            ]);
-        }
 
-        return redirect()->route('itineraries.edit', [$overview->id]);
+        // 各プランの更新または作成
+        foreach ($this->plans as $planData) {
+            if (isset($planData['id'])) {
+                // 既存のプランを更新
+                $plan = $this->overview->plans()->find($planData['id']);
+                if ($plan) {
+                    $plan->update([
+                        'date' => $planData['date'] ?: null,
+                        'time' => $planData['time'] ?: null,
+                        'plans_title' => $planData['plans_title'],
+                        'content' => $planData['content'],
+                    ]);
+                }
+            } else {
+                // 新しいプランを作成
+                $this->overview->plans()->create([
+                    'date' => $planData['date'] ?: null,
+                    'time' => $planData['time'] ?: null,
+                    'plans_title' => $planData['plans_title'],
+                    'content' => $planData['content'],
+                ]);
+            }
+        }
+        return redirect()->route('itineraries.edit', [$this->overview->id]);
     }
 
     public function render()
