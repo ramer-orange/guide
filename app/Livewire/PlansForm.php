@@ -11,6 +11,7 @@ class PlansForm extends Component
 {
     public $title;
     public $overview;
+    public $overviewText;
     public $plans = [];
 
     public function mount()
@@ -35,7 +36,7 @@ class PlansForm extends Component
     {
         $this->validate([
             'title' => 'required | string | max:255',
-            'overview' => 'nullable | string',
+            'overviewText' => 'nullable | string',
             'plans' => 'required | array',
             'plans.*.date' => 'nullable | date',
             'plans.*.time' => 'nullable | date_format:H:i',
@@ -46,7 +47,7 @@ class PlansForm extends Component
         $overview = TravelOverview::create([
             'user_id' => auth()->id(),
             'title' => $this->title,
-            'overview' => $this->overview,
+            'overview' => $this->overviewText,
         ]);
         foreach ($this->plans as $plan) {
             $overview->plans()->create([
