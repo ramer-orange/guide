@@ -8,7 +8,7 @@
             </div>
             <div>
                 <label for="overview">旅行概要</label>
-                <textarea id="overview" wire:model.defer="overview"></textarea>
+                <textarea id="overview" wire:model.defer="overviewText"></textarea>
                 @error('overview') <span class="text-red-500">{{ $message }}</span> @enderror
             </div>
         </div>
@@ -46,6 +46,6 @@
         </div>
 
         <button type="button" wire:click="addPlan">プランを追加</button>
-        <button type="submit">作成する</button>
+        <button type="submit">更新する</button>
     </form>
-</div>>
+</div>
