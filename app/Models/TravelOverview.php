@@ -9,7 +9,7 @@ class TravelOverview extends Model
     protected $fillable = [
         'user_id',
         'title',
-        'overview'
+        'overviewText'
     ];
 
     public function plans()

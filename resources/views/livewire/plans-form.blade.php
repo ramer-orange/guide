@@ -7,9 +7,9 @@
                 @error('title') <span class="text-red-500">{{ $message }}</span> @enderror
             </div>
             <div>
-                <label for="overview">旅行概要</label>
-                <textarea id="overview" wire:model.defer="overview"></textarea>
-                @error('overview') <span class="text-red-500">{{ $message }}</span> @enderror
+                <label for="overviewText">旅行概要</label>
+                <textarea id="overviewText" wire:model.defer="overviewText"></textarea>
+                @error('overviewText') <span class="text-red-500">{{ $message }}</span> @enderror
             </div>
         </div>
 
