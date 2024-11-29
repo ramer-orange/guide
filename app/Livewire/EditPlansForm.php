@@ -11,6 +11,7 @@ class EditPlansForm extends Component
     public $overviewText;
     public $overview;
     public $plans = [];
+    public $deletedPlans = [];
 
     public function mount(TravelOverview $overview)
     {
@@ -36,7 +37,13 @@ class EditPlansForm extends Component
 
     public function removePlan($index)
     {
+        if (isset($this->plans[$index]['id'])) {
+            // 既存のプランのIDを記録
+            $this->deletedPlans[] = $this->plans[$index]['id'];
+        }
+
         unset($this->plans[$index]);
+        $this->plans = array_values($this->plans);
     }
 
     public function submit()
@@ -77,6 +84,9 @@ class EditPlansForm extends Component
                     'plans_title' => $planData['plans_title'],
                     'content' => $planData['content'],
                 ]);
+            }
+            if(!empty($this->deletedPlans)) {
+                $this->overview->plans()->whereIn('id', $this->deletedPlans)->delete();
             }
         }
         return redirect()->route('itineraries.edit', [$this->overview->id]);

@@ -28,6 +28,7 @@ class PlansForm extends Component
     public function removePlan($index)
     {
         unset($this->plans[$index]);
+        $this->plans = array_values($this->plans);
     }
 
     public function submit()
