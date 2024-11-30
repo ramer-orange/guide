@@ -40,7 +40,19 @@
                                   wire:model.defer="plans.{{ $index }}.content"></textarea>
                         @error("plans.$index.content") <span class="text-red-500">{{ $message }}</span> @enderror
                     </div>
+                    <div>
+                        <label for="plans.{{ $index }}.planFiles">ファイルアップロード</label>
+                        <input type="file" wire:model="plans.{{ $index }}.planFiles">
+                        @error("plans.$index.planFiles") <span class="text-red-500">{{ $message }}</span> @enderror
+                    </div>
+                    {{--                    @foreach($plans[$index]['planFiles'] as $fileIndex => $planFile)--}}
+                    {{--                        <div>--}}
+                    {{--                            <input type="file" wire:model="planFiles.{{ $fileIndex }}">--}}
+                    {{--                            @error("planFiles.$fileIndex") <span class="error">{{ $message }}</span> @enderror--}}
+                    {{--                        </div>--}}
+                    {{--                    @endforeach--}}
                     <button type="button" wire:click="removePlan({{ $index }})">削除</button>
+                    {{--                    <livewire:upload-planFiles />--}}
                 </div>
             @endforeach
         </div>
@@ -48,4 +60,4 @@
         <button type="button" wire:click="addPlan">プランを追加</button>
         <button type="submit">作成する</button>
     </form>
-</div>>
+</div>
