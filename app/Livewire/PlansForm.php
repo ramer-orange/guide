@@ -16,7 +16,7 @@ class PlansForm extends Component
     public $overview;
     public $overviewText;
     public $plans = [];
-    public $planFiles = [];
+//    public $planFiles = [];
 
     public function mount()
     {
@@ -26,7 +26,7 @@ class PlansForm extends Component
             'plans_title' => '',
             'content' => '',
             // 新規ファイルアップロード用
-            'planFiles' => [],
+            'planFiles' => [null],
             // 既存ファイル表示用
             'existing_planFiles' => [],
         ];
@@ -40,16 +40,26 @@ class PlansForm extends Component
             'plans_title' => '',
             'content' => '',
             // 新規ファイルアップロード用
-            'planFiles' => [],
+            'planFiles' => [null],
             // 既存ファイル表示用
             'existing_planFiles' => [],
         ];
+    }
+
+    public function addPlanFiles($index)
+    {
+        $this->plans[$index]['planFiles'][] = null;
     }
 
     public function removePlan($index)
     {
         unset($this->plans[$index]);
         $this->plans = array_values($this->plans);
+    }
+    public function removePlanFiles($index,$fileIndex)
+    {
+        unset($this->plans[$index]['planFiles'][$fileIndex]);
+        $this->plans[$index]['planFiles'] = array_values($this->plans[$index]['planFiles']);
     }
 
     public function submit()
