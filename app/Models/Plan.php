@@ -18,4 +18,9 @@ class Plan extends Model
     {
         return $this->belongsTo(TravelOverview::class, 'travel_id');
     }
+
+    public function planFiles()
+    {
+        return $this->hasMany(PlanFile::class);
+    }
 }
