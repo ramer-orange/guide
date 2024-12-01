@@ -40,12 +40,39 @@
                                   wire:model.defer="plans.{{ $index }}.content"></textarea>
                         @error("plans.$index.content") <span class="text-red-500">{{ $message }}</span> @enderror
                     </div>
-                    <button type="button" wire:click="removePlan({{ $index }})">削除</button>
+                    <div>
+                        @if(!empty($plan['existing_planFiles']))
+                            @foreach($plan['existing_planFiles'] as $existingFileIndex => $existingFile)
+                                <div>
+                                    <a href="{{ Storage::url($existingFile['path']) }}" target="_blank">{{ $existingFile['file_name'] }}</a>
+                                    @error("plans.{{ $index }}.planFiles.{{ $existingFileIndex }}") <span
+                                        class="text-red-500">{{ $message }}</span> @enderror
+                                </div>
+                                <button type="button" wire:click="removeExistingPlanFile({{ $index }}, {{ $existingFileIndex }})">
+                                    ファイルを削除
+                                </button>
+                            @endforeach
+                        @endif
+                    </div>
+                    <div>
+                        @foreach($plan['planFiles'] as $fileIndex => $planFile)
+                            <div>
+                                <label for="plans.{{ $index }}.planFiles.{{ $fileIndex }}">ファイルアップロード</label>
+                                <input type="file" wire:model="plans.{{ $index }}.planFiles.{{ $fileIndex }}">
+                                @error("plans.{{ $index }}.planFiles.{{ $fileIndex }}") <span
+                                    class="text-red-500">{{ $message }}</span> @enderror
+                            </div>
+                            <button type="button" wire:click="addPlanFiles({{ $index }})">ファイルを追加</button>
+                            <button type="button" wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})">
+                                ファイルを削除
+                            </button>
+                        @endforeach
+                    </div>
+                    <button type="button" wire:click="addPlan">プランを追加</button>
+                    <button type="button" wire:click="removePlan({{ $index }})">プランを削除</button>
                 </div>
             @endforeach
         </div>
-
-        <button type="button" wire:click="addPlan">プランを追加</button>
         <button type="submit">更新する</button>
     </form>
 </div>
