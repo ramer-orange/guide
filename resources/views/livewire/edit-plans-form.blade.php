@@ -17,7 +17,7 @@
             <h2>プラン</h2>
 
             @foreach($plans as $index => $plan)
-                <div class="plan mt-5">
+                <div class="plan">
                     <div>
                         <label for="plans.{{ $index }}.date">日付</label>
                         <input type="date" id="plans.{{ $index }}.date" wire:model.defer="plans.{{ $index }}.date">

@@ -92,8 +92,6 @@ class PlansForm extends Component
                 }
             }
         }
-//        dd($plan['planFiles']);
-
         return redirect()->route('itineraries.edit', [$overview->id]);
     }
 
