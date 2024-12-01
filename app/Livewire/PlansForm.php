@@ -6,7 +6,6 @@ use App\Models\Plan;
 use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\Http;
 
 class PlansForm extends Component
 {
@@ -16,7 +15,6 @@ class PlansForm extends Component
     public $overview;
     public $overviewText;
     public $plans = [];
-//    public $planFiles = [];
 
     public function mount()
     {
@@ -27,8 +25,6 @@ class PlansForm extends Component
             'content' => '',
             // 新規ファイルアップロード用
             'planFiles' => [null],
-            // 既存ファイル表示用
-            'existing_planFiles' => [],
         ];
     }
 
@@ -41,8 +37,6 @@ class PlansForm extends Component
             'content' => '',
             // 新規ファイルアップロード用
             'planFiles' => [null],
-            // 既存ファイル表示用
-            'existing_planFiles' => [],
         ];
     }
 
@@ -89,13 +83,16 @@ class PlansForm extends Component
                 'content' => $plan['content'],
             ]);
             foreach ($plan['planFiles'] as $planFile) {
-                $filePath = $planFile->store('files', 'public');
-                $newPlan->planFiles()->create([
-                    'path' => $filePath,
-                    'file_name' => $planFile->getClientOriginalName(),
-                ]);
+                if($planFile) {
+                    $filePath = $planFile->store('files', 'public');
+                    $newPlan->planFiles()->create([
+                        'path' => $filePath,
+                        'file_name' => $planFile->getClientOriginalName(),
+                    ]);
+                }
             }
         }
+//        dd($plan['planFiles']);
 
         return redirect()->route('itineraries.edit', [$overview->id]);
     }
