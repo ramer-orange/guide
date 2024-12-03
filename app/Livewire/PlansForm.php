@@ -48,7 +48,6 @@ class PlansForm extends Component
 
             // 新規ファイルアップロード用
             'planFiles' => [null],
-
         ];
     }
 
