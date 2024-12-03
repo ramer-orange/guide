@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Models\PackingItem;
 use App\Models\PlanFile;
+use App\Models\Plan;
 use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -17,13 +19,22 @@ class EditPlansForm extends Component
     public $plans = [];
     public $deletedPlans = [];
     public $deletedPlanFiles = [];
+    public $packingItems = [];
+    public $deletePackingItems = [];
 
+    /**
+     * マウント時にコンポーネントの初期値を設定
+     *
+     * @param \App\Models\TravelOverview $overview
+     * @return void
+     */
     public function mount(TravelOverview $overview)
     {
         $this->overview = $overview;
         $this->title = $overview->title;
         $this->overviewText = $overview->overview;
 
+        // プランをロード
         $this->plans = $overview->plans->map(function ($plan) {
             return [
                 'id' => $plan->id,
@@ -32,6 +43,8 @@ class EditPlansForm extends Component
                 'plans_title' => $plan->plans_title,
                 'content' => $plan->content,
                 'planFiles' => [null],
+
+                // アップロードファイルをロード
                 'existing_planFiles' => $plan->planFiles->map(function ($planFile) {
                     return [
                         'id' => $planFile->id,
@@ -39,6 +52,15 @@ class EditPlansForm extends Component
                         'file_name' => $planFile->file_name,
                     ];
                 })->toArray()
+            ];
+        })->toArray();
+
+        // 持ち物リストをロード
+        $this->packingItems = $overview->packingItems->map(function ($packingItem) {
+            return [
+                'id' => $packingItem->id,
+                'packing_name' => $packingItem->packing_name,
+                'packing_is_checked' => $packingItem->packing_is_checked == 1,
             ];
         })->toArray();
     }
@@ -58,6 +80,20 @@ class EditPlansForm extends Component
     public function addPlanFiles($index)
     {
         $this->plans[$index]['planFiles'][] = null;
+    }
+
+    /**
+     * 持ち物リストに新しいアイテムを追加する。
+     *
+     * @return void
+     */
+    public function addPackingItem()
+    {
+        $this->packingItems[] = [
+            //持ち物リストの初期値
+            'packing_name' => '',
+            'packing_is_checked' => false,
+        ];
     }
 
     public function removePlan($index)
@@ -93,6 +129,24 @@ class EditPlansForm extends Component
         $this->plans[$index]['existing_planFiles'] = array_values($this->plans[$index]['existing_planFiles']);
     }
 
+    /**
+     * 持ち物が削除された際に、削除された持ち物のidを記録し、リストのインデックスを再構築。
+     *
+     * @param int $packingIndex
+     * @return void
+     */
+    public function removePackingItems($packingIndex)
+    {
+        if (isset($this->packingItems[$packingIndex]['id'])) {
+            // 既存の持ち物のIDを記録
+            $this->deletePackingItems[] = $this->packingItems[$packingIndex]['id'];
+        }
+
+        // リストのインデックスを再構築
+        unset($this->packingItems[$packingIndex]);
+        $this->packingItems = array_values($this->packingItems);
+    }
+
     public function submit()
     {
         $this->validate([
@@ -105,6 +159,9 @@ class EditPlansForm extends Component
             'plans.*.content' => 'nullable | string',
             'plans.*.planFiles' => 'nullable | array',
             'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+            'packingItems' => 'required | array',
+            'packingItems.*.packing_name' => 'nullable | string | max:255',
+            'packingItems.*.packing_is_checked' => 'nullable | boolean',
         ]);
 
         $this->overview->update([
@@ -124,10 +181,11 @@ class EditPlansForm extends Component
                         'plans_title' => $planData['plans_title'],
                         'content' => $planData['content'],
                     ]);
-                    if(!empty($planData['planFiles'])){
+                    if (!empty($planData['planFiles'])) {
                         foreach ($planData['planFiles'] as $planFile) {
-                            if($planFile) {
+                            if ($planFile) {
                                 $filePath = $planFile->store('files', 'public');
+                                //なぜupdateではない？
                                 $plan->planFiles()->create([
                                     'path' => $filePath,
                                     'file_name' => $planFile->getClientOriginalName(),
@@ -145,7 +203,7 @@ class EditPlansForm extends Component
                     'content' => $planData['content'],
                 ]);
                 foreach ($planData['planFiles'] as $planFile) {
-                    if($planFile) {
+                    if ($planFile) {
                         $filePath = $planFile->store('files', 'public');
                         $newPlan->planFiles()->create([
                             'path' => $filePath,
@@ -155,10 +213,32 @@ class EditPlansForm extends Component
                 }
             }
             if (!empty($this->deletedPlans)) {
-                $this->overview->plans()->whereIn('id', $this->deletedPlans)->delete();
+                Plan::whereIn('id', $this->deletedPlans)->delete();
             }
             if (!empty($this->deletedPlanFiles)) {
                 Planfile::whereIn('id', $this->deletedPlanFiles)->delete();
+            }
+        }
+
+        // 持ち物リスト更新
+        foreach ($this->packingItems as $packingItemData) {
+            if (isset($packingItemData['id'])) {
+                $packingItem = $this->overview->packingItems()->find($packingItemData['id']);
+                if ($packingItem) {
+                    $packingItem->update([
+                        'packing_name' => $packingItemData['packing_name'],
+                        'packing_is_checked' => $packingItemData['packing_is_checked'],
+                    ]);
+                }
+            } else {
+                $this->overview->packingItems()->create([
+                    'packing_name' => $packingItemData['packing_name'],
+                    'packing_is_checked' => $packingItemData['packing_is_checked'],
+                ]);
+            }
+            // 削除した持ち物をデータベースから削除
+            if (!empty($this->deletePackingItems)) {
+                PackingItem::whereIn('id', $this->deletePackingItems)->delete();
             }
         }
         return redirect()->route('itineraries.edit', [$this->overview->id]);

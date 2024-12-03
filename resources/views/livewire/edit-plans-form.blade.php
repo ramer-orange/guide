@@ -73,6 +73,29 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="packing_lists">
+            <h2>持ち物リスト</h2>
+
+            @foreach($packingItems as $packingIndex => $packingItem)
+                <div class="packingItem">
+                    <div>
+                        <input type="checkbox" wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
+                    </div>
+                    <div>
+                        <label for="packingItems.{{ $packingIndex }}.packing_name">名前</label>
+                        <input type="text" id="packingItems.{{ $packingIndex }}.packing_name" wire:model.defer="packingItems.{{ $packingIndex }}.packing_name">
+                        @error("packingItems.$packingIndex.packing_name") <span class="text-red-500">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <button type="button" wire:click="removePackingItems({{ $packingIndex }})">持ち物を削除</button>
+                    </div>
+                </div>
+            @endforeach
+            <div>
+                <button type="button" wire:click="addPackingItem">持ち物を追加</button>
+            </div>
+        </div>
         <button type="submit">更新する</button>
     </form>
 </div>
