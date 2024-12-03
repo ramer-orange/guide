@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PackingItem;
 use App\Models\Plan;
 use App\Models\TravelOverview;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class ItinerariesController extends Controller
     public function edit(TravelOverview $overview)
     {
         $overview->load('plans');
+        $overview->load('packingItems');
         return view('itineraries.edit', compact('overview'));
     }
 
