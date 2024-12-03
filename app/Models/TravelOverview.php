@@ -16,4 +16,9 @@ class TravelOverview extends Model
     {
         return $this->hasMany(Plan::class, 'travel_id');
     }
+
+    public function packingItems()
+    {
+        return $this->hasMany(PackingItem::class, 'travel_id');
+    }
 }

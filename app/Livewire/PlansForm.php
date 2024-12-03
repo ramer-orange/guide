@@ -15,26 +15,37 @@ class PlansForm extends Component
     public $overview;
     public $overviewText;
     public $plans = [];
+    public $packingItems = [];
 
     public function mount()
     {
         $this->plans[] = [
+            //プラン
             'date' => '',
             'time' => '',
             'plans_title' => '',
             'content' => '',
-            // 新規ファイルアップロード用
+
+            // 新規ファイルアップロード
             'planFiles' => [null],
+        ];
+
+        $this->packingItems[] = [
+            //持ち物リスト
+            'packing_name' => '',
+            'packing_is_checked' => false,
         ];
     }
 
     public function addPlan()
     {
         $this->plans[] = [
+            //プラン
             'date' => '',
             'time' => '',
             'plans_title' => '',
             'content' => '',
+
             // 新規ファイルアップロード用
             'planFiles' => [null],
         ];
@@ -45,15 +56,31 @@ class PlansForm extends Component
         $this->plans[$index]['planFiles'][] = null;
     }
 
+    public function addPackingItem()
+    {
+        $this->packingItems[] = [
+            //持ち物リスト
+            'packing_name' => '',
+            'packing_is_checked' => false,
+        ];
+    }
+
     public function removePlan($index)
     {
         unset($this->plans[$index]);
         $this->plans = array_values($this->plans);
     }
-    public function removePlanFiles($index,$fileIndex)
+
+    public function removePlanFiles($index, $fileIndex)
     {
         unset($this->plans[$index]['planFiles'][$fileIndex]);
         $this->plans[$index]['planFiles'] = array_values($this->plans[$index]['planFiles']);
+    }
+
+    public function removePackingItem($packingIndex)
+    {
+        unset($this->packingItems[$packingIndex]);
+        $this->packingItems = array_values($this->packingItems);
     }
 
     public function submit()
@@ -68,6 +95,9 @@ class PlansForm extends Component
             'plans.*.content' => 'nullable | string',
             'plans.*.planFiles' => 'nullable|array',
             'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+            'packingItems' => 'required | array',
+            'packingItems.*.packing_name' => 'nullable | string | max:255',
+            'packingItems.*.packing_is_checked' => 'nullable | boolean',
         ]);
 
         $overview = TravelOverview::create([
@@ -83,7 +113,7 @@ class PlansForm extends Component
                 'content' => $plan['content'],
             ]);
             foreach ($plan['planFiles'] as $planFile) {
-                if($planFile) {
+                if ($planFile) {
                     $filePath = $planFile->store('files', 'public');
                     $newPlan->planFiles()->create([
                         'path' => $filePath,
@@ -91,6 +121,12 @@ class PlansForm extends Component
                     ]);
                 }
             }
+        }
+        foreach ($this->packingItems as $packingItem) {
+            $overview->packingItems()->create([
+                'packing_name' => $packingItem['packing_name'],
+                'packing_is_checked' => $packingItem['packing_is_checked'],
+            ]);
         }
         return redirect()->route('itineraries.edit', [$overview->id]);
     }

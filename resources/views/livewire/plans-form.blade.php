@@ -48,12 +48,40 @@
                                 @error("plans.{{ $index }}.planFiles.{{ $fileIndex }}") <span
                                     class="text-red-500">{{ $message }}</span> @enderror
                             </div>
-                            <button type="button" wire:click="addPlanFiles({{ $index }})">ファイルを追加</button>
-                            <button type="button" wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})">ファイルを削除</button>
+                            <div>
+                                <button type="button" wire:click="addPlanFiles({{ $index }})">ファイルを追加</button>
+                                <button type="button" wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})">
+                                    ファイルを削除
+                                </button>
+                            </div>
                         @endforeach
                     </div>
-                    <button type="button" wire:click="addPlan">プランを追加</button>
-                    <button type="button" wire:click="removePlan({{ $index }})">プランを削除</button>
+                    <div>
+                        <button type="button" wire:click="addPlan">プランを追加</button>
+                        <button type="button" wire:click="removePlan({{ $index }})">プランを削除</button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+
+        <div class="packing_lists">
+            <h2>持ち物リスト</h2>
+
+            @foreach($packingItems as $packingIndex => $packingItem)
+                <div class="packingItem">
+                    <div>
+                        <input type="checkbox" wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
+                    </div>
+                    <div>
+                        <label for="packingItems.{{ $packingIndex }}.packing_name">名前</label>
+                        <input type="text" id="packingItems.{{ $packingIndex }}.packing_name" wire:model.defer="packingItems.{{ $packingIndex }}.packing_name">
+                        @error("packingItems.$packingIndex.packing_name") <span class="text-red-500">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <button type="button" wire:click="addPackingItem">持ち物を追加</button>
+                        <button type="button" wire:click="removePackingItem({{ $packingIndex }})">持ち物を削除</button>
+                    </div>
                 </div>
             @endforeach
         </div>
