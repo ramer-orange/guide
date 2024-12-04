@@ -15,6 +15,8 @@ class PlansForm extends Component
     public $overview;
     public $overviewText;
     public $plans = [];
+    public $useTemplatePackingItem = false;
+
     public $packingItems = [];
 
     public function mount()
@@ -54,6 +56,18 @@ class PlansForm extends Component
     public function addPlanFiles($index)
     {
         $this->plans[$index]['planFiles'][] = null;
+    }
+
+    public function useTemplatePackingItems()
+    {
+        $this->useTemplatePackingItem = true;
+
+        $this->packingItems = array_merge($this->packingItems, [
+            ['packing_name' => 'パスポート', 'packing_is_checked' => false],
+            ['packing_name' => 'ビザ(VISA、査証)、電子渡航申請(ESTA、ETASなど)', 'packing_is_checked' => false],
+        ]);
+
+        unset($this->packingItems[0]);
     }
 
     public function addPackingItem()
