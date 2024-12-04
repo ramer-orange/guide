@@ -65,25 +65,66 @@
         </div>
 
 
-        <div class="packing_lists">
+        <div class="packing_lists_wrap">
             <h2>持ち物リスト</h2>
 
-            @foreach($packingItems as $packingIndex => $packingItem)
-                <div class="packingItem">
+            <div class="packing_lists">
+                <div>
                     <div>
-                        <input type="checkbox" wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
-                    </div>
-                    <div>
-                        <label for="packingItems.{{ $packingIndex }}.packing_name">名前</label>
-                        <input type="text" id="packingItems.{{ $packingIndex }}.packing_name" wire:model.defer="packingItems.{{ $packingIndex }}.packing_name">
-                        @error("packingItems.$packingIndex.packing_name") <span class="text-red-500">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <button type="button" wire:click="addPackingItem">持ち物を追加</button>
-                        <button type="button" wire:click="removePackingItem({{ $packingIndex }})">持ち物を削除</button>
+                        <button type="button" wire:click="useTemplatePackingItems">テンプレートを使う</button>
                     </div>
                 </div>
-            @endforeach
+                @if($useTemplatePackingItem)
+                    <div wire:transition class="packing_template">
+                        <div class="packing_template_body">
+                            @foreach($packingItems as $packingIndex => $packingItem)
+                                <div class="packingItem">
+                                    <div>
+                                        <input type="checkbox"
+                                               wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
+                                    </div>
+                                    <div>
+                                        <label for="packingItems.{{ $packingIndex }}.packing_name">名前</label>
+                                        <input type="text" id="packingItems.{{ $packingIndex }}.packing_name"
+                                               wire:model.defer="packingItems.{{ $packingIndex }}.packing_name">
+                                        @error("packingItems.$packingIndex.packing_name") <span
+                                            class="text-red-500">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <button type="button" wire:click="addPackingItem">持ち物を追加</button>
+                                        <button type="button" wire:click="removePackingItem({{ $packingIndex }})">
+                                            持ち物を削除
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="normal_packing">
+                        @foreach($packingItems as $packingIndex => $packingItem)
+                            <div class="packingItem">
+                                <div>
+                                    <input type="checkbox"
+                                           wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
+                                </div>
+                                <div>
+                                    <label for="packingItems.{{ $packingIndex }}.packing_name">名前</label>
+                                    <input type="text" id="packingItems.{{ $packingIndex }}.packing_name"
+                                           wire:model.defer="packingItems.{{ $packingIndex }}.packing_name">
+                                    @error("packingItems.$packingIndex.packing_name") <span
+                                        class="text-red-500">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <button type="button" wire:click="addPackingItem">持ち物を追加</button>
+                                    <button type="button" wire:click="removePackingItem({{ $packingIndex }})">持ち物を削除
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         </div>
         <button type="submit">作成する</button>
     </form>
