@@ -58,7 +58,9 @@ class PlansForm extends Component
     }
 
     /**
-     * 持ち物リストのテンプレートの初期値
+     * 持ち物リストのテンプレートの使用時に配列を初期化
+     *
+     * @param string $type
      * @return void
      */
     public function useTemplatePackingItems($type)
@@ -69,6 +71,7 @@ class PlansForm extends Component
         $this->packingItems = [];
 
         $template = [
+            // 国内版
             'domestic' => [
                 ['packing_name' => '航空券', 'packing_is_checked' => false],
                 ['packing_name' => '現金（日本円）', 'packing_is_checked' => false],
@@ -132,6 +135,7 @@ class PlansForm extends Component
                 ['packing_name' => 'シェーバー', 'packing_is_checked' => false],
 
             ],
+            // 海外版
             'overseas' => [
                 ['packing_name' => 'パスポート', 'packing_is_checked' => false],
                 ['packing_name' => 'ビザ(VISA、査証)、電子渡航申請(ESTA、ETASなど)', 'packing_is_checked' => false],
