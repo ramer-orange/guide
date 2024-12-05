@@ -210,13 +210,21 @@ class PlansForm extends Component
         $this->packingItems = $template[$type];
     }
 
-    public function addPackingItem()
+    /**
+     * 指定した位置に新しい持ち物項目を追加
+     *
+     * @param int $packingIndex
+     * @return void
+     */
+    public function addPackingItem($packingIndex)
     {
-        $this->packingItems[] = [
-            //持ち物リスト
-            'packing_name' => '',
-            'packing_is_checked' => false,
-        ];
+        // 追加ボタンを押した箇所の次に挿入
+        array_splice($this->packingItems, $packingIndex + 1, 0, [
+            [
+                'packing_name' => '',
+                'packing_is_checked' => false,
+            ]
+        ]);
     }
 
     public function removePlan($index)

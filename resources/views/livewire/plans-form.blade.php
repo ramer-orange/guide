@@ -93,15 +93,13 @@
                                         class="text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
+                                    <button type="button" wire:click="addPackingItem({{ $packingIndex }})">持ち物を追加</button>
                                     <button type="button" wire:click="removePackingItem({{ $packingIndex }})">
                                         持ち物を削除
                                     </button>
                                 </div>
                             </div>
                         @endforeach
-                        <div>
-                            <button type="button" wire:click="addPackingItem">持ち物を追加</button>
-                        </div>
                     </div>
                 </div>
             </div>
