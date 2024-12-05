@@ -245,6 +245,17 @@ class PlansForm extends Component
         $this->packingItems = array_values($this->packingItems);
     }
 
+    /**
+     * 全ての持ち物を一括削除してリセット
+     * @return void
+     */
+    public function allRemovePackingItem()
+    {
+        $this->packingItems = [
+            ['packing_name' => '', 'packing_is_checked' => false]
+        ];
+    }
+
     public function submit()
     {
         $this->validate([

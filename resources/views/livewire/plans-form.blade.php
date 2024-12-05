@@ -75,6 +75,9 @@
                         </button>
                         <button type="button" wire:click="useTemplatePackingItems('overseas')">テンプレートを使う(海外版)
                         </button>
+                        <button type="button" wire:click="allRemovePackingItem" onclick="return confirm('本当に全ての持ち物を削除しますか？')">
+                            持ち物を全て削除
+                        </button>
                     </div>
                 </div>
                 <div class="packing_template">
@@ -93,7 +96,9 @@
                                         class="text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <button type="button" wire:click="addPackingItem({{ $packingIndex }})">持ち物を追加</button>
+                                    <button type="button" wire:click="addPackingItem({{ $packingIndex }})">
+                                        持ち物を追加
+                                    </button>
                                     <button type="button" wire:click="removePackingItem({{ $packingIndex }})">
                                         持ち物を削除
                                     </button>
