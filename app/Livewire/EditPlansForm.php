@@ -21,6 +21,8 @@ class EditPlansForm extends Component
     public $deletedPlanFiles = [];
     public $packingItems = [];
     public $deletePackingItems = [];
+    public $useTemplatePackingItem = false;
+    public $allRemovePackingItemFlag = 0;
 
     /**
      * マウント時にコンポーネントの初期値を設定
@@ -83,17 +85,170 @@ class EditPlansForm extends Component
     }
 
     /**
-     * 持ち物リストに新しいアイテムを追加する。
+     * 持ち物リストのテンプレートの使用時に配列を初期化
      *
+     * @param string $type
      * @return void
      */
-    public function addPackingItem()
+    public function useTemplatePackingItems($type)
     {
-        $this->packingItems[] = [
-            //持ち物リストの初期値
-            'packing_name' => '',
-            'packing_is_checked' => false,
+        $this->useTemplatePackingItem = true;
+
+        $template = [
+            // 国内版
+            'domestic' => [
+                ['packing_name' => '航空券', 'packing_is_checked' => false],
+                ['packing_name' => '現金（日本円）', 'packing_is_checked' => false],
+                ['packing_name' => 'クレジットカード', 'packing_is_checked' => false],
+                ['packing_name' => '各種乗車券・ホテルバウチャー等', 'packing_is_checked' => false],
+                ['packing_name' => '各種証明書のコピー', 'packing_is_checked' => false],
+                ['packing_name' => '免許証', 'packing_is_checked' => false],
+                ['packing_name' => '健康保険証', 'packing_is_checked' => false],
+
+                ['packing_name' => 'スマホ', 'packing_is_checked' => false],
+                ['packing_name' => '常備薬・医薬品', 'packing_is_checked' => false],
+                ['packing_name' => '各種充電器', 'packing_is_checked' => false],
+                ['packing_name' => 'モバイルバッテリー', 'packing_is_checked' => false],
+                ['packing_name' => 'カメラ', 'packing_is_checked' => false],
+                ['packing_name' => '腕時計', 'packing_is_checked' => false],
+
+                ['packing_name' => '小銭入れ', 'packing_is_checked' => false],
+                ['packing_name' => '折りたたみバッグ、エコバッグ', 'packing_is_checked' => false],
+                ['packing_name' => 'ジッパー付きの透明ビニール袋(機内持ち込み)', 'packing_is_checked' => false],
+                ['packing_name' => '機内用パーカー', 'packing_is_checked' => false],
+                ['packing_name' => 'アイマスク', 'packing_is_checked' => false],
+                ['packing_name' => 'マスク', 'packing_is_checked' => false],
+                ['packing_name' => '耳栓', 'packing_is_checked' => false],
+                ['packing_name' => 'リップクリーム', 'packing_is_checked' => false],
+                ['packing_name' => '使い捨てスリッパ', 'packing_is_checked' => false],
+                ['packing_name' => 'トラベル枕（首用）', 'packing_is_checked' => false],
+                ['packing_name' => 'イヤホン', 'packing_is_checked' => false],
+
+                ['packing_name' => '衣服', 'packing_is_checked' => false],
+                ['packing_name' => 'パジャマ', 'packing_is_checked' => false],
+                ['packing_name' => 'サンダル', 'packing_is_checked' => false],
+                ['packing_name' => '水着', 'packing_is_checked' => false],
+                ['packing_name' => 'ハンカチ', 'packing_is_checked' => false],
+                ['packing_name' => 'ポケットティッシュ', 'packing_is_checked' => false],
+
+                ['packing_name' => 'コンタクトレンズ用品・眼鏡', 'packing_is_checked' => false],
+                ['packing_name' => 'S字フック', 'packing_is_checked' => false],
+                ['packing_name' => 'ガイドブック', 'packing_is_checked' => false],
+                ['packing_name' => '筆記用具・メモ帳', 'packing_is_checked' => false],
+                ['packing_name' => '折り畳み傘', 'packing_is_checked' => false],
+                ['packing_name' => '日傘', 'packing_is_checked' => false],
+                ['packing_name' => 'レインコート', 'packing_is_checked' => false],
+                ['packing_name' => 'タオル', 'packing_is_checked' => false],
+                ['packing_name' => '日焼け止め', 'packing_is_checked' => false],
+                ['packing_name' => 'サングラス', 'packing_is_checked' => false],
+                ['packing_name' => '虫よけスプレー', 'packing_is_checked' => false],
+                ['packing_name' => 'ハンドファン', 'packing_is_checked' => false],
+                ['packing_name' => '汗拭きシート', 'packing_is_checked' => false],
+                ['packing_name' => 'カイロ', 'packing_is_checked' => false],
+                ['packing_name' => 'ばんそうこう', 'packing_is_checked' => false],
+                ['packing_name' => 'ウェットティッシュ', 'packing_is_checked' => false],
+                ['packing_name' => 'ポリ袋', 'packing_is_checked' => false],
+                ['packing_name' => '食料', 'packing_is_checked' => false],
+
+                ['packing_name' => '化粧品', 'packing_is_checked' => false],
+                ['packing_name' => '洗顔料・メイク落とし', 'packing_is_checked' => false],
+                ['packing_name' => '生理用品', 'packing_is_checked' => false],
+                ['packing_name' => '洗濯洗剤', 'packing_is_checked' => false],
+                ['packing_name' => '洗濯ネット', 'packing_is_checked' => false],
+
+                ['packing_name' => 'シェーバー', 'packing_is_checked' => false],
+
+            ],
+            // 海外版
+            'overseas' => [
+                ['packing_name' => 'パスポート', 'packing_is_checked' => false],
+                ['packing_name' => 'ビザ(VISA、査証)、電子渡航申請(ESTA、ETASなど)', 'packing_is_checked' => false],
+                ['packing_name' => '海外旅行保険保険証', 'packing_is_checked' => false],
+                ['packing_name' => '航空券', 'packing_is_checked' => false],
+                ['packing_name' => '現金（日本円）', 'packing_is_checked' => false],
+                ['packing_name' => '現金（現地通貨）', 'packing_is_checked' => false],
+                ['packing_name' => 'クレジットカード', 'packing_is_checked' => false],
+                ['packing_name' => '各種乗車券・ホテルバウチャー等', 'packing_is_checked' => false],
+                ['packing_name' => 'パスポート等、各種証明書のコピー', 'packing_is_checked' => false],
+                ['packing_name' => '国際免許証', 'packing_is_checked' => false],
+
+                ['packing_name' => 'スマホ', 'packing_is_checked' => false],
+                ['packing_name' => '常備薬・医薬品', 'packing_is_checked' => false],
+                ['packing_name' => '各種充電器', 'packing_is_checked' => false],
+                ['packing_name' => 'モバイルバッテリー', 'packing_is_checked' => false],
+                ['packing_name' => '海外用電源プラグ変換アダプター', 'packing_is_checked' => false],
+                ['packing_name' => 'ポケットWiFi', 'packing_is_checked' => false],
+                ['packing_name' => 'カメラ', 'packing_is_checked' => false],
+                ['packing_name' => '腕時計', 'packing_is_checked' => false],
+
+                ['packing_name' => '小銭入れ', 'packing_is_checked' => false],
+                ['packing_name' => '折りたたみバッグ、エコバッグ', 'packing_is_checked' => false],
+                ['packing_name' => 'ジッパー付きの透明ビニール袋(機内持ち込み)', 'packing_is_checked' => false],
+                ['packing_name' => '機内用パーカー', 'packing_is_checked' => false],
+                ['packing_name' => 'アイマスク', 'packing_is_checked' => false],
+                ['packing_name' => 'マスク', 'packing_is_checked' => false],
+                ['packing_name' => '耳栓', 'packing_is_checked' => false],
+                ['packing_name' => 'リップクリーム', 'packing_is_checked' => false],
+                ['packing_name' => '使い捨てスリッパ', 'packing_is_checked' => false],
+                ['packing_name' => 'トラベル枕（首用）', 'packing_is_checked' => false],
+                ['packing_name' => 'イヤホン', 'packing_is_checked' => false],
+
+                ['packing_name' => '衣服', 'packing_is_checked' => false],
+                ['packing_name' => 'パジャマ', 'packing_is_checked' => false],
+                ['packing_name' => 'サンダル', 'packing_is_checked' => false],
+                ['packing_name' => '水着', 'packing_is_checked' => false],
+                ['packing_name' => 'ハンカチ', 'packing_is_checked' => false],
+                ['packing_name' => 'ポケットティッシュ', 'packing_is_checked' => false],
+
+                ['packing_name' => 'コンタクトレンズ用品・眼鏡', 'packing_is_checked' => false],
+                ['packing_name' => 'S字フック', 'packing_is_checked' => false],
+                ['packing_name' => 'ガイドブック', 'packing_is_checked' => false],
+                ['packing_name' => '筆記用具・メモ帳', 'packing_is_checked' => false],
+                ['packing_name' => '折り畳み傘', 'packing_is_checked' => false],
+                ['packing_name' => '日傘', 'packing_is_checked' => false],
+                ['packing_name' => 'レインコート', 'packing_is_checked' => false],
+                ['packing_name' => 'タオル', 'packing_is_checked' => false],
+                ['packing_name' => '日焼け止め', 'packing_is_checked' => false],
+                ['packing_name' => 'サングラス', 'packing_is_checked' => false],
+                ['packing_name' => '虫よけスプレー', 'packing_is_checked' => false],
+                ['packing_name' => 'ハンドファン', 'packing_is_checked' => false],
+                ['packing_name' => '汗拭きシート', 'packing_is_checked' => false],
+                ['packing_name' => 'カイロ', 'packing_is_checked' => false],
+                ['packing_name' => 'ばんそうこう', 'packing_is_checked' => false],
+                ['packing_name' => 'ウェットティッシュ', 'packing_is_checked' => false],
+                ['packing_name' => 'ポリ袋', 'packing_is_checked' => false],
+                ['packing_name' => '食料', 'packing_is_checked' => false],
+
+                ['packing_name' => '化粧品', 'packing_is_checked' => false],
+                ['packing_name' => '洗顔料・メイク落とし', 'packing_is_checked' => false],
+                ['packing_name' => 'シャンプー、リンス、ボディソープ', 'packing_is_checked' => false],
+                ['packing_name' => '生理用品', 'packing_is_checked' => false],
+                ['packing_name' => 'ヘアブラシ', 'packing_is_checked' => false],
+                ['packing_name' => '洗濯洗剤', 'packing_is_checked' => false],
+                ['packing_name' => '洗濯ネット', 'packing_is_checked' => false],
+                ['packing_name' => '歯ブラシ・歯磨き粉', 'packing_is_checked' => false],
+
+                ['packing_name' => 'シェーバー', 'packing_is_checked' => false],
+            ]
         ];
+        $this->packingItems = array_merge($this->packingItems, $template[$type]);
+    }
+
+    /**
+     * 指定した位置に新しい持ち物項目を追加
+     *
+     * @param int $packingIndex
+     * @return void
+     */
+    public function addPackingItem($packingIndex)
+    {
+        // 追加ボタンを押した箇所の次に挿入
+        array_splice($this->packingItems, $packingIndex + 1, 0, [
+            [
+                'packing_name' => '',
+                'packing_is_checked' => false,
+            ]
+        ]);
     }
 
     public function removePlan($index)
@@ -145,6 +300,18 @@ class EditPlansForm extends Component
         // リストのインデックスを再構築
         unset($this->packingItems[$packingIndex]);
         $this->packingItems = array_values($this->packingItems);
+    }
+
+    /**
+     * 全ての持ち物を一括削除してリセット
+     * @return void
+     */
+    public function allRemovePackingItem()
+    {
+        $this->packingItems = [
+            ['packing_name' => '', 'packing_is_checked' => false]
+        ];
+        $this->allRemovePackingItemFlag = 1;
     }
 
     public function submit()
@@ -220,6 +387,10 @@ class EditPlansForm extends Component
             }
         }
 
+        //全て削除ボタンを押された時データベースの値も削除
+        if ($this->allRemovePackingItemFlag == 1){
+            PackingItem::where('travel_id', $this->overview->id)->delete();
+        }
         // 持ち物リスト更新
         foreach ($this->packingItems as $packingItemData) {
             if (isset($packingItemData['id'])) {
