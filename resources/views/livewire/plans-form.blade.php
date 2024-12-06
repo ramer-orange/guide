@@ -80,7 +80,7 @@
                     </button>
                 </div>
                 @foreach($packingItems as $packingIndex => $packingItem)
-                    <div class="packing_list">
+                    <div class="packing_list mt-10">
                         <div>
                             <input type="checkbox"
                                    wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked">
