@@ -20,9 +20,13 @@
     </form>
 </header>
 <main>
-    <h1>しおりを作成</h1>
-    <livewire:plans-form />
-    <a href="{{ route('itineraries.index') }}">一覧を見る</a>
+    <div class="flex justify-center">
+        <div class="max-w-screen-lg  w-full">
+            <h1 class="font-bold mt-16 text-3xl text-center">しおりを作成</h1>
+            <livewire:plans-form/>
+            <a href="{{ route('itineraries.index') }}" class="mt-8 border border-black bg-slate-200">一覧を見る</a>
+        </div>
+    </div>
 </main>
 </body>
 </html>

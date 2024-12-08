@@ -6,6 +6,8 @@ export default {
     content: [
         './resources/views/itineraries/create.blade.php',
         './resources/views/livewire/plans-form.blade.php',
+        './resources/views/itineraries/edit.blade.php',
+        './resources/views/livewire/edit-plans-form.blade.php',
         // './resources/**/*.js',
     ],
 

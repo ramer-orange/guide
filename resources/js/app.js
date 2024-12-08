@@ -1,5 +1,5 @@
 import './bootstrap';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+//
+// window.Alpine = Alpine;
+//
+// Alpine.start();
