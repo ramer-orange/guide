@@ -59,7 +59,6 @@ class EditPlansForm extends Component
             ];
         })->toArray();
 
-//        $this->template_type = optional($overview->templateType)->template_name;
         if ($overview->templateType) {
             $this->template_type = $overview->templateType->template_name;
         } else {
@@ -344,6 +343,7 @@ class EditPlansForm extends Component
             'packingItems' => 'required | array',
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
+            'template_type' => 'nullable | string | max:255',
         ]);
 
         $this->overview->update([
