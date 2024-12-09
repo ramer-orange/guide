@@ -17,6 +17,7 @@ class PlansForm extends Component
     public $plans = [];
     public $useTemplatePackingItem = false;
     public $packingItems = [];
+    public  $template_type;
 
     public function mount()
     {
@@ -30,6 +31,8 @@ class PlansForm extends Component
             // 新規ファイルアップロード
             'planFiles' => [null],
         ];
+
+        $this->template_type = null;
 
         $this->packingItems[] = [
             //持ち物リスト
@@ -66,6 +69,8 @@ class PlansForm extends Component
     public function useTemplatePackingItems($type)
     {
         $this->useTemplatePackingItem = true;
+
+        $this->template_type = $type;
 
         // 現在の持ち物リストをリセット
         $this->packingItems = [];
@@ -207,6 +212,7 @@ class PlansForm extends Component
                 ['packing_name' => 'シェーバー', 'packing_is_checked' => false],
             ]
         ];
+
         $this->packingItems = $template[$type];
     }
 
@@ -254,6 +260,7 @@ class PlansForm extends Component
         $this->packingItems = [
             ['packing_name' => '', 'packing_is_checked' => false]
         ];
+        $this->template_type = null;
     }
 
     public function submit()
@@ -271,6 +278,7 @@ class PlansForm extends Component
             'packingItems' => 'required | array',
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
+            'template_type' => 'nullable | string | max:255',
         ]);
 
         $overview = TravelOverview::create([
@@ -295,6 +303,7 @@ class PlansForm extends Component
                 }
             }
         }
+        $overview->templateType = $this->template_type;
         foreach ($this->packingItems as $packingItem) {
             $overview->packingItems()->create([
                 'packing_name' => $packingItem['packing_name'],

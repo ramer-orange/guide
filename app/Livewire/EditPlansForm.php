@@ -23,6 +23,8 @@ class EditPlansForm extends Component
     public $deletePackingItems = [];
     public $useTemplatePackingItem = false;
     public $allRemovePackingItemFlag = 0;
+    public  $template_type;
+
 
     /**
      * マウント時にコンポーネントの初期値を設定
@@ -56,6 +58,12 @@ class EditPlansForm extends Component
                 })->toArray()
             ];
         })->toArray();
+
+        if ($overview->templateType) {
+            $this->template_type = $overview->templateType->template_name;
+        } else {
+            $this->template_type = null;
+        }
 
         // 持ち物リストをロード
         $this->packingItems = $overview->packingItems->map(function ($packingItem) {
@@ -93,6 +101,11 @@ class EditPlansForm extends Component
     public function useTemplatePackingItems($type)
     {
         $this->useTemplatePackingItem = true;
+
+        $this->template_type = $type;
+
+        // 現在の持ち物リストをリセット
+        $this->packingItems = [];
 
         $template = [
             // 国内版
@@ -312,6 +325,7 @@ class EditPlansForm extends Component
             ['packing_name' => '', 'packing_is_checked' => false]
         ];
         $this->allRemovePackingItemFlag = 1;
+        $this->template_type = null;
     }
 
     public function submit()
@@ -329,6 +343,7 @@ class EditPlansForm extends Component
             'packingItems' => 'required | array',
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
+            'template_type' => 'nullable | string | max:255',
         ]);
 
         $this->overview->update([
@@ -379,13 +394,15 @@ class EditPlansForm extends Component
                     }
                 }
             }
-            if (!empty($this->deletedPlans)) {
-                Plan::whereIn('id', $this->deletedPlans)->delete();
-            }
-            if (!empty($this->deletedPlanFiles)) {
-                Planfile::whereIn('id', $this->deletedPlanFiles)->delete();
-            }
         }
+        if (!empty($this->deletedPlans)) {
+            Plan::whereIn('id', $this->deletedPlans)->delete();
+        }
+        if (!empty($this->deletedPlanFiles)) {
+            Planfile::whereIn('id', $this->deletedPlanFiles)->delete();
+        }
+
+        $this->overview->templateType = $this->template_type;
 
         //全て削除ボタンを押された時データベースの値も削除
         if ($this->allRemovePackingItemFlag == 1){
@@ -407,10 +424,10 @@ class EditPlansForm extends Component
                     'packing_is_checked' => $packingItemData['packing_is_checked'],
                 ]);
             }
-            // 削除した持ち物をデータベースから削除
-            if (!empty($this->deletePackingItems)) {
-                PackingItem::whereIn('id', $this->deletePackingItems)->delete();
-            }
+        }
+        // 削除した持ち物をデータベースから削除
+        if (!empty($this->deletePackingItems)) {
+            PackingItem::whereIn('id', $this->deletePackingItems)->delete();
         }
         return redirect()->route('itineraries.edit', [$this->overview->id]);
     }
