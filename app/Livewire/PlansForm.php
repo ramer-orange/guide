@@ -70,16 +70,10 @@ class PlansForm extends Component
     {
         $this->useTemplatePackingItem = true;
 
+        $this->template_type = $type;
+
         // 現在の持ち物リストをリセット
         $this->packingItems = [];
-
-        if ($type === 'domestic')
-        {
-            $this->template_type = 'domestic';
-        }elseif ($type === 'overseas')
-        {
-            $this->template_type = 'overseas';
-        }
 
         $template = [
             // 国内版
