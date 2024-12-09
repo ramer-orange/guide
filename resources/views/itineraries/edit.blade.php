@@ -21,8 +21,8 @@
 </header>
 <main>
     <div class="flex justify-center">
-        <div class="max-w-screen-lg  w-full">
-            <h1 class="font-bold mt-16 text-3xl text-center">しおりを編集</h1>
+        <div class="max-w-2xl w-full">
+            <h1 class="font-bold mt-4 text-2xl text-center">しおりを編集</h1>
 
             <livewire:edit-plans-form :overview="$overview"/>
 

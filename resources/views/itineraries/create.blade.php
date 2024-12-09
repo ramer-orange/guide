@@ -21,8 +21,8 @@
 </header>
 <main>
     <div class="flex justify-center">
-        <div class="max-w-screen-lg  w-full">
-            <h1 class="font-bold mt-16 text-3xl text-center">しおりを作成</h1>
+        <div class="max-w-2xl w-full">
+            <h1 class="font-bold mt-4 text-2xl text-center">しおりを作成</h1>
             <livewire:plans-form/>
             <a href="{{ route('itineraries.index') }}" class="mt-8 border border-black bg-slate-200">一覧を見る</a>
         </div>
