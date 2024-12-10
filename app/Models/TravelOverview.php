@@ -21,4 +21,9 @@ class TravelOverview extends Model
     {
         return $this->hasMany(PackingItem::class, 'travel_id');
     }
+
+    public function souvenirs()
+    {
+        return $this->hasMany(Souvenir::class, 'travel_id');
+    }
 }
