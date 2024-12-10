@@ -109,8 +109,8 @@
             <div class="mt-8">
                 <div>
                     <button type="button" wire:click="allRemoveSouvenir"
-                            onclick="return confirm('本当に全ての持ち物を削除しますか？')" class="border border-black bg-slate-200">
-                        持ち物を全て削除
+                            onclick="return confirm('本当に全てのお土産を削除しますか？')" class="border border-black bg-slate-200">
+                        お土産を全て削除
                     </button>
                 </div>
                 @foreach($souvenirs as $souvenirIndex => $souvenir)

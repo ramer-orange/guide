@@ -17,7 +17,6 @@ class PlansForm extends Component
     public $useTemplatePackingItem = false;
     public $packingItems = [];
     public $template_type;
-
     public $souvenirs = [];
 
     public function mount()

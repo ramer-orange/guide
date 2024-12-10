@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\PackingItem;
 use App\Models\PlanFile;
 use App\Models\Plan;
+use App\Models\Souvenir;
 use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -23,7 +24,11 @@ class EditPlansForm extends Component
     public $deletePackingItems = [];
     public $useTemplatePackingItem = false;
     public $allRemovePackingItemFlag = 0;
+    public $allRemoveSouvenirsFlag = 0;
     public  $template_type;
+    public $souvenirs = [];
+    public $deleteSouvenirs = [];
+
 
 
     /**
@@ -71,6 +76,15 @@ class EditPlansForm extends Component
                 'id' => $packingItem->id,
                 'packing_name' => $packingItem->packing_name,
                 'packing_is_checked' => $packingItem->packing_is_checked == 1,
+            ];
+        })->toArray();
+
+        // お土産リストをロード
+        $this->souvenirs = $overview->souvenirs->map(function ($souvenir) {
+            return [
+                'id' => $souvenir->id,
+                'souvenir_name' => $souvenir->souvenir_name,
+                'souvenir_is_checked' => $souvenir->souvenir_is_checked == 1,
             ];
         })->toArray();
     }
@@ -264,6 +278,23 @@ class EditPlansForm extends Component
         ]);
     }
 
+    /**
+     * 指定した位置に新しいお土産を追加
+     *
+     * @param int $souvenirIndex
+     * @return void
+     */
+    public function addSouvenir($souvenirIndex)
+    {
+        // 追加ボタンを押した箇所の次に挿入
+        array_splice($this->souvenirs, $souvenirIndex + 1, 0, [
+            [
+                'souvenir_name' => '',
+                'souvenir_is_checked' => false,
+            ]
+        ]);
+    }
+
     public function removePlan($index)
     {
         if (isset($this->plans[$index]['id'])) {
@@ -305,14 +336,30 @@ class EditPlansForm extends Component
      */
     public function removePackingItems($packingIndex)
     {
+        // 既存の持ち物のIDを記録
         if (isset($this->packingItems[$packingIndex]['id'])) {
-            // 既存の持ち物のIDを記録
             $this->deletePackingItems[] = $this->packingItems[$packingIndex]['id'];
         }
-
         // リストのインデックスを再構築
         unset($this->packingItems[$packingIndex]);
         $this->packingItems = array_values($this->packingItems);
+    }
+
+    /**
+     * お土産が削除された際に、削除された持ち物のidを記録し、リストのインデックスを再構築。
+     *
+     * @param int $packingIndex
+     * @return void
+     */
+    public function removeSouvenir($souvenirIndex)
+    {
+        // 既存のお土産のIDを記録
+        if(isset($this->souvenirs[$souvenirIndex]['id'])) {
+            $this->deleteSouvenirs[] = $this->souvenirs[$souvenirIndex]['id'];
+        }
+        // リストのインデックスを再構築
+        unset($this->souvenirs[$souvenirIndex]);
+        $this->souvenirs = array_values($this->souvenirs);
     }
 
     /**
@@ -322,10 +369,30 @@ class EditPlansForm extends Component
     public function allRemovePackingItem()
     {
         $this->packingItems = [
-            ['packing_name' => '', 'packing_is_checked' => false]
+            [
+                'packing_name' => '',
+                'packing_is_checked' => false
+            ]
         ];
+        // データベースを削除する際のフラグ
         $this->allRemovePackingItemFlag = 1;
         $this->template_type = null;
+    }
+
+    /**
+     * 全てのお土産を一括削除してリセット
+     * @return void
+     */
+    public function allRemoveSouvenir()
+    {
+        $this->packingItems = [
+            [
+                'souvenir_name' => '',
+                'souvenir_is_checked' => false
+            ]
+        ];
+        // データベースを削除する際のフラグ
+        $this->allRemoveSouvenirsFlag = 1;
     }
 
     public function submit()
@@ -344,6 +411,9 @@ class EditPlansForm extends Component
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
             'template_type' => 'nullable | string | max:255',
+            'souvenirs' => 'required | array',
+            'souvenirs.*.souvenir_name' => 'nullable | string | max:255',
+            'souvenirs.*.souvenir_is_checked' => 'nullable | boolean',
         ]);
 
         $this->overview->update([
@@ -428,6 +498,32 @@ class EditPlansForm extends Component
         // 削除した持ち物をデータベースから削除
         if (!empty($this->deletePackingItems)) {
             PackingItem::whereIn('id', $this->deletePackingItems)->delete();
+        }
+
+        //全て削除ボタンを押された時データベースの値も削除
+        if($this->allRemoveSouvenirsFlag == 1){
+            Souvenir::where('travel_id', $this->overview->id)->delete();
+        }
+        // 持ち物リスト更新
+        foreach ($this->souvenirs as $souvenirData) {
+            if (isset($souvenirData['id'])) {
+                $souvenir = $this->overview->souvenirs()->find($souvenirData['id']);
+                if ($souvenir) {
+                    $souvenir->update([
+                        'souvenir_name' => $souvenirData['souvenir_name'],
+                        'souvenir_is_checked' => $souvenirData['souvenir_is_checked'],
+                    ]);
+                }
+            } else {
+                $this->overview->souvenirs()->create([
+                    'souvenir_name' => $packingItemData['souvenir_name'],
+                    'souvenir_is_checked' => $packingItemData['souvenir_is_checked'],
+                ]);
+            }
+            // 削除したお土産をデータベースから削除
+            if (!empty($this->deleteSouvenirs)) {
+                Souvenir::whereIn('id', $this->deleteSouvenirs)->delete();
+            }
         }
         return redirect()->route('itineraries.edit', [$this->overview->id]);
     }
