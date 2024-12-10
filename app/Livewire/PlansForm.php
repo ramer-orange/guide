@@ -12,12 +12,13 @@ class PlansForm extends Component
     use WithFileUploads;
 
     public $title;
-    public $overview;
     public $overviewText;
     public $plans = [];
     public $useTemplatePackingItem = false;
     public $packingItems = [];
-    public  $template_type;
+    public $template_type;
+
+    public $souvenirs = [];
 
     public function mount()
     {
@@ -34,10 +35,16 @@ class PlansForm extends Component
 
         $this->template_type = null;
 
+        //持ち物リスト
         $this->packingItems[] = [
-            //持ち物リスト
             'packing_name' => '',
             'packing_is_checked' => false,
+        ];
+
+        //お土産リスト
+        $this->souvenirs[] = [
+            'souvenir_name' => '',
+            'souvenir_is_checked' => false,
         ];
     }
 
@@ -233,22 +240,69 @@ class PlansForm extends Component
         ]);
     }
 
+    /**
+     * 指定した位置に新しいお土産を追加
+     *
+     * @param int $souvenirIndex
+     * @return void
+     */
+    public function addSouvenir($souvenirIndex)
+    {
+        array_splice($this->souvenirs, $souvenirIndex + 1, 0, [
+            [
+                'souvenir_name' => '',
+                'souvenir_is_checked' => false,
+            ]
+        ]);
+    }
+
+    /**
+     * 指定した位置のプランを削除し、インデックスを再構築
+     *
+     * @param int $index
+     * @return void
+     */
     public function removePlan($index)
     {
         unset($this->plans[$index]);
         $this->plans = array_values($this->plans);
     }
 
+    /**
+     * 指定した位置のファイルを削除し、インデックスを再構築
+     *
+     * @param int $index
+     * @param int $fileIndex
+     * @return void
+     */
     public function removePlanFiles($index, $fileIndex)
     {
         unset($this->plans[$index]['planFiles'][$fileIndex]);
         $this->plans[$index]['planFiles'] = array_values($this->plans[$index]['planFiles']);
     }
 
+    /**
+     * 指定した位置の持ち物を削除し、インデックスを再構築
+     *
+     * @param int $packingIndex
+     * @return void
+     */
     public function removePackingItem($packingIndex)
     {
-        unset($this->packingItems[$packingIndex]);
-        $this->packingItems = array_values($this->packingItems);
+        unset($this->souvenirs[$packingIndex]);
+        $this->souvenirs = array_values($this->souvenirs);
+    }
+
+    /**
+     * 指定した位置のお土産を削除し、インデックスを再構築
+     *
+     * @param int $souvenirIndex
+     * @return void
+     */
+    public function removeSouvenir($packingIndex)
+    {
+        unset($this->souvenirs[$packingIndex]);
+        $this->souvenirs = array_values($this->souvenirs);
     }
 
     /**
@@ -258,9 +312,26 @@ class PlansForm extends Component
     public function allRemovePackingItem()
     {
         $this->packingItems = [
-            ['packing_name' => '', 'packing_is_checked' => false]
+            [
+                'packing_name' => '',
+                'packing_is_checked' => false
+            ]
         ];
         $this->template_type = null;
+    }
+
+    /**
+     * 全てのお土産を一括削除してリセット
+     * @return void
+     */
+    public function allRemoveSouvenir()
+    {
+        $this->souvenirs = [
+            [
+                'souvenir_name' => '',
+                'souvenir_is_checked' => false
+            ]
+        ];
     }
 
     public function submit()
@@ -279,6 +350,9 @@ class PlansForm extends Component
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
             'template_type' => 'nullable | string | max:255',
+            'souvenirs' => 'required | array',
+            'souvenirs.*.souvenirs_name' => 'nullable | string | max:255',
+            'souvenirs.*.souvenirs_is_checked' => 'nullable | boolean',
         ]);
 
         $overview = TravelOverview::create([
@@ -308,6 +382,12 @@ class PlansForm extends Component
             $overview->packingItems()->create([
                 'packing_name' => $packingItem['packing_name'],
                 'packing_is_checked' => $packingItem['packing_is_checked'],
+            ]);
+        }
+        foreach ($this->souvenirs as $souvenir) {
+            $overview->souvenirs()->create([
+                'souvenir_name' => $souvenir['souvenir_name'],
+                'souvenir_is_checked' => $souvenir['souvenir_is_checked'],
             ]);
         }
         return redirect()->route('itineraries.edit', [$overview->id]);

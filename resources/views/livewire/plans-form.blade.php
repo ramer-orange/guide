@@ -102,6 +102,40 @@
                 @endforeach
             </div>
         </div>
+
+        <div class="mt-16">
+            <h2 class="font-bold text-2xl text-center">お土産リスト</h2>
+
+            <div class="mt-8">
+                <div>
+                    <button type="button" wire:click="allRemoveSouvenir"
+                            onclick="return confirm('本当に全ての持ち物を削除しますか？')" class="border border-black bg-slate-200">
+                        持ち物を全て削除
+                    </button>
+                </div>
+                @foreach($souvenirs as $souvenirIndex => $souvenir)
+                    <div class="mt-8">
+                        <div>
+                            <input type="checkbox"
+                                   wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_is_checked">
+                            <label for="souvenirs.{{ $souvenirIndex }}.souvenir_name">名前</label>
+                            <input type="text" id="souvenirs.{{ $souvenirIndex }}.souvenir_name"
+                                   wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_name">
+                            @error("souvenirs.$souvenirIndex.souvenir_name") <span
+                                class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" wire:click="addSouvenir({{ $souvenirIndex }})" class="border border-black bg-slate-200">
+                                お土産を追加
+                            </button>
+                            <button type="button" wire:click="removeSouvenir({{ $souvenirIndex }})" class="border border-black bg-slate-200">
+                                お土産を削除
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
         <button type="submit" class="mt-8 border border-black bg-slate-200">作成する</button>
     </form>
 </div>
