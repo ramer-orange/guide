@@ -18,6 +18,7 @@ class PlansForm extends Component
     public $packingItems = [];
     public $template_type;
     public $souvenirs = [];
+    public $additionalComments = [];
 
     public function mount()
     {
@@ -44,6 +45,12 @@ class PlansForm extends Component
         $this->souvenirs[] = [
             'souvenir_name' => '',
             'souvenir_is_checked' => false,
+        ];
+
+        //自由記述欄
+        $this->additionalComments[] = [
+            'additionalComment_title' => '',
+            'additionalComment_text' => '',
         ];
     }
 
@@ -256,6 +263,22 @@ class PlansForm extends Component
     }
 
     /**
+     * 指定した位置に新しい自由記述欄を追加
+     *
+     * @param int $additionalCommentIndex
+     * @return void
+     */
+    public function addAdditionalComment($additionalCommentIndex)
+    {
+        array_splice($this->additionalComments, $additionalCommentIndex + 1, 0, [
+            [
+                'additionalComment_title' => '',
+                'additionalComment_text' => '',
+            ]
+        ]);
+    }
+
+    /**
      * 指定した位置のプランを削除し、インデックスを再構築
      *
      * @param int $index
@@ -302,6 +325,18 @@ class PlansForm extends Component
     {
         unset($this->souvenirs[$packingIndex]);
         $this->souvenirs = array_values($this->souvenirs);
+    }
+
+    /**
+     * 指定した位置の自由記述欄を削除し、インデックスを再構築
+     *
+     * @param int $additionalCommentIndex
+     * @return void
+     */
+    public function removeAdditionalComment($additionalCommentIndex)
+    {
+        unset($this->additionalComments[$additionalCommentIndex]);
+        $this->additionalComments = array_values($this->additionalComments);
     }
 
     /**
@@ -352,6 +387,9 @@ class PlansForm extends Component
             'souvenirs' => 'required | array',
             'souvenirs.*.souvenirs_name' => 'nullable | string | max:255',
             'souvenirs.*.souvenirs_is_checked' => 'nullable | boolean',
+            'additionalComments' => 'required | array',
+            'additionalComments.*.additionalComment_title' => 'nullable | string | max:255',
+            'additionalComments.*.additionalComment_text' => 'nullable | string',
         ]);
 
         $overview = TravelOverview::create([
@@ -387,6 +425,12 @@ class PlansForm extends Component
             $overview->souvenirs()->create([
                 'souvenir_name' => $souvenir['souvenir_name'],
                 'souvenir_is_checked' => $souvenir['souvenir_is_checked'],
+            ]);
+        }
+        foreach ($this->additionalComments as $additionalComment) {
+            $overview->additionalComments()->create([
+                'additionalComment_title' => $additionalComment['additionalComment_title'],
+                'additionalComment_text' => $additionalComment['additionalComment_text'],
             ]);
         }
         return redirect()->route('itineraries.edit', [$overview->id]);

@@ -49,16 +49,23 @@
                                     class="text-red-500">{{ $message }}</span> @enderror
                             </div>
                             <div class="mt-4">
-                                <button type="button" wire:click="addPlanFiles({{ $index }})" class="border border-black bg-slate-200">ファイルを追加</button>
-                                <button type="button" wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})" class="border border-black bg-slate-200">
+                                <button type="button" wire:click="addPlanFiles({{ $index }})"
+                                        class="border border-black bg-slate-200">ファイルを追加
+                                </button>
+                                <button type="button" wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})"
+                                        class="border border-black bg-slate-200">
                                     ファイルを削除
                                 </button>
                             </div>
                         @endforeach
                     </div>
                     <div class="mt-4">
-                        <button type="button" wire:click="addPlan" class="border border-black bg-slate-200">プランを追加</button>
-                        <button type="button" wire:click="removePlan({{ $index }})" class="border border-black bg-slate-200">プランを削除</button>
+                        <button type="button" wire:click="addPlan" class="border border-black bg-slate-200">
+                            プランを追加
+                        </button>
+                        <button type="button" wire:click="removePlan({{ $index }})"
+                                class="border border-black bg-slate-200">プランを削除
+                        </button>
                     </div>
                 </div>
             @endforeach
@@ -70,12 +77,17 @@
 
             <div class="mt-8">
                 <div>
-                    <button type="button" wire:click="useTemplatePackingItems('domestic')" class="border border-black bg-slate-200 active:bg-blue-700" @if ($template_type === 'domestic') disabled @endif>テンプレートを使う(国内版)
+                    <button type="button" wire:click="useTemplatePackingItems('domestic')"
+                            class="border border-black bg-slate-200 active:bg-blue-700"
+                            @if ($template_type === 'domestic') disabled @endif>テンプレートを使う(国内版)
                     </button>
-                    <button type="button" wire:click="useTemplatePackingItems('overseas')" class="border border-black bg-slate-200 active:bg-blue-700" @if ($template_type === 'overseas') disabled @endif>テンプレートを使う(海外版)
+                    <button type="button" wire:click="useTemplatePackingItems('overseas')"
+                            class="border border-black bg-slate-200 active:bg-blue-700"
+                            @if ($template_type === 'overseas') disabled @endif>テンプレートを使う(海外版)
                     </button>
                     <button type="button" wire:click="allRemovePackingItem"
-                            onclick="return confirm('本当に全ての持ち物を削除しますか？')" class="border border-black bg-slate-200">
+                            onclick="return confirm('本当に全ての持ち物を削除しますか？')"
+                            class="border border-black bg-slate-200">
                         持ち物を全て削除
                     </button>
                 </div>
@@ -91,10 +103,12 @@
                                 class="text-red-500">{{ $message }}</span> @enderror
                         </div>
                         <div class="mt-4">
-                            <button type="button" wire:click="addPackingItem({{ $packingIndex }})" class="border border-black bg-slate-200">
+                            <button type="button" wire:click="addPackingItem({{ $packingIndex }})"
+                                    class="border border-black bg-slate-200">
                                 持ち物を追加
                             </button>
-                            <button type="button" wire:click="removePackingItem({{ $packingIndex }})" class="border border-black bg-slate-200">
+                            <button type="button" wire:click="removePackingItem({{ $packingIndex }})"
+                                    class="border border-black bg-slate-200">
                                 持ち物を削除
                             </button>
                         </div>
@@ -109,7 +123,8 @@
             <div class="mt-8">
                 <div>
                     <button type="button" wire:click="allRemoveSouvenir"
-                            onclick="return confirm('本当に全てのお土産を削除しますか？')" class="border border-black bg-slate-200">
+                            onclick="return confirm('本当に全てのお土産を削除しますか？')"
+                            class="border border-black bg-slate-200">
                         お土産を全て削除
                     </button>
                 </div>
@@ -125,10 +140,12 @@
                                 class="text-red-500">{{ $message }}</span> @enderror
                         </div>
                         <div class="mt-4">
-                            <button type="button" wire:click="addSouvenir({{ $souvenirIndex }})" class="border border-black bg-slate-200">
+                            <button type="button" wire:click="addSouvenir({{ $souvenirIndex }})"
+                                    class="border border-black bg-slate-200">
                                 お土産を追加
                             </button>
-                            <button type="button" wire:click="removeSouvenir({{ $souvenirIndex }})" class="border border-black bg-slate-200">
+                            <button type="button" wire:click="removeSouvenir({{ $souvenirIndex }})"
+                                    class="border border-black bg-slate-200">
                                 お土産を削除
                             </button>
                         </div>
@@ -136,6 +153,42 @@
                 @endforeach
             </div>
         </div>
+
+        <div class="mt-16">
+            <h2 class="font-bold text-2xl text-center">自由記述欄</h2>
+
+            <div class="mt-8">
+                @foreach($additionalComments as $additionalCommentIndex => $additionalComment)
+                    <div class="mt-8">
+                        <div>
+                            <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">タイトル</label>
+                            <input type="text" id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
+                                   wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">
+                            @error("additionalComments.$additionalCommentIndex.additionalComment_title") <span
+                                class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mt-4">
+                            <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text">テキスト</label>
+                            <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
+                                      　wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"></textarea>
+                            @error("additionalComments.$additionalCommentIndex.additionalComment_text") <span
+                                class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" wire:click="addAdditionalComment({{ $additionalCommentIndex }})"
+                                    class="border border-black bg-slate-200">
+                                自由記述欄を追加
+                            </button>
+                            <button type="button" wire:click="removeAdditionalComment({{ $additionalCommentIndex }})"
+                                    class="border border-black bg-slate-200">
+                                自由記述欄を削除
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <button type="submit" class="mt-8 border border-black bg-slate-200">作成する</button>
     </form>
 </div>
