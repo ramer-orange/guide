@@ -26,4 +26,10 @@ class TravelOverview extends Model
     {
         return $this->hasMany(Souvenir::class, 'travel_id');
     }
+
+
+    public function additionalComments()
+    {
+        return $this->hasMany(AdditionalComment::class, 'travel_id');
+    }
 }
