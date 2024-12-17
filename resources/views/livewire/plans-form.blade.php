@@ -161,16 +161,19 @@
                 @foreach($additionalComments as $additionalCommentIndex => $additionalComment)
                     <div class="mt-8">
                         <div>
-                            <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">タイトル</label>
-                            <input type="text" id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
+                            <label
+                                for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">タイトル</label>
+                            <input type="text"
+                                   id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
                                    wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">
                             @error("additionalComments.$additionalCommentIndex.additionalComment_title") <span
                                 class="text-red-500">{{ $message }}</span> @enderror
                         </div>
                         <div class="mt-4">
-                            <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text">テキスト</label>
+                            <label
+                                for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text">テキスト</label>
                             <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
-                                      　wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"></textarea>
+                                      wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"></textarea>
                             @error("additionalComments.$additionalCommentIndex.additionalComment_text") <span
                                 class="text-red-500">{{ $message }}</span> @enderror
                         </div>
