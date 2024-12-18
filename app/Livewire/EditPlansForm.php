@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\AdditionalComment;
 use App\Models\PackingItem;
 use App\Models\PlanFile;
 use App\Models\Plan;
@@ -25,10 +26,11 @@ class EditPlansForm extends Component
     public $useTemplatePackingItem = false;
     public $allRemovePackingItemFlag = 0;
     public $allRemoveSouvenirsFlag = 0;
-    public  $template_type;
+    public $template_type;
     public $souvenirs = [];
     public $deleteSouvenirs = [];
-
+    public $additionalComments = [];
+    public $deleteAdditionalComments = [];
 
 
     /**
@@ -85,6 +87,15 @@ class EditPlansForm extends Component
                 'id' => $souvenir->id,
                 'souvenir_name' => $souvenir->souvenir_name,
                 'souvenir_is_checked' => $souvenir->souvenir_is_checked == 1,
+            ];
+        })->toArray();
+
+        // 自由記述欄をロード
+        $this->additionalComments = $overview->additionalComments->map(function ($additionalComment) {
+            return [
+                'id' => $additionalComment->id,
+                'additionalComment_title' => $additionalComment->additionalComment_title,
+                'additionalComment_text' => $additionalComment->additionalComment_text,
             ];
         })->toArray();
     }
@@ -295,6 +306,22 @@ class EditPlansForm extends Component
         ]);
     }
 
+    /**
+     * 指定した位置に新しい自由記述欄を追加
+     *
+     * @param int $additionalCommentIndex
+     * @return void
+     */
+    public function addAdditionalComment($additionalCommentIndex)
+    {
+        array_splice($this->additionalComments, $additionalCommentIndex + 1, 0, [
+            [
+                'additionalComment_title' => '',
+                'additionalComment_text' => '',
+            ]
+        ]);
+    }
+
     public function removePlan($index)
     {
         if (isset($this->plans[$index]['id'])) {
@@ -354,12 +381,27 @@ class EditPlansForm extends Component
     public function removeSouvenir($souvenirIndex)
     {
         // 既存のお土産のIDを記録
-        if(isset($this->souvenirs[$souvenirIndex]['id'])) {
+        if (isset($this->souvenirs[$souvenirIndex]['id'])) {
             $this->deleteSouvenirs[] = $this->souvenirs[$souvenirIndex]['id'];
         }
         // リストのインデックスを再構築
         unset($this->souvenirs[$souvenirIndex]);
         $this->souvenirs = array_values($this->souvenirs);
+    }
+
+    /**
+     * 指定した位置の自由記述欄を削除し、インデックスを再構築
+     *
+     * @param int $additionalCommentIndex
+     * @return void
+     */
+    public function removeAdditionalComment($additionalCommentIndex)
+    {
+        if (isset($this->additionalComments[$additionalCommentIndex]['id'])) {
+            $this->deleteAdditionalComments[] = $this->additionalComments[$additionalCommentIndex]['id'];
+        }
+        unset($this->additionalComments[$additionalCommentIndex]);
+        $this->additionalComments = array_values($this->additionalComments);
     }
 
     /**
@@ -414,6 +456,9 @@ class EditPlansForm extends Component
             'souvenirs' => 'required | array',
             'souvenirs.*.souvenir_name' => 'nullable | string | max:255',
             'souvenirs.*.souvenir_is_checked' => 'nullable | boolean',
+            'additionalComments' => 'required | array',
+            'additionalComments.*.additionalComment_title' => 'nullable | string | max:255',
+            'additionalComments.*.additionalComment_text' => 'nullable | string',
         ]);
 
         $this->overview->update([
@@ -475,9 +520,10 @@ class EditPlansForm extends Component
         $this->overview->templateType = $this->template_type;
 
         //全て削除ボタンを押された時データベースの値も削除
-        if ($this->allRemovePackingItemFlag == 1){
+        if ($this->allRemovePackingItemFlag == 1) {
             PackingItem::where('travel_id', $this->overview->id)->delete();
         }
+
         // 持ち物リスト更新
         foreach ($this->packingItems as $packingItemData) {
             if (isset($packingItemData['id'])) {
@@ -499,12 +545,12 @@ class EditPlansForm extends Component
         if (!empty($this->deletePackingItems)) {
             PackingItem::whereIn('id', $this->deletePackingItems)->delete();
         }
-
         //全て削除ボタンを押された時データベースの値も削除
-        if($this->allRemoveSouvenirsFlag == 1){
+        if ($this->allRemoveSouvenirsFlag == 1) {
             Souvenir::where('travel_id', $this->overview->id)->delete();
         }
-        // 持ち物リスト更新
+
+        // お土産リスト更新
         foreach ($this->souvenirs as $souvenirData) {
             if (isset($souvenirData['id'])) {
                 $souvenir = $this->overview->souvenirs()->find($souvenirData['id']);
@@ -525,6 +571,30 @@ class EditPlansForm extends Component
                 Souvenir::whereIn('id', $this->deleteSouvenirs)->delete();
             }
         }
+
+        // 自由記述欄を更新
+        foreach ($this->additionalComments as $additionalCommentData) {
+            if (isset($additionalCommentData['id'])) {
+                $additionalComment = $this->overview->additionalComments()->find($additionalCommentData['id']);
+                if ($additionalComment) {
+                    $additionalComment->update([
+                        'additionalComment_title' => $additionalCommentData['additionalComment_title'],
+                        'additionalComment_text' => $additionalCommentData['additionalComment_text'],
+                    ]);
+                }
+            } else {
+                $this->overview->additionalComments()->create([
+                    'additionalComment_title' => $additionalCommentData['additionalComment_title'],
+                    'additionalComment_text' => $additionalCommentData['additionalComment_text'],
+                ]);
+            }
+
+            // 削除した自由記述欄をデータベースから削除
+            if (!empty($this->deleteAdditionalComments)) {
+                AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
+            }
+        }
+
         return redirect()->route('itineraries.edit', [$this->overview->id]);
     }
 

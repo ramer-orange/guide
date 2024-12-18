@@ -162,6 +162,44 @@
                 @endforeach
             </div>
         </div>
+
+        <div class="mt-16">
+            <h2 class="font-bold text-2xl text-center">自由記述欄</h2>
+
+            <div class="mt-8">
+                @foreach($additionalComments as $additionalCommentIndex => $additionalComment)
+                    <div class="mt-8">
+                        <div>
+                            <label
+                                for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">タイトル</label>
+                            <input type="text"
+                                   id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
+                                   wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title">
+                            @error("additionalComments.$additionalCommentIndex.additionalComment_title") <span
+                                class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mt-4">
+                            <label
+                                for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text">テキスト</label>
+                            <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
+                                      wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"></textarea>
+                            @error("additionalComments.$additionalCommentIndex.additionalComment_text") <span
+                                class="text-red-500">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" wire:click="addAdditionalComment({{ $additionalCommentIndex }})"
+                                    class="border border-black bg-slate-200">
+                                自由記述欄を追加
+                            </button>
+                            <button type="button" wire:click="removeAdditionalComment({{ $additionalCommentIndex }})"
+                                    class="border border-black bg-slate-200">
+                                自由記述欄を削除
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
         <button type="submit" class="border border-black bg-slate-200 mt-4">更新する</button>
     </form>
 </div>
