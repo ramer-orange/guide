@@ -280,6 +280,7 @@ class PlansForm extends Component
 
     /**
      * 指定した位置のプランを削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
      *
      * @param int $index
      * @return void
@@ -288,10 +289,23 @@ class PlansForm extends Component
     {
         unset($this->plans[$index]);
         $this->plans = array_values($this->plans);
+        if (count($this->plans) === 0) {
+            $this->plans[] = [
+                //プラン
+                'date' => '',
+                'time' => '',
+                'plans_title' => '',
+                'content' => '',
+
+                // 新規ファイルアップロード
+                'planFiles' => [null],
+            ];
+        }
     }
 
     /**
      * 指定した位置のファイルを削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
      *
      * @param int $index
      * @param int $fileIndex
@@ -301,34 +315,55 @@ class PlansForm extends Component
     {
         unset($this->plans[$index]['planFiles'][$fileIndex]);
         $this->plans[$index]['planFiles'] = array_values($this->plans[$index]['planFiles']);
+
+        if (count($this->plans[$index]['planFiles']) === 0) {
+            $this->plans[$index]['planFiles'][] = null;
+        }
     }
 
     /**
      * 指定した位置の持ち物を削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
      *
      * @param int $packingIndex
      * @return void
      */
     public function removePackingItem($packingIndex)
     {
-        unset($this->souvenirs[$packingIndex]);
-        $this->souvenirs = array_values($this->souvenirs);
+        unset($this->packingItems[$packingIndex]);
+        $this->packingItems = array_values($this->packingItems);
+
+        if (count($this->packingItems) === 0) {
+            $this->packingItems[] = [
+                'packing_name' => '',
+                'packing_is_checked' => false,
+            ];
+        }
     }
 
     /**
      * 指定した位置のお土産を削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
      *
      * @param int $souvenirIndex
      * @return void
      */
-    public function removeSouvenir($packingIndex)
+    public function removeSouvenir($souvenirIndex)
     {
-        unset($this->souvenirs[$packingIndex]);
+        unset($this->souvenirs[$souvenirIndex]);
         $this->souvenirs = array_values($this->souvenirs);
+
+        if (count($this->souvenirs) === 0) {
+            $this->souvenirs[] = [
+                'souvenir_name' => '',
+                'souvenir_is_checked' => false,
+            ];
+        }
     }
 
     /**
      * 指定した位置の自由記述欄を削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
      *
      * @param int $additionalCommentIndex
      * @return void
@@ -337,6 +372,13 @@ class PlansForm extends Component
     {
         unset($this->additionalComments[$additionalCommentIndex]);
         $this->additionalComments = array_values($this->additionalComments);
+
+        if (count($this->additionalComments) === 0) {
+            $this->additionalComments[] = [
+                'additionalComment_title' => '',
+                'additionalComment_text' => '',
+            ];
+        }
     }
 
     /**
