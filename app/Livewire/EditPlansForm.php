@@ -43,7 +43,7 @@ class EditPlansForm extends Component
     {
         $this->overview = $overview;
         $this->title = $overview->title;
-        $this->overviewText = $overview->overview;
+        $this->overviewText = $overview->overviewText;
 
         // プランをロード
         $this->plans = $overview->plans->map(function ($plan) {

@@ -8,6 +8,7 @@ export default {
         './resources/views/livewire/plans-form.blade.php',
         './resources/views/itineraries/edit.blade.php',
         './resources/views/livewire/edit-plans-form.blade.php',
+        './resources/views/itineraries/index.blade.php',
         // './resources/**/*.js',
     ],
 
