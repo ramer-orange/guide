@@ -437,7 +437,7 @@ class PlansForm extends Component
         $overview = TravelOverview::create([
             'user_id' => auth()->id(),
             'title' => $this->title,
-            'overview' => $this->overviewText,
+            'overviewText' => $this->overviewText,
         ]);
         foreach ($this->plans as $plan) {
             $newPlan = $overview->plans()->create([
