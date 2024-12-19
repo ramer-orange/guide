@@ -322,6 +322,13 @@ class EditPlansForm extends Component
         ]);
     }
 
+    /**
+     * 指定した位置のプランを削除し、インデックスを再構築
+     * 削除した際、配列の要素数が0であれば、初期値を設置
+     *
+     * @param int $index
+     * @return void
+     */
     public function removePlan($index)
     {
         if (isset($this->plans[$index]['id'])) {
