@@ -363,11 +363,6 @@ class EditPlansForm extends Component
      */
     public function removePlanFiles($index, $fileIndex)
     {
-        if (isset($this->plans[$index]['planFiles'][$fileIndex]['id'])) {
-            // 既存のファイルのIDを記録
-            $this->deletedPlanFiles[] = $this->plans[$index]['planFiles'][$fileIndex]['id'];
-        }
-
         unset($this->plans[$index]['planFiles'][$fileIndex]);
         $this->plans[$index]['planFiles'] = array_values($this->plans[$index]['planFiles']);
 
@@ -394,7 +389,7 @@ class EditPlansForm extends Component
      * @param int $packingIndex
      * @return void
      */
-    public function removePackingItems($packingIndex)
+    public function removePackingItem($packingIndex)
     {
         // 既存の持ち物のIDを記録
         if (isset($this->packingItems[$packingIndex]['id'])) {
@@ -618,8 +613,8 @@ class EditPlansForm extends Component
                 }
             } else {
                 $this->overview->souvenirs()->create([
-                    'souvenir_name' => $packingItemData['souvenir_name'],
-                    'souvenir_is_checked' => $packingItemData['souvenir_is_checked'],
+                    'souvenir_is_checked' => $souvenirData['souvenir_is_checked'],
+                    'souvenir_name' => $souvenirData['souvenir_name'],
                 ]);
             }
             // 削除したお土産をデータベースから削除

@@ -36,7 +36,7 @@
                             class="absolute inset-0 w-full h-full bg-white border-2 border-black group-hover:bg-black"></span>
 
                         <span class="relative flex items-center text-black group-hover:text-white">
-                            一覧を見る
+                            しおり一覧を見る
                             <!-- 右矢印アイコン -->
                             <svg xmlns="http://www.w3.org/2000/svg"
                                  class="h-5 w-5 mr-2"

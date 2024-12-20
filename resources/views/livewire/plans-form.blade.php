@@ -6,7 +6,8 @@
                 <div>
                     <label for="title" class="block text-sm font-medium text-gray-700">タイトル</label>
                     <input type="text" id="title" wire:model.defer="title"
-                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="フランス旅行">
                     @error('title')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
                     @enderror
@@ -14,7 +15,8 @@
                 <div class="mt-6">
                     <label for="overviewText" class="block text-sm font-medium text-gray-700">旅行概要</label>
                     <textarea id="overviewText" wire:model.defer="overviewText"
-                              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="美食を求める旅"></textarea>
                     @error('overviewText')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
                     @enderror
@@ -27,7 +29,8 @@
             <div class="mt-12 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">
                 <h2 class="flex items-center justify-center text-2xl font-semibold text-gray-800">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-6 h-6 mr-2 text-yellow-600">
-                        <path d="M51.7 295.1l31.7 6.3c7.9 1.6 16-.9 21.7-6.6l15.4-15.4c11.6-11.6 31.1-8.4 38.4 6.2l9.3 18.5c4.8 9.6 14.6 15.7 25.4 15.7c15.2 0 26.1-14.6 21.7-29.2l-6-19.9c-4.6-15.4 6.9-30.9 23-30.9l2.3 0c13.4 0 25.9-6.7 33.3-17.8l10.7-16.1c5.6-8.5 5.3-19.6-.8-27.7l-16.1-21.5c-10.3-13.7-3.3-33.5 13.4-37.7l17-4.3c7.5-1.9 13.6-7.2 16.5-14.4l16.4-40.9C303.4 52.1 280.2 48 256 48C141.1 48 48 141.1 48 256c0 13.4 1.3 26.5 3.7 39.1zm407.7 4.6c-3-.3-6-.1-9 .8l-15.8 4.4c-6.7 1.9-13.8-.9-17.5-6.7l-2-3.1c-6-9.4-16.4-15.1-27.6-15.1s-21.6 5.7-27.6 15.1l-6.1 9.5c-1.4 2.2-3.4 4.1-5.7 5.3L312 330.1c-18.1 10.1-25.5 32.4-17 51.3l5.5 12.4c8.6 19.2 30.7 28.5 50.5 21.1l2.6-1c10-3.7 21.3-2.2 29.9 4.1l1.5 1.1c37.2-29.5 64.1-71.4 74.4-119.5zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm144.5 92.1c-2.1 8.6 3.1 17.3 11.6 19.4l32 8c8.6 2.1 17.3-3.1 19.4-11.6s-3.1-17.3-11.6-19.4l-32-8c-8.6-2.1-17.3 3.1-19.4 11.6zm92-20c-2.1 8.6 3.1 17.3 11.6 19.4s17.3-3.1 19.4-11.6l8-32c2.1-8.6-3.1-17.3-11.6-19.4s-17.3 3.1-19.4 11.6l-8 32zM343.2 113.7c-7.9-4-17.5-.7-21.5 7.2l-16 32c-4 7.9-.7 17.5 7.2 21.5s17.5 .7 21.5-7.2l16-32c4-7.9 .7-17.5-7.2-21.5z"/>
+                        <path
+                            d="M51.7 295.1l31.7 6.3c7.9 1.6 16-.9 21.7-6.6l15.4-15.4c11.6-11.6 31.1-8.4 38.4 6.2l9.3 18.5c4.8 9.6 14.6 15.7 25.4 15.7c15.2 0 26.1-14.6 21.7-29.2l-6-19.9c-4.6-15.4 6.9-30.9 23-30.9l2.3 0c13.4 0 25.9-6.7 33.3-17.8l10.7-16.1c5.6-8.5 5.3-19.6-.8-27.7l-16.1-21.5c-10.3-13.7-3.3-33.5 13.4-37.7l17-4.3c7.5-1.9 13.6-7.2 16.5-14.4l16.4-40.9C303.4 52.1 280.2 48 256 48C141.1 48 48 141.1 48 256c0 13.4 1.3 26.5 3.7 39.1zm407.7 4.6c-3-.3-6-.1-9 .8l-15.8 4.4c-6.7 1.9-13.8-.9-17.5-6.7l-2-3.1c-6-9.4-16.4-15.1-27.6-15.1s-21.6 5.7-27.6 15.1l-6.1 9.5c-1.4 2.2-3.4 4.1-5.7 5.3L312 330.1c-18.1 10.1-25.5 32.4-17 51.3l5.5 12.4c8.6 19.2 30.7 28.5 50.5 21.1l2.6-1c10-3.7 21.3-2.2 29.9 4.1l1.5 1.1c37.2-29.5 64.1-71.4 74.4-119.5zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm144.5 92.1c-2.1 8.6 3.1 17.3 11.6 19.4l32 8c8.6 2.1 17.3-3.1 19.4-11.6s-3.1-17.3-11.6-19.4l-32-8c-8.6-2.1-17.3 3.1-19.4 11.6zm92-20c-2.1 8.6 3.1 17.3 11.6 19.4s17.3-3.1 19.4-11.6l8-32c2.1-8.6-3.1-17.3-11.6-19.4s-17.3 3.1-19.4 11.6l-8 32zM343.2 113.7c-7.9-4-17.5-.7-21.5 7.2l-16 32c-4 7.9-.7 17.5 7.2 21.5s17.5 .7 21.5-7.2l16-32c4-7.9 .7-17.5-7.2-21.5z"/>
                     </svg>
                     プラン
                 </h2>
@@ -60,10 +63,11 @@
                         <!-- タイトル -->
                         <div class="mt-6">
                             <label for="plans.{{ $index }}.plans_title"
-                                   class="block text-sm font-medium text-gray-700">タイトル</label>
+                                   class="block text-sm font-medium text-gray-700">プランタイトル</label>
                             <input type="text" id="plans.{{ $index }}.plans_title"
                                    wire:model.defer="plans.{{ $index }}.plans_title"
-                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="東京駅発">
                             @error("plans.$index.plans_title")
                             <span class="text-red-500 text-sm">{{ $message }}</span>
                             @enderror
@@ -72,9 +76,10 @@
                         <!-- 内容 -->
                         <div class="mt-4">
                             <label for="plans.{{ $index }}.content"
-                                   class="block text-sm font-medium text-gray-700">内容</label>
+                                   class="block text-sm font-medium text-gray-700">プラン内容</label>
                             <textarea id="plans.{{ $index }}.content" wire:model.defer="plans.{{ $index }}.content"
-                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                      placeholder="成田エクスプレスで成田空港に向かう"></textarea>
                             @error("plans.$index.content")
                             <span class="text-red-500 text-sm">{{ $message }}</span>
                             @enderror
@@ -82,9 +87,9 @@
 
                         <!-- ファイルアップロード -->
                         <div class="mt-6">
-                            <h3 class="text-lg font-medium text-gray-700">ファイルアップロード</h3>
+                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード</h3>
                             @foreach($plan['planFiles'] as $fileIndex => $planFile)
-                                <div class="flex items-center mt-4">
+                                <div class="flex items-center mt-1">
                                     <!-- inputをhiddenで隠す -->
                                     <input
                                         type="file"
@@ -150,42 +155,45 @@
                                 </button>
                             </div>
                         </div>
-                    @endforeach
 
-                    <div class="mt-4 sp2:mt-8 flex justify-center gap-2 sp2:gap-6 flex-col sp2:flex-row">
-                        <!-- プラン追加ボタン -->
-                        <button type="button" wire:click="addPlan">
+                        <!-- 各種ボタン -->
+                        <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
+                            <!-- プラン追加ボタン -->
+                            <button type="button" wire:click="addPlan">
                             <span class="relative inline-block text-lg group">
                                 <span
-                                    class="relative z-10 block px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
                                     <span
-                                        class="absolute inset-0 w-full h-full px-5 py-3 rounded-lg bg-gray-50"></span>
+                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
                                     <span
                                         class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
                                     <span class="relative">プラン追加</span>
                                 </span>
                                 <span
                                     class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                    data-rounded="rounded-lg"></span>
+                                    data-rounded="rounded-lg">
+                                </span>
                             </span>
-                        </button>
-                        <!-- プラン削除ボタン -->
-                        <button type="button" wire:click="removePlan({{ $index }})">
+                            </button>
+                            <!-- プラン削除ボタン -->
+                            <button type="button" wire:click="removePlan({{ $index }})">
                             <span class="relative inline-block text-lg group">
                                 <span
-                                    class="relative z-10 block px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
                                     <span
-                                        class="absolute inset-0 w-full h-full px-5 py-3 rounded-lg bg-gray-50"></span>
+                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
                                     <span
                                         class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
                                     <span class="relative">プラン削除</span>
                                 </span>
                                 <span
                                     class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                    data-rounded="rounded-lg"></span>
+                                    data-rounded="rounded-lg">
+                                </span>
                             </span>
-                        </button>
-                    </div>
+                            </button>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </seciton>
@@ -251,7 +259,7 @@
                                 @error("packingItems.$packingIndex.packing_name")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
-                                <button type="submit"
+                                <button type="button"
                                         class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
                                         wire:click="removePackingItem({{ $packingIndex }})"
                                         aria-label="削除"
@@ -267,21 +275,12 @@
                                 </button>
                             </div>
                             <!-- 持ち物追加ボタン -->
-                            <div class="mt-4">
+                            <div class="mt-2">
                                 <button type="button" wire:click="addPackingItem({{ $packingIndex }})">
-                                <span class="relative inline-block text-base group">
-                                    <span
-                                        class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
-                                        <span
-                                            class="absolute inset-0 w-full h-full px-4 py-2 rounded-md bg-gray-50"></span>
-                                        <span
-                                            class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                        <span class="relative">持ち物追加</span>
-                                    </span>
-                                    <span
-                                        class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
-                                        data-rounded="rounded-md"></span>
-                                </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
+                                        <path
+                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                    </svg>
                                 </button>
                             </div>
                         @endforeach
@@ -332,7 +331,7 @@
                                 @error("souvenirs.$souvenirIndex.souvenir_name")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
-                                <button type="submit"
+                                <button type="button"
                                         class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
                                         wire:click="removeSouvenir({{ $souvenirIndex }})"
                                         aria-label="削除"
@@ -350,19 +349,10 @@
                             <!-- お土産追加ボタン -->
                             <div class="mt-4">
                                 <button type="button" wire:click="addSouvenir({{ $souvenirIndex }})">
-                                    <span class="relative inline-block text-base group">
-                                        <span
-                                            class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
-                                            <span
-                                                class="absolute inset-0 w-full h-full px-4 py-2 rounded-md bg-gray-50"></span>
-                                            <span
-                                                class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                            <span class="relative">お土産追加</span>
-                                        </span>
-                                        <span
-                                            class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
-                                            data-rounded="rounded-md"></span>
-                                    </span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
+                                        <path
+                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                    </svg>
                                 </button>
                             </div>
                         @endforeach
@@ -407,14 +397,14 @@
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
                             </div>
-                            <div class="mt-4 sp2:mt-8 flex justify-center gap-2 sp2:gap-6 flex-col sp2:flex-row">
+                            <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                                 <!-- メモ欄追加ボタン -->
                                 <button type="button" wire:click="addAdditionalComment({{ $additionalCommentIndex }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
-                                            class="relative z-10 block px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                            class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
                                             <span
-                                                class="absolute inset-0 w-full h-full px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
                                             <span
                                                 class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
                                             <span class="relative">メモ追加</span>
@@ -429,9 +419,9 @@
                                         wire:click="removeAdditionalComment({{ $additionalCommentIndex }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
-                                            class="relative z-10 block px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                            class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
                                             <span
-                                                class="absolute inset-0 w-full h-full px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
                                             <span
                                                 class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
                                             <span class="relative">メモ削除</span>
@@ -461,6 +451,5 @@
                 </span>
             </button>
         </div>
-
     </form>
 </div>
