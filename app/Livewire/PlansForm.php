@@ -421,7 +421,7 @@ class PlansForm extends Component
             'plans.*.plans_title' => 'nullable | string | max:255',
             'plans.*.content' => 'nullable | string',
             'plans.*.planFiles' => 'nullable|array',
-            'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+            'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
             'packingItems' => 'required | array',
             'packingItems.*.packing_name' => 'nullable | string | max:255',
             'packingItems.*.packing_is_checked' => 'nullable | boolean',
