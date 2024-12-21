@@ -10,6 +10,7 @@ export default {
         './resources/views/itineraries/edit.blade.php',
         './resources/views/livewire/edit-plans-form.blade.php',
         './resources/views/itineraries/index.blade.php',
+        './resources/views/livewire/pages/auth/register.blade.php',
         // './resources/**/*.js',
     ],
 
