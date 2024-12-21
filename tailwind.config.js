@@ -4,6 +4,7 @@ import forms from '@tailwindcss/forms';
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
+        './resources/views/home.blade.php',
         './resources/views/itineraries/create.blade.php',
         './resources/views/livewire/plans-form.blade.php',
         './resources/views/itineraries/edit.blade.php',
