@@ -38,7 +38,7 @@ new #[Layout('layouts.guest')] class extends Component
 
 <div>
     <form wire:submit="register">
-        <div class="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700 max-w-lg mx-auto">
+        <div class="mt-7 bg-white border border-gray-200 rounded-xl shadow-xs dark:bg-neutral-900 dark:border-neutral-700 max-w-lg mx-auto">
             <div class="p-4 sm:p-8">
                 <!-- ヘッダー -->
                 <div class="text-center">
@@ -46,7 +46,7 @@ new #[Layout('layouts.guest')] class extends Component
                     <p class="text-sm text-gray-600 dark:text-neutral-400 mt-4">
                         すでにアカウントを持っていますか？
                         <br class="md:hidden">
-                        <a class="text-blue-600 decoration-2 hover:underline focus:outline-none focus:underline font-medium dark:text-blue-500"
+                        <a class="text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-blue-500"
                            href="{{ 'login' }}">
                             ログインへ
                         </a>

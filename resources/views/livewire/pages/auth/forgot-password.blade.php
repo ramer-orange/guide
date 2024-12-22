@@ -36,7 +36,7 @@ new #[Layout('layouts.guest')] class extends Component
     }
 }; ?>
 
-<div class="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-900 dark:border-neutral-700 max-w-lg mx-auto">
+<div class="mt-7 bg-white border border-gray-200 rounded-xl shadow-xs dark:bg-neutral-900 dark:border-neutral-700 max-w-lg mx-auto">
     <div class="p-4 sm:p-8">
         <!-- ヘッダー -->
         <div>
