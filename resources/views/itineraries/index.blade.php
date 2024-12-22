@@ -8,9 +8,12 @@
     @vite('resources/css/app.css')
 </head>
 <body>
+<!-- ヘッダー -->
+<x-header></x-header>
+
 <main>
     <div class="bg-[#fffdfa]">
-        <div class="max-w-7xl mx-auto p-4 sm:p-6 dark:bg-gray-800 min-h-screen">
+        <div class="max-w-7xl mx-auto p-4 pt-24 sm:p-6,pt-24 dark:bg-gray-800 min-h-screen ">
             <h1 class="text-3xl sm:text-4xl font-extrabold mb-6 text-gray-900">しおり一覧</h1>
 
             <div class="bg-white dark:bg-gray-700 shadow-lg rounded-lg p-4 sm:p-8">
