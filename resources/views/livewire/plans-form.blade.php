@@ -15,7 +15,7 @@
                 <div class="mt-6">
                     <label for="overviewText" class="block text-sm font-medium text-gray-700">旅行概要</label>
                     <textarea id="overviewText" wire:model.defer="overviewText"
-                              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
                               placeholder="美食を求める旅"></textarea>
                     @error('overviewText')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -78,7 +78,7 @@
                             <label for="plans.{{ $index }}.content"
                                    class="block text-sm font-medium text-gray-700">プラン内容</label>
                             <textarea id="plans.{{ $index }}.content" wire:model.defer="plans.{{ $index }}.content"
-                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
                                       placeholder="成田エクスプレスで成田空港に向かう"></textarea>
                             @error("plans.$index.content")
                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -392,7 +392,7 @@
                                 <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                           wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                           placeholder="テキスト"
-                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"></textarea>
                                 @error("additionalComments.$additionalCommentIndex.additionalComment_text")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
