@@ -8,20 +8,12 @@
     @vite('resources/css/app.css')
 </head>
 <body class="bg-[#fffdfa]">
-<header>
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
+<!-- ヘッダー -->
+<x-header></x-header>
 
-        <x-dropdown-link :href="route('logout')"
-                         onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-            {{ __('Log Out') }}
-        </x-dropdown-link>
-    </form>
-</header>
 <main>
     <div class="max-w-7xl mx-auto p-4 pb-8 sm:p-6 sm:pb-12 dark:bg-gray-800 min-h-screen">
-        <div class="flex justify-center">
+        <div class="flex justify-center mt-20">
             <div class="max-w-3xl w-full">
                 <h1 class="text-3xl sm:text-4xl font-extrabold mb-6 text-gray-900 text-center">しおり編集</h1>
 
