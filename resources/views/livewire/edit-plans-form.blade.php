@@ -5,7 +5,7 @@
             <div>
                 <label for="title" class="block text-sm font-medium text-gray-700">タイトル</label>
                 <input type="text" id="title" wire:model.defer="title"
-                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                 @error('title')
                 <span class="text-red-500 text-sm">{{ $message }}</span>
                 @enderror
@@ -14,7 +14,7 @@
             <div>
                 <label for="overviewText" class="block text-sm font-medium text-gray-700">旅行概要</label>
                 <textarea id="overviewText" wire:model.defer="overviewText"
-                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                           placeholder="美食を求める旅"></textarea>
                 @error('overviewText')
                 <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -42,7 +42,7 @@
                                        class="block text-sm font-medium text-gray-700">日付</label>
                                 <input type="date" id="plans.{{ $index }}.date"
                                        wire:model.defer="plans.{{ $index }}.date"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                 @error("plans.$index.date") <span class="text-red-500">{{ $message }}</span> @enderror
                             </div>
                             <div>
@@ -50,7 +50,7 @@
                                        class="block text-sm font-medium text-gray-700">時間</label>
                                 <input type="time" id="plans.{{ $index }}.time"
                                        wire:model.defer="plans.{{ $index }}.time"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                 @error("plans.$index.time") <span class="text-red-500">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -61,7 +61,7 @@
                                    class="block text-sm font-medium text-gray-700">プランタイトル</label>
                             <input type="text" id="plans.{{ $index }}.plans_title"
                                    wire:model.defer="plans.{{ $index }}.plans_title"
-                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                    placeholder="東京駅発">
                             @error("plans.$index.plans_title")
                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -73,7 +73,7 @@
                             <label for="plans.{{ $index }}.content"
                                    class="block text-sm font-medium text-gray-700">プラン内容</label>
                             <textarea id="plans.{{ $index }}.content" wire:model.defer="plans.{{ $index }}.content"
-                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                       placeholder="成田エクスプレスで成田空港に向かう"></textarea>
                             @error("plans.$index.content")
                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -89,7 +89,7 @@
                                     <div class="mt-4 space-y-4">
                                         @foreach($plan['existing_planFiles'] as $existingFileIndex => $existingFile)
                                             <div
-                                                class="flex items-center justify-between p-3 px-4 bg-gray-100 rounded-md shadow-sm">
+                                                class="flex items-center justify-between p-3 px-4 bg-gray-100 rounded-md shadow-xs">
                                                 <!-- ファイル情報 -->
                                                 <div class="flex items-center space-x-2">
                                                     <!-- ファイルアイコン -->
@@ -136,7 +136,7 @@
                                             <!-- labelでクリック可能エリアを作る -->
                                             <label
                                                 for="file-{{ $index }}-{{ $fileIndex }}"
-                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm cursor-pointer focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-xs cursor-pointer focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                                 @if(isset($plans[$index]['planFiles'][$fileIndex]) && $plans[$index]['planFiles'][$fileIndex])
                                                     <!-- ファイルが選択済みの場合、ファイル名を表示 -->
                                                     {{ $plans[$index]['planFiles'][$fileIndex]->getClientOriginalName() }}
@@ -274,7 +274,7 @@
                                 <span
                                     class="relative inline-flex items-center justify-start px-4 py-2 overflow-hidden font-medium transition-all bg-red-500 rounded-lg group">
                                     <span
-                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded group-hover:-mr-3 group-hover:-mt-3">
+                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded-sm group-hover:-mr-3 group-hover:-mt-3">
                                         <span
                                             class="absolute top-0 right-0 w-4 h-4 rotate-45 translate-x-1/2 -translate-y-1/2 bg-white"></span>
                                     </span>
@@ -289,10 +289,10 @@
                             <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
                                 <input type="checkbox"
                                        wire:model.defer="packingItems.{{ $packingIndex }}.packing_is_checked"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
                                 <input type="text" id="packingItems.{{ $packingIndex }}.packing_name"
                                        wire:model.defer="packingItems.{{ $packingIndex }}.packing_name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="持ち物の名前">
                                 @error("packingItems.$packingIndex.packing_name")
                                 <span class="text-red-500">{{ $message }}</span>
@@ -347,7 +347,7 @@
                                 <span
                                     class="relative inline-flex items-center justify-start px-4 py-2 overflow-hidden font-medium transition-all bg-red-500 rounded-lg group">
                                     <span
-                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded group-hover:-mr-3 group-hover:-mt-3">
+                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded-sm group-hover:-mr-3 group-hover:-mt-3">
                                         <span
                                             class="absolute top-0 right-0 w-4 h-4 rotate-45 translate-x-1/2 -translate-y-1/2 bg-white"></span>
                                     </span>
@@ -362,10 +362,10 @@
                             <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
                                 <input type="checkbox"
                                        wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_is_checked"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
                                 <input type="text" id="souvenirs.{{ $souvenirIndex }}.souvenir_name"
                                        wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="お土産の名前">
                                 @error("souvenirs.$souvenirIndex.souvenir_name")
                                 <span class="text-red-500">{{ $message }}</span>
@@ -420,7 +420,7 @@
                                        id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
                                        wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
                                        placeholder="タイトル"
-                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                 @error("additionalComments.$additionalCommentIndex.additionalComment_title")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
@@ -431,7 +431,7 @@
                                 <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                           wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                           placeholder="テキスト"
-                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                                 @error("additionalComments.$additionalCommentIndex.additionalComment_text")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
