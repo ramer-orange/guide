@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Http\Requests\SubmitFormRequest;
 use App\Models\AdditionalComment;
 use App\Models\PackingItem;
 use App\Models\PlanFile;
@@ -33,6 +34,11 @@ class EditPlansForm extends Component
     public $deleteSouvenirs = [];
     public $additionalComments = [];
     public $deleteAdditionalComments = [];
+
+    protected function rules(): array
+    {
+        return (new SubmitFormRequest())->rules();
+    }
 
 
     /**
@@ -270,27 +276,7 @@ class EditPlansForm extends Component
 
     public function submit()
     {
-        $this->validate([
-            'title' => 'required | string | max:255',
-            'overviewText' => 'nullable | string',
-            'plans' => 'required | array',
-            'plans.*.date' => 'nullable | date',
-            'plans.*.time' => 'nullable | date_format:H:i',
-            'plans.*.plans_title' => 'nullable | string | max:255',
-            'plans.*.content' => 'nullable | string',
-            'plans.*.planFiles' => 'nullable | array',
-            'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
-            'packingItems' => 'required | array',
-            'packingItems.*.packing_name' => 'nullable | string | max:255',
-            'packingItems.*.packing_is_checked' => 'nullable | boolean',
-            'template_type' => 'nullable | string | max:255',
-            'souvenirs' => 'required | array',
-            'souvenirs.*.souvenir_name' => 'nullable | string | max:255',
-            'souvenirs.*.souvenir_is_checked' => 'nullable | boolean',
-            'additionalComments' => 'required | array',
-            'additionalComments.*.additionalComment_title' => 'nullable | string | max:255',
-            'additionalComments.*.additionalComment_text' => 'nullable | string',
-        ]);
+        $this->validate();
 
         $this->overview->update([
             'title' => $this->title,
