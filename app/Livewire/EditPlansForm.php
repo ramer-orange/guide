@@ -12,11 +12,14 @@ use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Livewire\Traits\AddItems;
+use App\Livewire\Traits\InitializeLists;
+
 
 class EditPlansForm extends Component
 {
     use WithFileUploads;
     use AddItems;
+    use InitializeLists;
 
     public $title;
     public $overviewText;
@@ -126,16 +129,7 @@ class EditPlansForm extends Component
         $this->plans = array_values($this->plans);
 
         if (count($this->plans) === 0) {
-            $this->plans[] = [
-                //プラン
-                'date' => '',
-                'time' => '',
-                'plans_title' => '',
-                'content' => '',
-
-                // 新規ファイルアップロード
-                'planFiles' => [null],
-            ];
+            $this->plans[] = $this->getDefaultPlan();
         }
     }
 
@@ -186,10 +180,7 @@ class EditPlansForm extends Component
         $this->packingItems = array_values($this->packingItems);
 
         if (count($this->packingItems) === 0) {
-            $this->packingItems[] = [
-                'packing_name' => '',
-                'packing_is_checked' => false,
-            ];
+            $this->packingItems[] = $this->getDefaultPackingItems();
         }
     }
 
@@ -211,10 +202,7 @@ class EditPlansForm extends Component
         $this->souvenirs = array_values($this->souvenirs);
 
         if (count($this->souvenirs) === 0) {
-            $this->souvenirs[] = [
-                'souvenir_name' => '',
-                'souvenir_is_checked' => false,
-            ];
+            $this->souvenirs[] = $this->getDefaultSouvenirs();
         }
     }
 
@@ -234,10 +222,7 @@ class EditPlansForm extends Component
         $this->additionalComments = array_values($this->additionalComments);
 
         if (count($this->additionalComments) === 0) {
-            $this->additionalComments[] = [
-                'additionalComment_title' => '',
-                'additionalComment_text' => '',
-            ];
+            $this->additionalComments[] = $this->getDefaultAdditionalComments();
         }
     }
 
@@ -247,12 +232,8 @@ class EditPlansForm extends Component
      */
     public function allRemovePackingItem()
     {
-        $this->packingItems = [
-            [
-                'packing_name' => '',
-                'packing_is_checked' => false
-            ]
-        ];
+        $this->packingItems = [$this->getDefaultPackingItems()];
+
         // データベースを削除する際のフラグ
         $this->allRemovePackingItemFlag = 1;
         $this->template_type = null;
@@ -264,12 +245,7 @@ class EditPlansForm extends Component
      */
     public function allRemoveSouvenir()
     {
-        $this->packingItems = [
-            [
-                'souvenir_name' => '',
-                'souvenir_is_checked' => false
-            ]
-        ];
+        $this->souvenirs = [$this->getDefaultSouvenirs()];
         // データベースを削除する際のフラグ
         $this->allRemoveSouvenirsFlag = 1;
     }

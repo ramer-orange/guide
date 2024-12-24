@@ -7,12 +7,14 @@ use App\Models\Plan;
 use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use App\Livewire\Traits\addItems;
+use App\Livewire\Traits\AddItems;
+use App\Livewire\Traits\InitializeLists;
 
 class PlansForm extends Component
 {
     use WithFileUploads;
     use AddItems;
+    use InitializeLists;
 
     public $title;
     public $overviewText;
@@ -30,36 +32,15 @@ class PlansForm extends Component
 
     public function mount()
     {
-        $this->plans[] = [
-            //プラン
-            'date' => '',
-            'time' => '',
-            'plans_title' => '',
-            'content' => '',
-
-            // 新規ファイルアップロード
-            'planFiles' => [null],
-        ];
+        $this->plans[] = $this->getDefaultPlan();
 
         $this->template_type = null;
 
-        //持ち物リスト
-        $this->packingItems[] = [
-            'packing_name' => '',
-            'packing_is_checked' => false,
-        ];
+        $this->packingItems[] = $this->getDefaultPackingItems();
 
-        //お土産リスト
-        $this->souvenirs[] = [
-            'souvenir_name' => '',
-            'souvenir_is_checked' => false,
-        ];
+        $this->souvenirs[] = $this->getDefaultSouvenirs();
 
-        //自由記述欄
-        $this->additionalComments[] = [
-            'additionalComment_title' => '',
-            'additionalComment_text' => '',
-        ];
+        $this->additionalComments[] = $this->getDefaultAdditionalComments();
     }
 
     /**
@@ -74,16 +55,7 @@ class PlansForm extends Component
         unset($this->plans[$index]);
         $this->plans = array_values($this->plans);
         if (count($this->plans) === 0) {
-            $this->plans[] = [
-                //プラン
-                'date' => '',
-                'time' => '',
-                'plans_title' => '',
-                'content' => '',
-
-                // 新規ファイルアップロード
-                'planFiles' => [null],
-            ];
+            $this->plans[] = $this->getDefaultPlan();
         }
     }
 
@@ -118,10 +90,7 @@ class PlansForm extends Component
         $this->packingItems = array_values($this->packingItems);
 
         if (count($this->packingItems) === 0) {
-            $this->packingItems[] = [
-                'packing_name' => '',
-                'packing_is_checked' => false,
-            ];
+            $this->packingItems[] = $this->getDefaultPackingItems();
         }
     }
 
@@ -138,10 +107,7 @@ class PlansForm extends Component
         $this->souvenirs = array_values($this->souvenirs);
 
         if (count($this->souvenirs) === 0) {
-            $this->souvenirs[] = [
-                'souvenir_name' => '',
-                'souvenir_is_checked' => false,
-            ];
+            $this->souvenirs[] = $this->getDefaultSouvenirs();
         }
     }
 
@@ -158,10 +124,7 @@ class PlansForm extends Component
         $this->additionalComments = array_values($this->additionalComments);
 
         if (count($this->additionalComments) === 0) {
-            $this->additionalComments[] = [
-                'additionalComment_title' => '',
-                'additionalComment_text' => '',
-            ];
+            $this->additionalComments[] = $this->getDefaultAdditionalComments();
         }
     }
 
@@ -171,12 +134,7 @@ class PlansForm extends Component
      */
     public function allRemovePackingItem()
     {
-        $this->packingItems = [
-            [
-                'packing_name' => '',
-                'packing_is_checked' => false
-            ]
-        ];
+        $this->packingItems = [$this->getDefaultPackingItems()];
         $this->template_type = null;
     }
 
@@ -186,12 +144,7 @@ class PlansForm extends Component
      */
     public function allRemoveSouvenir()
     {
-        $this->souvenirs = [
-            [
-                'souvenir_name' => '',
-                'souvenir_is_checked' => false
-            ]
-        ];
+        $this->souvenirs = [$this->getDefaultSouvenirs()];
     }
 
     public function submit()
