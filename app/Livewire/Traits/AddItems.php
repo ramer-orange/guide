@@ -198,10 +198,10 @@ trait AddItems
      * @param int $index
      * @return void
      */
-    public function addPackingItem($packingIndex)
+    public function addPackingItem($index)
     {
         // 追加ボタンを押した箇所の次に挿入
-        array_splice($this->packingItems, $packingIndex + 1, 0, [
+        array_splice($this->packingItems, $index + 1, 0, [
             [
                 'packing_name' => '',
                 'packing_is_checked' => false,
@@ -212,7 +212,7 @@ trait AddItems
     /**
      * 指定した位置に新しいお土産を追加
      *
-     * @param int $souvenirIndex
+     * @param int $index
      * @return void
      */
     public function addSouvenir($index)
