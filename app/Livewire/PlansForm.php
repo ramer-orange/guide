@@ -56,7 +56,6 @@ class PlansForm extends Component
         ];
     }
 
-
     /**
      * 指定した位置のプランを削除し、インデックスを再構築
      * 削除した際、配列の要素数が0であれば、初期値を設置
@@ -104,12 +103,12 @@ class PlansForm extends Component
      * 指定した位置の持ち物を削除し、インデックスを再構築
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $packingIndex
+     * @param int $index
      * @return void
      */
-    public function removePackingItem($packingIndex)
+    public function removePackingItem($index)
     {
-        unset($this->packingItems[$packingIndex]);
+        unset($this->packingItems[$index]);
         $this->packingItems = array_values($this->packingItems);
 
         if (count($this->packingItems) === 0) {
@@ -124,12 +123,12 @@ class PlansForm extends Component
      * 指定した位置のお土産を削除し、インデックスを再構築
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $souvenirIndex
+     * @param int $index
      * @return void
      */
-    public function removeSouvenir($souvenirIndex)
+    public function removeSouvenir($index)
     {
-        unset($this->souvenirs[$souvenirIndex]);
+        unset($this->souvenirs[$index]);
         $this->souvenirs = array_values($this->souvenirs);
 
         if (count($this->souvenirs) === 0) {
@@ -144,12 +143,12 @@ class PlansForm extends Component
      * 指定した位置の自由記述欄を削除し、インデックスを再構築
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $additionalCommentIndex
+     * @param int $index
      * @return void
      */
-    public function removeAdditionalComment($additionalCommentIndex)
+    public function removeAdditionalComment($index)
     {
-        unset($this->additionalComments[$additionalCommentIndex]);
+        unset($this->additionalComments[$index]);
         $this->additionalComments = array_values($this->additionalComments);
 
         if (count($this->additionalComments) === 0) {

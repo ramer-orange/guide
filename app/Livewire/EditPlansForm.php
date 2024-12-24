@@ -166,17 +166,17 @@ class EditPlansForm extends Component
      * 持ち物が削除された際に、削除された持ち物のidを記録し、リストのインデックスを再構築。
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $packingIndex
+     * @param int $index
      * @return void
      */
-    public function removePackingItem($packingIndex)
+    public function removePackingItem($index)
     {
         // 既存の持ち物のIDを記録
-        if (isset($this->packingItems[$packingIndex]['id'])) {
-            $this->deletePackingItems[] = $this->packingItems[$packingIndex]['id'];
+        if (isset($this->packingItems[$index]['id'])) {
+            $this->deletePackingItems[] = $this->packingItems[$index]['id'];
         }
         // リストのインデックスを再構築
-        unset($this->packingItems[$packingIndex]);
+        unset($this->packingItems[$index]);
         $this->packingItems = array_values($this->packingItems);
 
         if (count($this->packingItems) === 0) {
@@ -191,17 +191,17 @@ class EditPlansForm extends Component
      * お土産が削除された際に、削除されたお土産のidを記録し、リストのインデックスを再構築。
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $packingIndex
+     * @param int $index
      * @return void
      */
-    public function removeSouvenir($souvenirIndex)
+    public function removeSouvenir($index)
     {
         // 既存のお土産のIDを記録
-        if (isset($this->souvenirs[$souvenirIndex]['id'])) {
-            $this->deleteSouvenirs[] = $this->souvenirs[$souvenirIndex]['id'];
+        if (isset($this->souvenirs[$index]['id'])) {
+            $this->deleteSouvenirs[] = $this->souvenirs[$index]['id'];
         }
         // リストのインデックスを再構築
-        unset($this->souvenirs[$souvenirIndex]);
+        unset($this->souvenirs[$index]);
         $this->souvenirs = array_values($this->souvenirs);
 
         if (count($this->souvenirs) === 0) {
@@ -216,15 +216,15 @@ class EditPlansForm extends Component
      * 指定した位置の自由記述欄を削除し、削除された自由記述欄のidを記録し、リストのインデックスを再構築。
      * 削除した際、配列の要素数が0であれば、初期値を設置
      *
-     * @param int $additionalCommentIndex
+     * @param int $index
      * @return void
      */
-    public function removeAdditionalComment($additionalCommentIndex)
+    public function removeAdditionalComment($index)
     {
-        if (isset($this->additionalComments[$additionalCommentIndex]['id'])) {
-            $this->deleteAdditionalComments[] = $this->additionalComments[$additionalCommentIndex]['id'];
+        if (isset($this->additionalComments[$index]['id'])) {
+            $this->deleteAdditionalComments[] = $this->additionalComments[$index]['id'];
         }
-        unset($this->additionalComments[$additionalCommentIndex]);
+        unset($this->additionalComments[$index]);
         $this->additionalComments = array_values($this->additionalComments);
 
         if (count($this->additionalComments) === 0) {
