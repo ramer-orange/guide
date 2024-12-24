@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Http\Requests\SubmitFormRequest;
 use App\Models\Plan;
 use App\Models\TravelOverview;
 use Livewire\Component;
@@ -21,6 +22,11 @@ class PlansForm extends Component
     public $template_type;
     public $souvenirs = [];
     public $additionalComments = [];
+
+    protected function rules(): array
+    {
+        return (new SubmitFormRequest())->rules();
+    }
 
     public function mount()
     {
@@ -190,27 +196,7 @@ class PlansForm extends Component
 
     public function submit()
     {
-        $this->validate([
-            'title' => 'required | string | max:255',
-            'overviewText' => 'nullable | string',
-            'plans' => 'required | array',
-            'plans.*.date' => 'nullable | date',
-            'plans.*.time' => 'nullable | date_format:H:i',
-            'plans.*.plans_title' => 'nullable | string | max:255',
-            'plans.*.content' => 'nullable | string',
-            'plans.*.planFiles' => 'nullable|array',
-            'plans.*.planFiles.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
-            'packingItems' => 'required | array',
-            'packingItems.*.packing_name' => 'nullable | string | max:255',
-            'packingItems.*.packing_is_checked' => 'nullable | boolean',
-            'template_type' => 'nullable | string | max:255',
-            'souvenirs' => 'required | array',
-            'souvenirs.*.souvenirs_name' => 'nullable | string | max:255',
-            'souvenirs.*.souvenirs_is_checked' => 'nullable | boolean',
-            'additionalComments' => 'required | array',
-            'additionalComments.*.additionalComment_title' => 'nullable | string | max:255',
-            'additionalComments.*.additionalComment_text' => 'nullable | string',
-        ]);
+        $this->validate();
 
         $overview = TravelOverview::create([
             'user_id' => auth()->id(),
