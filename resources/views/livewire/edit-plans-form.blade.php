@@ -1,3 +1,4 @@
+
 <div class="max-w-4xl mx-auto">
     <form wire:submit.prevent="submit">
         <!-- タイトルと概要 -->
@@ -437,7 +438,7 @@
                                 @enderror
                             </div>
                             <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
-                            <!-- メモ欄追加ボタン -->
+                                <!-- メモ欄追加ボタン -->
                                 <button type="button" wire:click="addAdditionalComment({{ $index }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
