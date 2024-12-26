@@ -290,16 +290,16 @@
                                 <input type="checkbox"
                                        wire:model.defer="packingItems.{{ $index }}.packing_is_checked"
                                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
-                                <input type="text" id="packingItems.{{ $index }}.packing_name"
-                                       wire:model.defer="packingItems.{{ $index }}.packing_name"
+                                <input type="text" id="packingItems.{{  }}.packing_name"
+                                       wire:model.defer="packingItems.{{ $packingIndex }}.packing_name"
                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="持ち物の名前">
-                                @error("packingItems.$index.packing_name")
+                                @error("packingItems.$packingIndex.packing_name")
                                 <span class="text-red-500">{{ $message }}</span>
                                 @enderror
                                 <button type="button"
                                         class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                        wire:click="removePackingItem({{ $index }})"
+                                        wire:click="removePackingItem({{ $packingIndex }})"
                                         aria-label="削除"
                                         title="削除">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -314,7 +314,7 @@
                             </div>
                             <!-- 持ち物追加ボタン -->
                             <div class="mt-2">
-                                <button type="button" wire:click="addPackingItem({{ $index }})">
+                                <button type="button" wire:click="addPackingItem({{ $packingIndex }})">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
                                         <path
                                             d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
@@ -358,54 +358,43 @@
                                 </span>
                             </button>
                         </div>
-                        <div wire:sortable="updateOrder('souvenirs')">
-                            @foreach($souvenirs as $index => $souvenir)
-                                @php
-                                    $sortableId = $souvenir->id ?? Str::uuid();
-                                @endphp
-                                <div wire:sortable.item="{{ $sortableId }}" wire:key="souvenir-{{ $sortableId }}">
-                                    <div wire:sortable.handle class="cursor-grab">
-                                        <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
-                                            <input type="checkbox"
-                                                   wire:model.defer="souvenirs.{{ $index }}.souvenir_is_checked"
-                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
-                                            <input type="text" id="souvenirs.{{ $index }}.souvenir_name"
-                                                   wire:model.defer="souvenirs.{{ $index }}.souvenir_name"
-                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
-                                                   placeholder="お土産の名前">
-                                            @error("souvenirs.$index.souvenir_name")
-                                            <span class="text-red-500">{{ $message }}</span>
-                                            @enderror
-                                            <button type="button"
-                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                                    wire:click="removeSouvenir({{ $index }})"
-                                                    aria-label="削除"
-                                                    title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <!-- お土産追加ボタン -->
-                                        <div class="mt-4">
-                                            <button type="button" wire:click="addSouvenir({{ $index }})">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                                     class="w-6 h-6">
-                                                    <path
-                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                        @foreach($souvenirs as $souvenirIndex => $souvenir)
+                            <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
+                                <input type="checkbox"
+                                       wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_is_checked"
+                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
+                                <input type="text" id="souvenirs.{{ $souvenirIndex }}.souvenir_name"
+                                       wire:model.defer="souvenirs.{{ $souvenirIndex }}.souvenir_name"
+                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                       placeholder="お土産の名前">
+                                @error("souvenirs.$souvenirIndex.souvenir_name")
+                                <span class="text-red-500">{{ $message }}</span>
+                                @enderror
+                                <button type="button"
+                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
+                                        wire:click="removeSouvenir({{ $souvenirIndex }})"
+                                        aria-label="削除"
+                                        title="削除">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-6 w-6"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <!-- お土産追加ボタン -->
+                            <div class="mt-4">
+                                <button type="button" wire:click="addSouvenir({{ $souvenirIndex }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
+                                        <path
+                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                    </svg>
+                                </button>
+                            </div>
                         @endforeach
-                        </div>
                     </div>
                 </div>
             </div>
@@ -423,33 +412,33 @@
                 </h2>
                 <div class="mt-6 space-y-6">
                     <div class="p-2 pt-6 pb-6 md:p-6 bg-gray-50 rounded-lg shadow-inner">
-                        @foreach($additionalComments as $index => $additionalComment)
+                        @foreach($additionalComments as $additionalCommentIndex => $additionalComment)
                             <div>
-                                <label for="additionalComments.{{ $index }}.additionalComment_title"
+                                <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
                                        class="block text-sm font-medium text-gray-700">タイトル</label>
                                 <input type="text"
-                                       id="additionalComments.{{ $index }}.additionalComment_title"
-                                       wire:model.defer="additionalComments.{{ $index }}.additionalComment_title"
+                                       id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
+                                       wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_title"
                                        placeholder="タイトル"
                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
-                                @error("additionalComments.$index.additionalComment_title")
+                                @error("additionalComments.$additionalCommentIndex.additionalComment_title")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="mt-4">
-                                <label for="additionalComments.{{ $index }}.additionalComment_text"
+                                <label for="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                        class="block text-sm font-medium text-gray-700">テキスト</label>
-                                <textarea id="additionalComments.{{ $index }}.additionalComment_text"
-                                          wire:model.defer="additionalComments.{{ $index }}.additionalComment_text"
+                                <textarea id="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
+                                          wire:model.defer="additionalComments.{{ $additionalCommentIndex }}.additionalComment_text"
                                           placeholder="テキスト"
                                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"></textarea>
-                                @error("additionalComments.$index.additionalComment_text")
+                                @error("additionalComments.$additionalCommentIndex.additionalComment_text")
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
                                 @enderror
                             </div>
                             <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                             <!-- メモ欄追加ボタン -->
-                                <button type="button" wire:click="addAdditionalComment({{ $index }})">
+                                <button type="button" wire:click="addAdditionalComment({{ $additionalCommentIndex }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
                                             class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
@@ -466,7 +455,7 @@
                                 </button>
                                 <!-- メモ削除ボタン -->
                                 <button type="button"
-                                        wire:click="removeAdditionalComment({{ $index }})">
+                                        wire:click="removeAdditionalComment({{ $additionalCommentIndex }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
                                             class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
