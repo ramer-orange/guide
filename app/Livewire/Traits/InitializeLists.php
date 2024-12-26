@@ -1,5 +1,6 @@
 <?php
 namespace App\Livewire\Traits;
+use Illuminate\Support\Str;
 
 /*
  * 初期化に関連するデフォルトデータに関するトレイト。
@@ -16,6 +17,7 @@ trait InitializeLists
         return
         [
             //プラン
+            'id' => Str::uuid()->toString(),
             'date' => '',
             'time' => '',
             'plans_title' => '',
@@ -35,6 +37,7 @@ trait InitializeLists
     {
         return
         [
+            'id' => Str::uuid()->toString(),
             'packing_name' => '',
             'packing_is_checked' => false,
         ];
@@ -49,6 +52,7 @@ trait InitializeLists
     {
         return
             [
+                'id' => Str::uuid()->toString(),
                 'souvenir_name' => '',
                 'souvenir_is_checked' => false,
             ];
@@ -63,6 +67,7 @@ trait InitializeLists
     {
         return
             [
+                'id' => Str::uuid()->toString(),
                 'additionalComment_title' => '',
                 'additionalComment_text' => '',
             ];

@@ -9,12 +9,14 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
+use App\Livewire\Traits\UpdateOrder;
 
 class PlansForm extends Component
 {
     use WithFileUploads;
     use AddItems;
     use InitializeLists;
+    use UpdateOrder;
 
     public $title;
     public $overviewText;
@@ -146,6 +148,51 @@ class PlansForm extends Component
     {
         $this->souvenirs = [$this->getDefaultSouvenirs()];
     }
+
+    /**
+     * プランの要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updatePlanOrder($orderedIds)
+    {
+        $this->plans = $this->updateOrder($this->plans, $orderedIds);
+    }
+
+    /**
+     * 持ち物の要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updatePackingItemOrder($orderedIds)
+    {
+        $this->packingItems = $this->updateOrder($this->packingItems, $orderedIds);
+    }
+
+    /**
+     * お土産の要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updateSouvenirOrder($orderedIds)
+    {
+        $this->souvenirs = $this->updateOrder($this->souvenirs, $orderedIds);
+    }
+
+    /**
+     * メモの要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updateAdditionalCommentsOrder($orderedIds)
+    {
+        $this->additionalComments = $this->updateOrder($this->additionalComments, $orderedIds);
+    }
+
 
     public function submit()
     {

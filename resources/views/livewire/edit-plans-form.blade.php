@@ -358,43 +358,54 @@
                                 </span>
                             </button>
                         </div>
-                        @foreach($souvenirs as $index => $souvenir)
-                            <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
-                                <input type="checkbox"
-                                       wire:model.defer="souvenirs.{{ $index }}.souvenir_is_checked"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
-                                <input type="text" id="souvenirs.{{ $index }}.souvenir_name"
-                                       wire:model.defer="souvenirs.{{ $index }}.souvenir_name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
-                                       placeholder="お土産の名前">
-                                @error("souvenirs.$index.souvenir_name")
-                                <span class="text-red-500">{{ $message }}</span>
-                                @enderror
-                                <button type="button"
-                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                        wire:click="removeSouvenir({{ $index }})"
-                                        aria-label="削除"
-                                        title="削除">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-6 w-6"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- お土産追加ボタン -->
-                            <div class="mt-4">
-                                <button type="button" wire:click="addSouvenir({{ $index }})">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
-                                        <path
-                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                    </svg>
-                                </button>
-                            </div>
+                        <div wire:sortable="updateOrder('souvenirs')">
+                            @foreach($souvenirs as $index => $souvenir)
+                                @php
+                                    $sortableId = $souvenir->id ?? Str::uuid();
+                                @endphp
+                                <div wire:sortable.item="{{ $sortableId }}" wire:key="souvenir-{{ $sortableId }}">
+                                    <div wire:sortable.handle class="cursor-grab">
+                                        <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
+                                            <input type="checkbox"
+                                                   wire:model.defer="souvenirs.{{ $index }}.souvenir_is_checked"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
+                                            <input type="text" id="souvenirs.{{ $index }}.souvenir_name"
+                                                   wire:model.defer="souvenirs.{{ $index }}.souvenir_name"
+                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="お土産の名前">
+                                            @error("souvenirs.$index.souvenir_name")
+                                            <span class="text-red-500">{{ $message }}</span>
+                                            @enderror
+                                            <button type="button"
+                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
+                                                    wire:click="removeSouvenir({{ $index }})"
+                                                    aria-label="削除"
+                                                    title="削除">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-6 w-6"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          stroke-width="2"
+                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- お土産追加ボタン -->
+                                        <div class="mt-4">
+                                            <button type="button" wire:click="addSouvenir({{ $index }})">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                                                     class="w-6 h-6">
+                                                    <path
+                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                         @endforeach
+                        </div>
                     </div>
                 </div>
             </div>

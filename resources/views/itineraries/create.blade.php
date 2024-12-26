@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>しおり作成ページ</title>
+    @livewireStyles
 
-    @vite('resources/css/app.css')
+    @vite(['resources/js/app.js', 'resources/js/hamburger.js', 'resources/css/app.css'])
+
+    @livewireScripts
 </head>
 <body class="bg-[#fffdfa]">
 <!-- ヘッダー -->
