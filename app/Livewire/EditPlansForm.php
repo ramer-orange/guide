@@ -13,6 +13,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
+use App\Livewire\Traits\UpdateOrder;
 
 
 class EditPlansForm extends Component
@@ -20,6 +21,7 @@ class EditPlansForm extends Component
     use WithFileUploads;
     use AddItems;
     use InitializeLists;
+    use UpdateOrder;
 
     public $title;
     public $overviewText;
@@ -250,6 +252,51 @@ class EditPlansForm extends Component
         $this->allRemoveSouvenirsFlag = 1;
     }
 
+    /**
+     * プランの要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updatePlanOrder($orderedIds)
+    {
+        $this->plans = $this->updateOrder($this->plans, $orderedIds);
+    }
+
+    /**
+     * 持ち物の要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updatePackingItemOrder($orderedIds)
+    {
+        $this->packingItems = $this->updateOrder($this->packingItems, $orderedIds);
+    }
+
+    /**
+     * お土産の要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updateSouvenirOrder($orderedIds)
+    {
+        $this->souvenirs = $this->updateOrder($this->souvenirs, $orderedIds);
+        dd($this->souvenirs);
+    }
+
+    /**
+     * メモの要素を並び替えした場合
+     *
+     * @param $orderedIds
+     * @return void
+     */
+    public function updateAdditionalCommentsOrder($orderedIds)
+    {
+        $this->additionalComments = $this->updateOrder($this->additionalComments, $orderedIds);
+    }
+
     public function submit()
     {
         $this->validate();
@@ -266,6 +313,7 @@ class EditPlansForm extends Component
                 $plan = $this->overview->plans()->find($planData['id']);
                 if ($plan) {
                     $plan->update([
+                        'id' => $planData['id'],
                         'date' => $planData['date'] ?: null,
                         'time' => $planData['time'] ?: null,
                         'plans_title' => $planData['plans_title'],
@@ -323,6 +371,7 @@ class EditPlansForm extends Component
                 $packingItem = $this->overview->packingItems()->find($packingItemData['id']);
                 if ($packingItem) {
                     $packingItem->update([
+                        'id' => $packingItemData['id'],
                         'packing_name' => $packingItemData['packing_name'],
                         'packing_is_checked' => $packingItemData['packing_is_checked'],
                     ]);
@@ -349,6 +398,7 @@ class EditPlansForm extends Component
                 $souvenir = $this->overview->souvenirs()->find($souvenirData['id']);
                 if ($souvenir) {
                     $souvenir->update([
+                        'id' => $souvenirData['id'],
                         'souvenir_name' => $souvenirData['souvenir_name'],
                         'souvenir_is_checked' => $souvenirData['souvenir_is_checked'],
                     ]);
@@ -365,12 +415,13 @@ class EditPlansForm extends Component
             }
         }
 
-        // 自由記述欄を更新
+        // メモを更新
         foreach ($this->additionalComments as $additionalCommentData) {
             if (isset($additionalCommentData['id'])) {
                 $additionalComment = $this->overview->additionalComments()->find($additionalCommentData['id']);
                 if ($additionalComment) {
                     $additionalComment->update([
+                        'id' => $additionalCommentData['id'],
                         'additionalComment_title' => $additionalCommentData['additionalComment_title'],
                         'additionalComment_text' => $additionalCommentData['additionalComment_text'],
                     ]);

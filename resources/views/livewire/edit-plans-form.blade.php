@@ -1,4 +1,3 @@
-
 <div class="max-w-4xl mx-auto">
     <form wire:submit.prevent="submit">
         <!-- タイトルと概要 -->
@@ -35,115 +34,137 @@
                 </h2>
 
                 <div class="mt-8 p-2 md:p-6 bg-gray-50 rounded-lg shadow-inner relative">
-                    @foreach($plans as $index => $plan)
-                        <!-- 日付と時間 -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="plans.{{ $index }}.date"
-                                       class="block text-sm font-medium text-gray-700">日付</label>
-                                <input type="date" id="plans.{{ $index }}.date"
-                                       wire:model.defer="plans.{{ $index }}.date"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
-                                @error("plans.$index.date") <span class="text-red-500">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label for="plans.{{ $index }}.time"
-                                       class="block text-sm font-medium text-gray-700">時間</label>
-                                <input type="time" id="plans.{{ $index }}.time"
-                                       wire:model.defer="plans.{{ $index }}.time"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
-                                @error("plans.$index.time") <span class="text-red-500">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <!-- タイトル -->
-                        <div class="mt-6">
-                            <label for="plans.{{ $index }}.plans_title"
-                                   class="block text-sm font-medium text-gray-700">プランタイトル</label>
-                            <input type="text" id="plans.{{ $index }}.plans_title"
-                                   wire:model.defer="plans.{{ $index }}.plans_title"
-                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="東京駅発">
-                            @error("plans.$index.plans_title")
-                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- 内容 -->
-                        <div class="mt-4">
-                            <label for="plans.{{ $index }}.content"
-                                   class="block text-sm font-medium text-gray-700">プラン内容</label>
-                            <textarea id="plans.{{ $index }}.content" wire:model.defer="plans.{{ $index }}.content"
-                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
-                                      placeholder="成田エクスプレスで成田空港に向かう"></textarea>
-                            @error("plans.$index.content")
-                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <!-- ファイルアップロード -->
-                        <div class="mt-6">
-                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード</h3>
-                            <div>
-                                <!-- 既存ファイルの表示 -->
-                                @if(!empty($plan['existing_planFiles']))
-                                    <div class="mt-4 space-y-4">
-                                        @foreach($plan['existing_planFiles'] as $existingFileIndex => $existingFile)
-                                            <div
-                                                class="flex items-center justify-between p-3 px-4 bg-gray-100 rounded-md shadow-xs">
-                                                <!-- ファイル情報 -->
-                                                <div class="flex items-center space-x-2">
-                                                    <!-- ファイルアイコン -->
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"
-                                                         class="w-5 h-5 text-gray-600">
-                                                        <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-                                                        <path
-                                                            d="M64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-288-128 0c-17.7 0-32-14.3-32-32L224 0 64 0zM256 0l0 128 128 0L256 0zM112 256l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/>
-                                                    </svg>
-                                                    <!-- ファイル名リンク -->
-                                                    <a href="{{ Storage::url($existingFile['path']) }}" target="_blank"
-                                                       class="text-blue-600 hover:underline text-sm md:text-base">
-                                                        {{ $existingFile['file_name'] }}
-                                                    </a>
-                                                </div>
-                                                <!-- 削除ボタン -->
-                                                <button type="button"
-                                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110"
-                                                        wire:click="removeExistingPlanFile({{ $index }}, {{ $existingFileIndex }})"
-                                                        aria-label="ファイルを削除" title="ファイルを削除">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                                         viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                              stroke-width="2"
-                                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                    </svg>
-                                                </button>
+                    <div wire:sortable="updatePlanOrder" wire:sortable.options="{ animation: 100, scroll: false  }"
+                         class="flex gap-4 flex-col">
+                        @foreach($plans as $index => $plan)
+                            <div wire:sortable.item="{{ $plan['id'] }}"
+                                 wire:key="plan-{{ $plan['id'] }}">
+                                <div wire:sortable.handle class="cursor-grab">
+                                    <div>
+                                        <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
+                                                 class="w-3 h-5">
+                                                <path
+                                                    d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
+                                            </svg>
+                                        </div>
+                                        <!-- 日付と時間 -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label for="plans.{{ $index }}.date"
+                                                       class="block text-sm font-medium text-gray-700">日付</label>
+                                                <input type="date" id="plans.{{ $index }}.date"
+                                                       wire:model.defer="plans.{{ $index }}.date"
+                                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
+                                                @error("plans.$index.date") <span
+                                                    class="text-red-500">{{ $message }}</span> @enderror
                                             </div>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                            <div>
+                                                <label for="plans.{{ $index }}.time"
+                                                       class="block text-sm font-medium text-gray-700">時間</label>
+                                                <input type="time" id="plans.{{ $index }}.time"
+                                                       wire:model.defer="plans.{{ $index }}.time"
+                                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
+                                                @error("plans.$index.time") <span
+                                                    class="text-red-500">{{ $message }}</span> @enderror
+                                            </div>
+                                        </div>
 
-                                <!-- 新規ファイルアップロード -->
-                                <div class="mt-4 space-y-4">
-                                    @foreach($plan['planFiles'] as $fileIndex => $planFile)
-                                        <div class="flex items-center">
-                                            <!-- inputをhiddenで隠す -->
-                                            <input
-                                                type="file"
-                                                wire:model="plans.{{ $index }}.planFiles.{{ $fileIndex }}"
-                                                id="file-{{ $index }}-{{ $fileIndex }}"
-                                                class="hidden"/>
+                                        <!-- タイトル -->
+                                        <div class="mt-6">
+                                            <label for="plans.{{ $index }}.plans_title"
+                                                   class="block text-sm font-medium text-gray-700">プランタイトル</label>
+                                            <input type="text" id="plans.{{ $index }}.plans_title"
+                                                   wire:model.defer="plans.{{ $index }}.plans_title"
+                                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="東京駅発">
+                                            @error("plans.$index.plans_title")
+                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            @enderror
+                                        </div>
 
-                                            <!-- labelでクリック可能エリアを作る -->
-                                            <label
-                                                for="file-{{ $index }}-{{ $fileIndex }}"
-                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-xs cursor-pointer focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
-                                                @if(isset($plans[$index]['planFiles'][$fileIndex]) && $plans[$index]['planFiles'][$fileIndex])
-                                                    <!-- ファイルが選択済みの場合、ファイル名を表示 -->
-                                                    {{ $plans[$index]['planFiles'][$fileIndex]->getClientOriginalName() }}
-                                                @else
-                                                    <!-- ファイル未選択時の表示 -->
-                                                    <span class="flex items-center gap-1.5">
+                                        <!-- 内容 -->
+                                        <div class="mt-4">
+                                            <label for="plans.{{ $index }}.content"
+                                                   class="block text-sm font-medium text-gray-700">プラン内容</label>
+                                            <textarea id="plans.{{ $index }}.content"
+                                                      wire:model.defer="plans.{{ $index }}.content"
+                                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
+                                                      placeholder="成田エクスプレスで成田空港に向かう"></textarea>
+                                            @error("plans.$index.content")
+                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+
+                                        <!-- ファイルアップロード -->
+                                        <div class="mt-6">
+                                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード</h3>
+                                            <div>
+                                                <!-- 既存ファイルの表示 -->
+                                                @if(!empty($plan['existing_planFiles']))
+                                                    <div class="mt-4 space-y-4">
+                                                        @foreach($plan['existing_planFiles'] as $existingFileIndex => $existingFile)
+                                                            <div
+                                                                class="flex items-center justify-between p-3 px-4 bg-gray-100 rounded-md shadow-xs">
+                                                                <!-- ファイル情報 -->
+                                                                <div class="flex items-center space-x-2">
+                                                                    <!-- ファイルアイコン -->
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                         viewBox="0 0 384 512"
+                                                                         class="w-5 h-5 text-gray-600">
+                                                                        <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                                                                        <path
+                                                                            d="M64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-288-128 0c-17.7 0-32-14.3-32-32L224 0 64 0zM256 0l0 128 128 0L256 0zM112 256l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16zm0 64l160 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-160 0c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/>
+                                                                    </svg>
+                                                                    <!-- ファイル名リンク -->
+                                                                    <a href="{{ Storage::url($existingFile['path']) }}"
+                                                                       target="_blank"
+                                                                       class="text-blue-600 hover:underline text-sm md:text-base">
+                                                                        {{ $existingFile['file_name'] }}
+                                                                    </a>
+                                                                </div>
+                                                                <!-- 削除ボタン -->
+                                                                <button type="button"
+                                                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110"
+                                                                        wire:click="removeExistingPlanFile({{ $index }}, {{ $existingFileIndex }})"
+                                                                        aria-label="ファイルを削除"
+                                                                        title="ファイルを削除">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                         class="h-6 w-6"
+                                                                         fill="none"
+                                                                         viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round"
+                                                                              stroke-linejoin="round"
+                                                                              stroke-width="2"
+                                                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+                                                <!-- 新規ファイルアップロード -->
+                                                <div class="mt-4 space-y-4">
+                                                    @foreach($plan['planFiles'] as $fileIndex => $planFile)
+                                                        <div class="flex items-center">
+                                                            <!-- inputをhiddenで隠す -->
+                                                            <input
+                                                                type="file"
+                                                                wire:model="plans.{{ $index }}.planFiles.{{ $fileIndex }}"
+                                                                id="file-{{ $index }}-{{ $fileIndex }}"
+                                                                class="hidden"/>
+
+                                                            <!-- labelでクリック可能エリアを作る -->
+                                                            <label
+                                                                for="file-{{ $index }}-{{ $fileIndex }}"
+                                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-xs cursor-pointer focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
+                                                                @if(isset($plans[$index]['planFiles'][$fileIndex]) && $plans[$index]['planFiles'][$fileIndex])
+                                                                    <!-- ファイルが選択済みの場合、ファイル名を表示 -->
+                                                                    {{ $plans[$index]['planFiles'][$fileIndex]->getClientOriginalName() }}
+                                                                @else
+                                                                    <!-- ファイル未選択時の表示 -->
+                                                                    <span class="flex items-center gap-1.5">
                                                     <svg xmlns="http://www.w3.org/2000/svg"
                                                          class="h-5 w-5 text-gray-500" fill="none"
                                                          viewBox="0 0 24 24" stroke="currentColor">
@@ -153,33 +174,34 @@
                                                     </svg>
                                                     ファイルを選択する
                                                 </span>
-                                                @endif
-                                            </label>
-                                            <button type="button"
-                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                                    wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})"
-                                                    aria-label="削除"
-                                                    title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                                                     viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        @error("plans.{$index}.planFiles.{$fileIndex}")
-                                        <span class="text-red-500 text-sm ml-2">{{ $message }}</span>
-                                        @enderror
-                                    @endforeach
+                                                                @endif
+                                                            </label>
+                                                            <button type="button"
+                                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
+                                                                    wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})"
+                                                                    aria-label="削除"
+                                                                    title="削除">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                        @error("plans.{$index}.planFiles.{$fileIndex}")
+                                                        <span class="text-red-500 text-sm ml-2">{{ $message }}</span>
+                                                        @enderror
+                                                    @endforeach
 
-                                </div>
-                            </div>
+                                                </div>
+                                            </div>
 
-                            <!-- ファイル追加ボタン -->
-                            <div class="mt-4">
-                                <button type="button" wire:click="addPlanFiles({{ $index }})"
-                                        class="relative inline-block text-base group">
+                                            <!-- ファイル追加ボタン -->
+                                            <div class="mt-4">
+                                                <button type="button" wire:click="addPlanFiles({{ $index }})"
+                                                        class="relative inline-block text-base group">
                                     <span
                                         class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
                                         <span
@@ -188,18 +210,19 @@
                                             class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
                                         <span class="relative">ファイル追加</span>
                                     </span>
-                                    <span
-                                        class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
-                                        data-rounded="rounded-md">
+                                                    <span
+                                                        class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
+                                                        data-rounded="rounded-md">
                                     </span>
-                                </button>
-                            </div>
-                        </div>
+                                                </button>
+                                            </div>
+                                        </div>
 
-                        <!-- 各種ボタン -->
-                        <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
-                            <!-- プラン追加ボタン -->
-                            <button type="button" wire:click="addPlan( {{ $index }})">
+                                        <!-- 各種ボタン -->
+                                        <div
+                                            class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
+                                            <!-- プラン追加ボタン -->
+                                            <button type="button" wire:click="addPlan( {{ $index }})">
                             <span class="relative inline-block text-lg group">
                                 <span
                                     class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
@@ -213,9 +236,9 @@
                                     class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
                                     data-rounded="rounded-lg"></span>
                             </span>
-                            </button>
-                            <!-- プラン削除ボタン -->
-                            <button type="button" wire:click="removePlan({{ $index }})">
+                                            </button>
+                                            <!-- プラン削除ボタン -->
+                                            <button type="button" wire:click="removePlan({{ $index }})">
                             <span class="relative inline-block text-lg group">
                                 <span
                                     class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
@@ -229,9 +252,13 @@
                                     class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
                                     data-rounded="rounded-lg"></span>
                             </span>
-                            </button>
-                        </div>
-                    @endforeach
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </section>
@@ -286,43 +313,60 @@
                                 </span>
                             </button>
                         </div>
-                        @foreach($packingItems as $index => $packingItem)
-                            <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
-                                <input type="checkbox"
-                                       wire:model.defer="packingItems.{{ $index }}.packing_is_checked"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
-                                <input type="text" id="packingItems.{{ $index }}.packing_name"
-                                       wire:model.defer="packingItems.{{ $index }}.packing_name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
-                                       placeholder="持ち物の名前">
-                                @error("packingItems.$index.packing_name")
-                                <span class="text-red-500">{{ $message }}</span>
-                                @enderror
-                                <button type="button"
-                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                        wire:click="removePackingItem({{ $index }})"
-                                        aria-label="削除"
-                                        title="削除">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-6 w-6"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- 持ち物追加ボタン -->
-                            <div class="mt-2">
-                                <button type="button" wire:click="addPackingItem({{ $index }})">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
-                                        <path
-                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        @endforeach
+                        <div wire:sortable="updatePackingItemOrder"
+                             wire:sortable.options="{ animation: 100, scroll: false  }">
+                            @foreach($packingItems as $packingItem)
+                                <div wire:sortable.item="{{ $packingItem['id'] }}"
+                                     wire:key="packingItem-{{ $packingItem['id'] }}">
+                                    <div wire:sortable.handle class="cursor-grab">
+                                        <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
+                                            <div>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
+                                                     class="w-3 h-5">
+                                                    <path
+                                                        d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
+                                                </svg>
+                                            </div>
+                                            <input type="checkbox"
+                                                   wire:model.defer="packingItems.{{ $loop->index }}.packing_is_checked"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
+                                            <input type="text" id="packingItems.{{ $loop->index }}.packing_name"
+                                                   wire:model.defer="packingItems.{{ $loop->index }}.packing_name"
+                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="持ち物の名前">
+                                            @error("packingItems.$loop->index.packing_name")
+                                            <span class="text-red-500">{{ $loop->index }}</span>
+                                            @enderror
+                                            <button type="button"
+                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
+                                                    wire:click="removePackingItem({{ $loop->index }})"
+                                                    aria-label="削除"
+                                                    title="削除">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-6 w-6"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          stroke-width="2"
+                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- 持ち物追加ボタン -->
+                                        <div class="mt-2">
+                                            <button type="button" wire:click="addPackingItem({{ $loop->index }})">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                                                     class="w-6 h-6">
+                                                    <path
+                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
@@ -359,43 +403,60 @@
                                 </span>
                             </button>
                         </div>
-                        @foreach($souvenirs as $index => $souvenir)
-                            <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
-                                <input type="checkbox"
-                                       wire:model.defer="souvenirs.{{ $index }}.souvenir_is_checked"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
-                                <input type="text" id="souvenirs.{{ $index }}.souvenir_name"
-                                       wire:model.defer="souvenirs.{{ $index }}.souvenir_name"
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
-                                       placeholder="お土産の名前">
-                                @error("souvenirs.$index.souvenir_name")
-                                <span class="text-red-500">{{ $message }}</span>
-                                @enderror
-                                <button type="button"
-                                        class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
-                                        wire:click="removeSouvenir({{ $index }})"
-                                        aria-label="削除"
-                                        title="削除">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-6 w-6"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <!-- お土産追加ボタン -->
-                            <div class="mt-4">
-                                <button type="button" wire:click="addSouvenir({{ $index }})">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="w-6 h-6">
-                                        <path
-                                            d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        @endforeach
+                        <div wire:sortable="updateSouvenirOrder"
+                             wire:sortable.options="{ animation: 100, scroll: false }">
+                            @foreach($souvenirs as $souvenir)
+                                <div wire:sortable.item="{{ $souvenir['id'] }}"
+                                     wire:key="souvenir-{{ $souvenir['id'] }}">
+                                    <div wire:sortable.handle class="cursor-grab">
+                                        <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
+                                            <div>
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
+                                                     class="w-3 h-5">
+                                                    <path
+                                                        d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
+                                                </svg>
+                                            </div>
+                                            <input type="checkbox"
+                                                   wire:model.defer="souvenirs.{{ $loop->index }}.souvenir_is_checked"
+                                                   class="h-4 w-4 text-indigo-600 border-gray-300 rounded-sm">
+                                            <input type="text" id="souvenirs.{{ $loop->index }}.souvenir_name"
+                                                   wire:model.defer="souvenirs.{{ $loop->index }}.souvenir_name"
+                                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
+                                                   placeholder="お土産の名前">
+                                            @error("souvenirs.$loop->index.souvenir_name")
+                                            <span class="text-red-500">{{ $message }}</span>
+                                            @enderror
+                                            <button type="button"
+                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 ml-4"
+                                                    wire:click="removeSouvenir({{ $loop->index }})"
+                                                    aria-label="削除"
+                                                    title="削除">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-6 w-6"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          stroke-width="2"
+                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <!-- お土産追加ボタン -->
+                                        <div class="mt-4">
+                                            <button type="button" wire:click="addSouvenir({{ $loop->index }})">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                                                     class="w-6 h-6">
+                                                    <path
+                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
@@ -413,33 +474,46 @@
                 </h2>
                 <div class="mt-6 space-y-6">
                     <div class="p-2 pt-6 pb-6 md:p-6 bg-gray-50 rounded-lg shadow-inner">
-                        @foreach($additionalComments as $index => $additionalComment)
-                            <div>
-                                <label for="additionalComments.{{ $index }}.additionalComment_title"
-                                       class="block text-sm font-medium text-gray-700">タイトル</label>
-                                <input type="text"
-                                       id="additionalComments.{{ $index }}.additionalComment_title"
-                                       wire:model.defer="additionalComments.{{ $index }}.additionalComment_title"
-                                       placeholder="タイトル"
-                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
-                                @error("additionalComments.$index.additionalComment_title")
-                                <span class="text-red-500 text-sm">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="mt-4">
-                                <label for="additionalComments.{{ $index }}.additionalComment_text"
-                                       class="block text-sm font-medium text-gray-700">テキスト</label>
-                                <textarea id="additionalComments.{{ $index }}.additionalComment_text"
-                                          wire:model.defer="additionalComments.{{ $index }}.additionalComment_text"
-                                          placeholder="テキスト"
-                                          class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"></textarea>
-                                @error("additionalComments.$index.additionalComment_text")
-                                <span class="text-red-500 text-sm">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
-                                <!-- メモ欄追加ボタン -->
-                                <button type="button" wire:click="addAdditionalComment({{ $index }})">
+                        <div wire:sortable="updateAdditionalCommentsOrder"
+                             wire:sortable.options="{ animation: 100, scroll: false }" class="flex gap-4 flex-col">
+                            @foreach($additionalComments as $additionalComment)
+                                <div wire:sortable.item="{{ $additionalComment['id'] }}"
+                                     wire:key="additionalComment-{{ $additionalComment['id'] }}">
+                                    <div wire:sortable.handle class="cursor-grab">
+                                        <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
+                                                 class="w-3 h-5">
+                                                <path
+                                                    d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <label for="additionalComments.{{ $loop->index }}.additionalComment_title"
+                                                   class="block text-sm font-medium text-gray-700">タイトル</label>
+                                            <input type="text"
+                                                   id="additionalComments.{{ $loop->index }}.additionalComment_title"
+                                                   wire:model.defer="additionalComments.{{ $loop->index }}.additionalComment_title"
+                                                   placeholder="タイトル"
+                                                   class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
+                                            @error("additionalComments.$loop->index.additionalComment_title")
+                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                        <div class="mt-4">
+                                            <label for="additionalComments.{{ $loop->index }}.additionalComment_text"
+                                                   class="block text-sm font-medium text-gray-700">テキスト</label>
+                                            <textarea id="additionalComments.{{ $loop->index }}.additionalComment_text"
+                                                      wire:model.defer="additionalComments.{{ $loop->index }}.additionalComment_text"
+                                                      placeholder="テキスト"
+                                                      class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"></textarea>
+                                            @error("additionalComments.$loop->index.additionalComment_text")
+                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                        <div
+                                            class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
+                                            <!-- メモ欄追加ボタン -->
+                                            <button type="button" wire:click="addAdditionalComment({{ $index }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
                                             class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
@@ -453,10 +527,10 @@
                                             class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
                                             data-rounded="rounded-lg"></span>
                                     </span>
-                                </button>
-                                <!-- メモ削除ボタン -->
-                                <button type="button"
-                                        wire:click="removeAdditionalComment({{ $index }})">
+                                            </button>
+                                            <!-- メモ削除ボタン -->
+                                            <button type="button"
+                                                    wire:click="removeAdditionalComment({{ $index }})">
                                     <span class="relative inline-block text-lg group">
                                         <span
                                             class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
@@ -470,9 +544,12 @@
                                             class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
                                             data-rounded="rounded-lg"></span>
                                     </span>
-                                </button>
-                            </div>
-                        @endforeach
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
@@ -482,13 +559,13 @@
         <div class="mt-6 flex justify-center">
             <button type="submit"
                     class="relative inline-block px-8 py-4 font-semibold text-xl group">
-                <span
-                    class="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-2 translate-y-2 bg-black group-hover:translate-x-0 group-hover:translate-y-0"></span>
+        <span
+            class="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-2 translate-y-2 bg-black group-hover:translate-x-0 group-hover:translate-y-0"></span>
                 <span
                     class="absolute inset-0 w-full h-full bg-white border-2 border-black transition duration-300 ease-out group-hover:bg-black"></span>
                 <span class="relative flex items-center text-black group-hover:text-white">
                     更新する
-                </span>
+        </span>
             </button>
         </div>
     </form>
