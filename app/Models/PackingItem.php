@@ -10,7 +10,7 @@ class PackingItem extends Model
         'travel_id',
         'packing_name',
         'packing_is_checked',
-//        'order',
+        'order',
     ];
 
     public function travelOverview()

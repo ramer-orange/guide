@@ -12,7 +12,7 @@ class Plan extends Model
         'time',
         'plans_title',
         'content',
-//        'order',
+        'order',
     ];
 
     public function travelOverview()
