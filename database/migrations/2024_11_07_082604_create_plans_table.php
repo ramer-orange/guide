@@ -18,7 +18,7 @@ return new class extends Migration
             $table->time('time')->nullable();
             $table->string('plans_title')->nullable();
             $table->text('content')->nullable();
-            $table->integer('order')->nullable();
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }

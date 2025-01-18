@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Http\Requests\SubmitFormRequest;
 use App\Models\Plan;
+use App\Models\Souvenir;
 use App\Models\TravelOverview;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -180,6 +181,8 @@ class PlansForm extends Component
     public function updateSouvenirOrder($orderedIds)
     {
         $this->souvenirs = $this->updateOrder($this->souvenirs, $orderedIds);
+
+//        dd($this->souvenirs);
     }
 
     /**
@@ -203,12 +206,13 @@ class PlansForm extends Component
             'title' => $this->title,
             'overviewText' => $this->overviewText,
         ]);
-        foreach ($this->plans as $plan) {
+        foreach ($this->plans as $index => $plan) {
             $newPlan = $overview->plans()->create([
                 'date' => $plan['date'] ?: null,
                 'time' => $plan['time'] ?: null,
                 'plans_title' => $plan['plans_title'],
                 'content' => $plan['content'],
+                'order' => $index,
             ]);
             foreach ($plan['planFiles'] as $planFile) {
                 if ($planFile) {
@@ -221,24 +225,28 @@ class PlansForm extends Component
             }
         }
         $overview->templateType = $this->template_type;
-        foreach ($this->packingItems as $packingItem) {
+        foreach ($this->packingItems as $index => $packingItem) {
             $overview->packingItems()->create([
                 'packing_name' => $packingItem['packing_name'],
                 'packing_is_checked' => $packingItem['packing_is_checked'],
+                'order' => $index,
             ]);
         }
-        foreach ($this->souvenirs as $souvenir) {
+        foreach ($this->souvenirs as $index => $souvenir) {
             $overview->souvenirs()->create([
                 'souvenir_name' => $souvenir['souvenir_name'],
                 'souvenir_is_checked' => $souvenir['souvenir_is_checked'],
+                'order' => $index,
             ]);
         }
-        foreach ($this->additionalComments as $additionalComment) {
+        foreach ($this->additionalComments as $index => $additionalComment) {
             $overview->additionalComments()->create([
                 'additionalComment_title' => $additionalComment['additionalComment_title'],
                 'additionalComment_text' => $additionalComment['additionalComment_text'],
+                'order' => $index,
             ]);
         }
+
         return redirect()->route('itineraries.edit', [$overview->id]);
     }
 

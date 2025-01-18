@@ -59,25 +59,29 @@ class EditPlansForm extends Component
         $this->overviewText = $overview->overviewText;
 
         // プランをロード
-        $this->plans = $overview->plans->map(function ($plan) {
-            return [
-                'id' => $plan->id,
-                'date' => $plan->date,
-                'time' => $plan->time,
-                'plans_title' => $plan->plans_title,
-                'content' => $plan->content,
-                'planFiles' => [null],
+        $this->plans = $overview->plans
+            ->sortBy('order')
+            ->values()
+            ->map(function ($plan) {
+                return [
+                    'id' => $plan->id,
+                    'date' => $plan->date,
+                    'time' => $plan->time,
+                    'plans_title' => $plan->plans_title,
+                    'content' => $plan->content,
+                    'planFiles' => [null],
+                    'order' => $plan->order,
 
-                // アップロードファイルをロード
-                'existing_planFiles' => $plan->planFiles->map(function ($planFile) {
-                    return [
-                        'id' => $planFile->id,
-                        'path' => $planFile->path,
-                        'file_name' => $planFile->file_name,
-                    ];
-                })->toArray()
-            ];
-        })->toArray();
+                    // アップロードファイルをロード
+                    'existing_planFiles' => $plan->planFiles->map(function ($planFile) {
+                        return [
+                            'id' => $planFile->id,
+                            'path' => $planFile->path,
+                            'file_name' => $planFile->file_name,
+                        ];
+                    })->toArray()
+                ];
+            })->toArray();
 
         if ($overview->templateType) {
             $this->template_type = $overview->templateType->template_name;
@@ -86,31 +90,44 @@ class EditPlansForm extends Component
         }
 
         // 持ち物リストをロード
-        $this->packingItems = $overview->packingItems->map(function ($packingItem) {
-            return [
-                'id' => $packingItem->id,
-                'packing_name' => $packingItem->packing_name,
-                'packing_is_checked' => $packingItem->packing_is_checked == 1,
-            ];
-        })->toArray();
+        $this->packingItems = $overview->packingItems
+            ->sortBy('order')
+            ->values()
+            ->map(function ($packingItem) {
+                return [
+                    'id' => $packingItem->id,
+                    'packing_name' => $packingItem->packing_name,
+                    'packing_is_checked' => $packingItem->packing_is_checked == 1,
+                    'order' => $packingItem->order,
+                ];
+            })->toArray();
 
         // お土産リストをロード
-        $this->souvenirs = $overview->souvenirs->map(function ($souvenir) {
-            return [
-                'id' => $souvenir->id,
-                'souvenir_name' => $souvenir->souvenir_name,
-                'souvenir_is_checked' => $souvenir->souvenir_is_checked == 1,
-            ];
-        })->toArray();
+        $this->souvenirs = $overview->souvenirs
+            ->sortBy('order')
+            ->values()
+            ->map(function ($souvenir) {
+                return [
+                    'id' => $souvenir->id,
+                    'souvenir_name' => $souvenir->souvenir_name,
+                    'souvenir_is_checked' => $souvenir->souvenir_is_checked == 1,
+                    'order' => $souvenir->order,
+                ];
+            })->toArray();
 
         // 自由記述欄をロード
-        $this->additionalComments = $overview->additionalComments->map(function ($additionalComment) {
-            return [
-                'id' => $additionalComment->id,
-                'additionalComment_title' => $additionalComment->additionalComment_title,
-                'additionalComment_text' => $additionalComment->additionalComment_text,
-            ];
-        })->toArray();
+        $this->additionalComments = $overview->additionalComments
+            ->sortBy('order')
+            ->values()
+            ->map(function ($additionalComment) {
+                return [
+                    'id' => $additionalComment->id,
+                    'additionalComment_title' => $additionalComment->additionalComment_title,
+                    'additionalComment_text' => $additionalComment->additionalComment_text,
+                    'order' => $additionalComment->order,
+
+                ];
+            })->toArray();
     }
 
     /**
@@ -283,7 +300,6 @@ class EditPlansForm extends Component
     public function updateSouvenirOrder($orderedIds)
     {
         $this->souvenirs = $this->updateOrder($this->souvenirs, $orderedIds);
-        dd($this->souvenirs);
     }
 
     /**
@@ -307,43 +323,28 @@ class EditPlansForm extends Component
         ]);
 
         // 各プランの更新または作成
-        foreach ($this->plans as $planData) {
-            if (isset($planData['id'])) {
-                // 既存のプランを更新
-                $plan = $this->overview->plans()->find($planData['id']);
-                if ($plan) {
-                    $plan->update([
-                        'id' => $planData['id'],
-                        'date' => $planData['date'] ?: null,
-                        'time' => $planData['time'] ?: null,
-                        'plans_title' => $planData['plans_title'],
-                        'content' => $planData['content'],
-                    ]);
-                    if (!empty($planData['planFiles'])) {
-                        foreach ($planData['planFiles'] as $planFile) {
-                            if ($planFile) {
-                                $filePath = $planFile->store('files', 'public');
-                                //なぜupdateではない？
-                                $plan->planFiles()->create([
-                                    'path' => $filePath,
-                                    'file_name' => $planFile->getClientOriginalName(),
-                                ]);
-                            }
-                        }
-                    }
-                }
-            } else {
-                // 新しいプランを作成
-                $newPlan = $this->overview->plans()->create([
-                    'date' => $planData['date'] ?: null,
-                    'time' => $planData['time'] ?: null,
-                    'plans_title' => $planData['plans_title'],
-                    'content' => $planData['content'],
-                ]);
+        foreach ($this->plans as $index => $planData) {
+            // プランを検索または新規作成
+            $plan = $this->overview->plans()->firstOrNew(
+                ['id' => $planData['id'] ?? null] // 検索条件
+            );
+
+            // プランのデータをセット
+            $plan->date = $planData['date'] ?: null;
+            $plan->time = $planData['time'] ?: null;
+            $plan->plans_title = $planData['plans_title'];
+            $plan->content = $planData['content'];
+            $plan->order = $index;
+
+            // 保存 (更新または新規作成)
+            $plan->save();
+
+            // プランに関連するファイルの処理
+            if (!empty($planData['planFiles'])) {
                 foreach ($planData['planFiles'] as $planFile) {
                     if ($planFile) {
                         $filePath = $planFile->store('files', 'public');
-                        $newPlan->planFiles()->create([
+                        $plan->planFiles()->create([
                             'path' => $filePath,
                             'file_name' => $planFile->getClientOriginalName(),
                         ]);
@@ -351,6 +352,17 @@ class EditPlansForm extends Component
                 }
             }
         }
+
+// 削除するプランの処理
+        if (!empty($this->deletedPlans)) {
+            Plan::whereIn('id', $this->deletedPlans)->delete();
+        }
+
+// 削除するプランファイルの処理
+        if (!empty($this->deletedPlanFiles)) {
+            PlanFile::whereIn('id', $this->deletedPlanFiles)->delete();
+        }
+
         if (!empty($this->deletedPlans)) {
             Plan::whereIn('id', $this->deletedPlans)->delete();
         }
@@ -366,77 +378,68 @@ class EditPlansForm extends Component
         }
 
         // 持ち物リスト更新
-        foreach ($this->packingItems as $packingItemData) {
-            if (isset($packingItemData['id'])) {
-                $packingItem = $this->overview->packingItems()->find($packingItemData['id']);
-                if ($packingItem) {
-                    $packingItem->update([
-                        'id' => $packingItemData['id'],
-                        'packing_name' => $packingItemData['packing_name'],
-                        'packing_is_checked' => $packingItemData['packing_is_checked'],
-                    ]);
-                }
-            } else {
-                $this->overview->packingItems()->create([
-                    'packing_name' => $packingItemData['packing_name'],
-                    'packing_is_checked' => $packingItemData['packing_is_checked'],
-                ]);
-            }
+        // 持ち物リストを更新または作成
+        foreach ($this->packingItems as $index => $packingItemData) {
+            $packingItem = $this->overview->packingItems()->firstOrNew(
+                ['id' => $packingItemData['id'] ?? null] // 検索条件
+            );
+
+            $packingItem->packing_name = $packingItemData['packing_name'];
+            $packingItem->packing_is_checked = $packingItemData['packing_is_checked'];
+            $packingItem->order = $index;
+
+            // 保存 (更新または新規作成)
+            $packingItem->save();
         }
+
         // 削除した持ち物をデータベースから削除
         if (!empty($this->deletePackingItems)) {
             PackingItem::whereIn('id', $this->deletePackingItems)->delete();
         }
-        //全て削除ボタンを押された時データベースの値も削除
+
+        // 全て削除ボタンが押された場合、関連するお土産を全削除
         if ($this->allRemoveSouvenirsFlag == 1) {
             Souvenir::where('travel_id', $this->overview->id)->delete();
         }
 
+
         // お土産リスト更新
-        foreach ($this->souvenirs as $souvenirData) {
-            if (isset($souvenirData['id'])) {
-                $souvenir = $this->overview->souvenirs()->find($souvenirData['id']);
-                if ($souvenir) {
-                    $souvenir->update([
-                        'id' => $souvenirData['id'],
-                        'souvenir_name' => $souvenirData['souvenir_name'],
-                        'souvenir_is_checked' => $souvenirData['souvenir_is_checked'],
-                    ]);
-                }
-            } else {
-                $this->overview->souvenirs()->create([
-                    'souvenir_is_checked' => $souvenirData['souvenir_is_checked'],
-                    'souvenir_name' => $souvenirData['souvenir_name'],
-                ]);
-            }
-            // 削除したお土産をデータベースから削除
-            if (!empty($this->deleteSouvenirs)) {
-                Souvenir::whereIn('id', $this->deleteSouvenirs)->delete();
-            }
+        foreach ($this->souvenirs as $index => $souvenirData) {
+            $souvenir = $this->overview->souvenirs()->firstOrNew(
+            // 検索条件 (見つからなければ new される)
+                ['id' => $souvenirData['id'] ?? null]
+            );
+
+            $souvenir->souvenir_name = $souvenirData['souvenir_name'];
+            $souvenir->souvenir_is_checked = $souvenirData['souvenir_is_checked'];
+            $souvenir->order = $index;
+
+            // id が見つかれば update、見つからなければ create
+            $souvenir->save();
+        }
+        // 削除したお土産をデータベースから削除
+        if (!empty($this->deleteSouvenirs)) {
+            Souvenir::whereIn('id', $this->deleteSouvenirs)->delete();
         }
 
         // メモを更新
-        foreach ($this->additionalComments as $additionalCommentData) {
-            if (isset($additionalCommentData['id'])) {
-                $additionalComment = $this->overview->additionalComments()->find($additionalCommentData['id']);
-                if ($additionalComment) {
-                    $additionalComment->update([
-                        'id' => $additionalCommentData['id'],
-                        'additionalComment_title' => $additionalCommentData['additionalComment_title'],
-                        'additionalComment_text' => $additionalCommentData['additionalComment_text'],
-                    ]);
-                }
-            } else {
-                $this->overview->additionalComments()->create([
-                    'additionalComment_title' => $additionalCommentData['additionalComment_title'],
-                    'additionalComment_text' => $additionalCommentData['additionalComment_text'],
-                ]);
-            }
+        // 自由記述欄を更新または作成
+        foreach ($this->additionalComments as $index => $additionalCommentData) {
+            $additionalComment = $this->overview->additionalComments()->firstOrNew(
+                ['id' => $additionalCommentData['id'] ?? null] // 検索条件
+            );
 
-            // 削除した自由記述欄をデータベースから削除
-            if (!empty($this->deleteAdditionalComments)) {
-                AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
-            }
+            $additionalComment->additionalComment_title = $additionalCommentData['additionalComment_title'];
+            $additionalComment->additionalComment_text = $additionalCommentData['additionalComment_text'];
+            $additionalComment->order = $index;
+
+            // 保存 (更新または新規作成)
+            $additionalComment->save();
+        }
+
+        // 削除した自由記述欄をデータベースから削除
+        if (!empty($this->deleteAdditionalComments)) {
+            AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
         }
 
         return redirect()->route('itineraries.edit', [$this->overview->id]);

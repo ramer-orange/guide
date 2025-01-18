@@ -22,6 +22,7 @@ trait InitializeLists
             'time' => '',
             'plans_title' => '',
             'content' => '',
+            'order' => 0,
 
             // 新規ファイルアップロード
             'planFiles' => [null],
@@ -40,6 +41,7 @@ trait InitializeLists
             'id' => Str::uuid()->toString(),
             'packing_name' => '',
             'packing_is_checked' => false,
+            'order' => 0,
         ];
     }
 
@@ -55,6 +57,7 @@ trait InitializeLists
                 'id' => Str::uuid()->toString(),
                 'souvenir_name' => '',
                 'souvenir_is_checked' => false,
+                'order' => 0,
             ];
     }
 
@@ -70,6 +73,7 @@ trait InitializeLists
                 'id' => Str::uuid()->toString(),
                 'additionalComment_title' => '',
                 'additionalComment_text' => '',
+                'order' => 0,
             ];
     }
 }

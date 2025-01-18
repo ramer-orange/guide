@@ -10,6 +10,7 @@ class AdditionalComment extends Model
         'travel_id',
         'additionalComment_title',
         'additionalComment_text',
+        'order',
     ];
 
     public function travelOverview()

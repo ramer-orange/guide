@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('packing_name')->nullable();
             $table->boolean('packing_is_checked')->nullable()->default(false);
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }

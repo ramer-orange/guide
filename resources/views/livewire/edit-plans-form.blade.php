@@ -165,15 +165,15 @@
                                                                 @else
                                                                     <!-- ファイル未選択時の表示 -->
                                                                     <span class="flex items-center gap-1.5">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                         class="h-5 w-5 text-gray-500" fill="none"
-                                                         viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                              stroke-width="2"
-                                                              d="M12 4v16m8-8H4"/>
-                                                    </svg>
-                                                    ファイルを選択する
-                                                </span>
+                                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                                             class="h-5 w-5 text-gray-500" fill="none"
+                                                                             viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                                  stroke-width="2"
+                                                                                  d="M12 4v16m8-8H4"/>
+                                                                        </svg>
+                                                                        ファイルを選択する
+                                                                    </span>
                                                                 @endif
                                                             </label>
                                                             <button type="button"
@@ -202,18 +202,18 @@
                                             <div class="mt-4">
                                                 <button type="button" wire:click="addPlanFiles({{ $index }})"
                                                         class="relative inline-block text-base group">
-                                    <span
-                                        class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
-                                        <span
-                                            class="absolute inset-0 w-full h-full px-4 py-2 rounded-md bg-gray-50"></span>
-                                        <span
-                                            class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                        <span class="relative">ファイル追加</span>
-                                    </span>
+                                                    <span
+                                                        class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
+                                                        <span
+                                                            class="absolute inset-0 w-full h-full px-4 py-2 rounded-md bg-gray-50"></span>
+                                                        <span
+                                                            class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
+                                                        <span class="relative">ファイル追加</span>
+                                                    </span>
                                                     <span
                                                         class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
                                                         data-rounded="rounded-md">
-                                    </span>
+                                                    </span>
                                                 </button>
                                             </div>
                                         </div>
@@ -223,35 +223,35 @@
                                             class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                                             <!-- プラン追加ボタン -->
                                             <button type="button" wire:click="addPlan( {{ $index }})">
-                            <span class="relative inline-block text-lg group">
-                                <span
-                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                    <span
-                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                    <span
-                                        class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                    <span class="relative">プラン追加</span>
-                                </span>
-                                <span
-                                    class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                    data-rounded="rounded-lg"></span>
-                            </span>
+                                                <span class="relative inline-block text-lg group">
+                                                    <span
+                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                                        <span
+                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                        <span
+                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
+                                                        <span class="relative">プラン追加</span>
+                                                    </span>
+                                                    <span
+                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
+                                                        data-rounded="rounded-lg"></span>
+                                                </span>
                                             </button>
                                             <!-- プラン削除ボタン -->
                                             <button type="button" wire:click="removePlan({{ $index }})">
-                            <span class="relative inline-block text-lg group">
-                                <span
-                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                    <span
-                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                    <span
-                                        class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                    <span class="relative">プラン削除</span>
-                                </span>
-                                <span
-                                    class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                    data-rounded="rounded-lg"></span>
-                            </span>
+                                                <span class="relative inline-block text-lg group">
+                                                    <span
+                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                                        <span
+                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                        <span
+                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
+                                                        <span class="relative">プラン削除</span>
+                                                    </span>
+                                                    <span
+                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
+                                                        data-rounded="rounded-lg"></span>
+                                                </span>
                                             </button>
                                         </div>
                                     </div>
@@ -513,37 +513,37 @@
                                         <div
                                             class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                                             <!-- メモ欄追加ボタン -->
-                                            <button type="button" wire:click="addAdditionalComment({{ $index }})">
-                                    <span class="relative inline-block text-lg group">
-                                        <span
-                                            class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                            <span
-                                                class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                            <span
-                                                class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                            <span class="relative">メモ追加</span>
-                                        </span>
-                                        <span
-                                            class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                            data-rounded="rounded-lg"></span>
-                                    </span>
+                                            <button type="button" wire:click="addAdditionalComment({{ $loop->index }})">
+                                                <span class="relative inline-block text-lg group">
+                                                    <span
+                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                                        <span
+                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                        <span
+                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
+                                                        <span class="relative">メモ追加</span>
+                                                    </span>
+                                                    <span
+                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
+                                                        data-rounded="rounded-lg"></span>
+                                                </span>
                                             </button>
                                             <!-- メモ削除ボタン -->
                                             <button type="button"
-                                                    wire:click="removeAdditionalComment({{ $index }})">
-                                    <span class="relative inline-block text-lg group">
-                                        <span
-                                            class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                            <span
-                                                class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                            <span
-                                                class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                            <span class="relative">メモ削除</span>
-                                        </span>
-                                        <span
-                                            class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                            data-rounded="rounded-lg"></span>
-                                    </span>
+                                                    wire:click="removeAdditionalComment({{ $loop->index }})">
+                                                <span class="relative inline-block text-lg group">
+                                                    <span
+                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
+                                                        <span
+                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
+                                                        <span
+                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
+                                                        <span class="relative">メモ削除</span>
+                                                    </span>
+                                                    <span
+                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
+                                                        data-rounded="rounded-lg"></span>
+                                                </span>
                                             </button>
                                         </div>
                                     </div>
