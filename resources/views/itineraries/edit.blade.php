@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>編集ページ</title>
 
-    @vite('resources/css/app.css')
+    @livewireStyles
+
+    @vite(['resources/js/app.js', 'resources/js/hamburger.js', 'resources/css/app.css'])
+
+    @livewireScripts
 </head>
 <body class="bg-[#fffdfa]">
 <!-- ヘッダー -->

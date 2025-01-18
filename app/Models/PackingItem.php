@@ -9,7 +9,8 @@ class PackingItem extends Model
     protected $fillable = [
         'travel_id',
         'packing_name',
-        'packing_is_checked'
+        'packing_is_checked',
+        'order',
     ];
 
     public function travelOverview()

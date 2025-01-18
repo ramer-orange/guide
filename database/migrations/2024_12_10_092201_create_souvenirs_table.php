@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('souvenir_name');
             $table->boolean('souvenir_is_checked');
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }

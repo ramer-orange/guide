@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('additionalComment_title')->nullable();
             $table->text('additionalComment_text')->nullable();
+            $table->integer('order')->default(0);
             $table->timestamps();
         });
     }
