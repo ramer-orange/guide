@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Plan extends Model
 {
@@ -14,6 +15,12 @@ class Plan extends Model
         'content',
         'order',
     ];
+
+    public function getTimeAttribute($value)
+    {
+        // Carbonインスタンスを生成して、formatで整形して返す
+        return Carbon::createFromFormat('H:i:s', $value)->format('H:i');
+    }
 
     public function travelOverview()
     {
