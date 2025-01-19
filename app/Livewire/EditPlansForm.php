@@ -66,7 +66,7 @@ class EditPlansForm extends Component
                 return [
                     'id' => $plan->id,
                     'date' => $plan->date,
-                    'time' => $plan->time,
+                    'time' => substr($plan->time, 0, 5),
                     'plans_title' => $plan->plans_title,
                     'content' => $plan->content,
                     'planFiles' => [null],
