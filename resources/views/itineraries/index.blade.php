@@ -32,14 +32,7 @@
                                            class="text-indigo-600 hover:text-indigo-900 transition duration-150 transform hover:scale-110"
                                            aria-label="編集"
                                            title="編集">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 class="h-6 w-6"
-                                                 fill="none"
-                                                 viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                            </svg>
+                                            <x-button.create-button></x-button.create-button>
                                         </a>
 
                                         <!-- 削除アイコンボタン -->
@@ -53,15 +46,7 @@
                                                     onclick="return confirm('本当に削除しますか？');"
                                                     aria-label="削除"
                                                     title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
+                                                <x-button.trash-button></x-button.trash-button>
                                             </button>
                                         </form>
                                     </div>

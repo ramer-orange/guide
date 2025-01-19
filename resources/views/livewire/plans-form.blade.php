@@ -35,18 +35,15 @@
                     プラン
                 </h2>
                 <div class="mt-8 p-2 md:p-6 bg-gray-50 rounded-lg shadow-inner relative pt-6">
-                    <div wire:sortable="updatePlanOrder" wire:sortable.options="{ animation: 100, scroll: false  }" class="flex gap-4 flex-col">
+                    <div wire:sortable="updatePlanOrder" wire:sortable.options="{ animation: 100, scroll: false  }"
+                         class="flex gap-4 flex-col">
                         @foreach($plans as $index => $plan)
                             <div wire:sortable.item="{{ $plan['id'] }}"
                                  wire:key="plan-{{ $plan['id'] }}">
                                 <div wire:sortable.handle class="cursor-grab">
                                     <div>
                                         <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
-                                                 class="w-3 h-5">
-                                                <path
-                                                    d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
-                                            </svg>
+                                            <x-button.drag-button></x-button.drag-button>
                                         </div>
                                         <!-- 日付と時間 -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -140,13 +137,7 @@
                                                             wire:click="removePlanFiles({{ $index }}, {{ $fileIndex }})"
                                                             aria-label="削除"
                                                             title="削除">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
-                                                             fill="none"
-                                                             viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                  stroke-width="2"
-                                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                        </svg>
+                                                        <x-button.trash-button></x-button.trash-button>
                                                     </button>
                                                 </div>
                                             @endforeach
@@ -154,19 +145,7 @@
                                             <!-- ファイル追加ボタン -->
                                             <div class="mt-4">
                                                 <button type="button" wire:click="addPlanFiles({{ $index }})">
-                                    <span class="relative inline-block text-base group">
-                                        <span
-                                            class="relative z-10 block px-4 py-2 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border border-gray-900 rounded-md group-hover:text-white">
-                                            <span
-                                                class="absolute inset-0 w-full h-full px-4 py-2 rounded-md bg-gray-50"></span>
-                                            <span
-                                                class="absolute left-0 w-40 h-40 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                            <span class="relative">ファイル追加</span>
-                                        </span>
-                                        <span
-                                            class="absolute bottom-0 right-0 w-full h-8 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-md group-hover:mb-0 group-hover:mr-0"
-                                            data-rounded="rounded-md"></span>
-                                    </span>
+                                                    <x-button.addFile-button>ファイル追加</x-button.addFile-button>
                                                 </button>
                                             </div>
                                         </div>
@@ -176,37 +155,15 @@
                                     <div class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                                         <!-- プラン追加ボタン -->
                                         <button type="button" wire:click="addPlan({{ $index }})">
-                                            <span class="relative inline-block text-lg group">
-                                                <span
-                                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                                    <span
-                                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                                    <span
-                                                        class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                                    <span class="relative">プラン追加</span>
-                                                </span>
-                                                <span
-                                                    class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                                    data-rounded="rounded-lg">
-                                                </span>
-                                            </span>
+                                            <x-button.button1>
+                                                プランを追加
+                                            </x-button.button1>
                                         </button>
                                         <!-- プラン削除ボタン -->
                                         <button type="button" wire:click="removePlan({{ $index }})">
-                            <span class="relative inline-block text-lg group">
-                                <span
-                                    class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                    <span
-                                        class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                    <span
-                                        class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                    <span class="relative">プラン削除</span>
-                                </span>
-                                <span
-                                    class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                    data-rounded="rounded-lg">
-                                </span>
-                            </span>
+                                            <x-button.button1>
+                                                プランを削除
+                                            </x-button.button1>
                                         </button>
                                     </div>
                                 </div>
@@ -233,7 +190,7 @@
                         <div class="flex flex-col sp2:flex-row justify-center items-center gap-2 sp:gap-4">
                             <!-- テンプレートボタン(国内版) -->
                             <button type="button" wire:click="useTemplatePackingItems('domestic')"
-                                    class="relative inline-flex items-center px-4 py-2 font-medium text-sm text-white bg-blue-500 border-b-2 border-blue-700 rounded-full hover:bg-blue-600 hover:border-b border-blue-600 transform hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    class="relative inline-flex items-center px-4 py-2 font-medium text-sm text-white bg-blue-500 border-b-2 border-blue-700 rounded-full hover:bg-blue-600 hover:border-b border-blue-600 transform hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
                                     @if ($template_type === 'domestic') disabled @endif
                                     aria-label="テンプレートを使う(国内版)" title="テンプレートを使う(国内版)">
                                 テンプレートを使う(国内版)
@@ -241,7 +198,7 @@
                             </button>
                             <!-- テンプレートボタン(海外版) -->
                             <button type="button" wire:click="useTemplatePackingItems('overseas')"
-                                    class="relative inline-flex items-center px-4 py-2 font-medium text-sm text-white bg-blue-500 border-b-2 border-blue-700 rounded-full hover:bg-blue-600 hover:border-b border-blue-600 transform hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    class="relative inline-flex items-center px-4 py-2 font-medium text-sm text-white bg-blue-500 border-b-2 border-blue-700 rounded-full hover:bg-blue-600 hover:border-b border-blue-600 transform hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed group cursor-pointer"
                                     @if ($template_type === 'overseas') disabled @endif
                                     aria-label="テンプレートを使う(海外版)" title="テンプレートを使う(海外版)">
                                 テンプレートを使う(海外版)
@@ -252,18 +209,7 @@
                         <div class="mt-4">
                             <button type="button" wire:click="allRemovePackingItem"
                                     onclick="return confirm('本当に全ての持ち物を削除しますか？')">
-                                <span
-                                    class="relative inline-flex items-center justify-start px-4 py-2 overflow-hidden font-medium transition-all bg-red-500 rounded-lg group">
-                                    <span
-                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded-sm group-hover:-mr-3 group-hover:-mt-3">
-                                        <span
-                                            class="absolute top-0 right-0 w-4 h-4 rotate-45 translate-x-1/2 -translate-y-1/2 bg-white"></span>
-                                    </span>
-                                    <span
-                                        class="absolute bottom-0 left-0 w-full h-full transition-all duration-500 ease-in-out delay-200 -translate-x-full translate-y-full bg-red-600 rounded-xl group-hover:mb-8 group-hover:translate-x-0"></span>
-                                    <span
-                                        class="relative w-full text-left text-sm text-white transition-colors duration-200 ease-in-out group-hover:text-white">全て削除</span>
-                                </span>
+                                <x-button.allRemove-button>全て削除</x-button.allRemove-button>
                             </button>
                         </div>
                         <div wire:sortable="updatePackingItemOrder"
@@ -274,11 +220,7 @@
                                     <div wire:sortable.handle class="cursor-grab">
                                         <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
                                             <div>
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
-                                                     class="w-3 h-5">
-                                                    <path
-                                                        d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
-                                                </svg>
+                                                <x-button.drag-button></x-button.drag-button>
                                             </div>
                                             <input type="checkbox"
                                                    wire:model.defer="packingItems.{{ $loop->index }}.packing_is_checked"
@@ -295,40 +237,20 @@
                                                     wire:click="removePackingItem({{ $loop->index }})"
                                                     aria-label="削除"
                                                     title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
+                                                <x-button.trash-button></x-button.trash-button>
                                             </button>
                                         </div>
                                         <!-- 持ち物追加ボタン -->
                                         <div class="ml-2 mt-2 sp2:mt-4 flex gap-2">
                                             <button type="button" wire:click="addPackingItem({{ $loop->index }})">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                                     class="w-6 h-6">
-                                                    <path
-                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                                </svg>
+                                                <x-button.plus-button></x-button.plus-button>
                                             </button>
                                             <button type="button"
                                                     class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 sp2:hidden"
                                                     wire:click="removePackingItem({{ $loop->index }})"
                                                     aria-label="削除"
                                                     title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
+                                                <x-button.trash-button></x-button.trash-button>
                                             </button>
                                         </div>
                                     </div>
@@ -356,18 +278,7 @@
                         <div>
                             <button type="button" wire:click="allRemoveSouvenir"
                                     onclick="return confirm('本当に全てのお土産を削除しますか？')">
-                                <span
-                                    class="relative inline-flex items-center justify-start px-4 py-2 overflow-hidden font-medium transition-all bg-red-500 rounded-lg group">
-                                    <span
-                                        class="absolute top-0 right-0 inline-block w-3 h-3 transition-all duration-500 ease-in-out bg-red-700 rounded-sm group-hover:-mr-3 group-hover:-mt-3">
-                                        <span
-                                            class="absolute top-0 right-0 w-4 h-4 rotate-45 translate-x-1/2 -translate-y-1/2 bg-white"></span>
-                                    </span>
-                                    <span
-                                        class="absolute bottom-0 left-0 w-full h-full transition-all duration-500 ease-in-out delay-200 -translate-x-full translate-y-full bg-red-600 rounded-lg group-hover:mb-8 group-hover:translate-x-0"></span>
-                                    <span
-                                        class="relative w-full text-left text-sm text-white transition-colors duration-200 ease-in-out group-hover:text-white">全て削除</span>
-                                </span>
+                                <x-button.allRemove-button>全て削除</x-button.allRemove-button>
                             </button>
                         </div>
                         <div wire:sortable="updateSouvenirOrder"
@@ -378,11 +289,7 @@
                                     <div wire:sortable.handle class="cursor-grab">
                                         <div class="flex items-center space-x-1.5 sp:space-x-4 mt-4">
                                             <div>
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
-                                                     class="w-3 h-5">
-                                                    <path
-                                                        d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
-                                                </svg>
+                                                <x-button.drag-button></x-button.drag-button>
                                             </div>
                                             <input type="checkbox"
                                                    wire:model.defer="souvenirs.{{ $loop->index }}.souvenir_is_checked"
@@ -399,40 +306,20 @@
                                                     wire:click="removeSouvenir({{ $loop->index }})"
                                                     aria-label="削除"
                                                     title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
+                                                <x-button.trash-button></x-button.trash-button>
                                             </button>
                                         </div>
                                         <!-- お土産追加ボタン -->
                                         <div class="ml-2 mt-2 sp2:mt-4 flex gap-2">
                                             <button type="button" wire:click="addSouvenir({{ $loop->index }})">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                                     class="w-6 h-6">
-                                                    <path
-                                                        d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 144L48 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l144 0 0 144c0 17.7 14.3 32 32 32s32-14.3 32-32l0-144 144 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-144 0 0-144z"/>
-                                                </svg>
+                                                <x-button.plus-button></x-button.plus-button>
                                             </button>
                                             <button type="button"
                                                     class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 sp2:hidden"
                                                     wire:click="removeSouvenir({{ $loop->index }})"
                                                     aria-label="削除"
                                                     title="削除">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
+                                                <x-button.trash-button></x-button.trash-button>
                                             </button>
                                         </div>
                                     </div>
@@ -463,11 +350,7 @@
                                      wire:key="additionalComment-{{ $additionalComment['id'] }}">
                                     <div wire:sortable.handle class="cursor-grab">
                                         <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"
-                                                 class="w-3 h-5">
-                                                <path
-                                                    d="M40 352l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zm192 0l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 320c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 192l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40zM40 160c-22.1 0-40-17.9-40-40L0 72C0 49.9 17.9 32 40 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0zM232 32l48 0c22.1 0 40 17.9 40 40l0 48c0 22.1-17.9 40-40 40l-48 0c-22.1 0-40-17.9-40-40l0-48c0-22.1 17.9-40 40-40z"/>
-                                            </svg>
+                                            <x-button.drag-button></x-button.drag-button>
                                         </div>
                                         <div>
                                             <div>
@@ -501,36 +384,16 @@
                                             class="mt-4 sp2:mt-8 flex justify-around sp2:justify-center gap-2 sp2:gap-6">
                                             <!-- メモ欄追加ボタン -->
                                             <button type="button" wire:click="addAdditionalComment({{ $loop->index }})">
-                                                <span class="relative inline-block text-lg group">
-                                                    <span
-                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                                        <span
-                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                                        <span
-                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                                        <span class="relative">メモ追加</span>
-                                                    </span>
-                                                    <span
-                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                                        data-rounded="rounded-lg"></span>
-                                                </span>
+                                                <x-button.button1>
+                                                    メモを追加
+                                                </x-button.button1>
                                             </button>
                                             <!-- メモ削除ボタン -->
                                             <button type="button"
                                                     wire:click="removeAdditionalComment({{ $index }})">
-                                                <span class="relative inline-block text-lg group">
-                                                    <span
-                                                        class="relative z-10 block px-3 sp2:px-5 py-3 overflow-hidden font-medium leading-tight text-gray-800 transition-colors duration-300 ease-out border-2 border-gray-900 rounded-lg group-hover:text-white">
-                                                        <span
-                                                            class="absolute inset-0 w-full h-full px-3 sp2:px-5 py-3 rounded-lg bg-gray-50"></span>
-                                                        <span
-                                                            class="absolute left-0 w-48 h-48 -ml-2 transition-all duration-300 origin-top-right -rotate-90 -translate-x-full translate-y-12 bg-gray-900 group-hover:-rotate-180 ease"></span>
-                                                        <span class="relative">メモ削除</span>
-                                                    </span>
-                                                    <span
-                                                        class="absolute bottom-0 right-0 w-full h-12 -mb-1 -mr-1 transition-all duration-200 ease-linear bg-gray-900 rounded-lg group-hover:mb-0 group-hover:mr-0"
-                                                        data-rounded="rounded-lg"></span>
-                                                </span>
+                                                <x-button.button1>
+                                                    メモを削除
+                                                </x-button.button1>
                                             </button>
                                         </div>
                                     </div>
@@ -544,16 +407,9 @@
 
         <!-- 送信ボタン -->
         <div class="mt-6 flex justify-center">
-            <button type="submit"
-                    class="relative inline-block px-8 py-4 font-semibold text-xl group">
-                <span
-                    class="absolute inset-0 w-full h-full transition duration-300 ease-out transform translate-x-2 translate-y-2 bg-black group-hover:translate-x-0 group-hover:translate-y-0"></span>
-                <span
-                    class="absolute inset-0 w-full h-full bg-white border-2 border-black transition duration-300 ease-out group-hover:bg-black"></span>
-                <span class="relative flex items-center text-black group-hover:text-white">
-                    作成する
-                </span>
-            </button>
+            <x-button.button2>
+                作成する
+            </x-button.button2>
         </div>
     </form>
 </div>

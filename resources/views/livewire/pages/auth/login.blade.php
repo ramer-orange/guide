@@ -82,10 +82,10 @@ new #[Layout('layouts.guest')] class extends Component {
                     </label>
                 </div>
 
-                <div class="flex items-center justify-end">
-                    <x-submit-button class="ms-4">
+                <div class="flex items-center justify-end mt-4">
+                    <x-button.button2>
                         ログイン
-                    </x-submit-button>
+                    </x-button.button2>
                 </div>
             </div>
         </div>
