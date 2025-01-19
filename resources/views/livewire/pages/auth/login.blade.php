@@ -19,7 +19,7 @@ new #[Layout('layouts.guest')] class extends Component {
 
         Session::regenerate();
 
-        $this->redirectIntended(route('home'));
+        $this->redirectIntended(route('itineraries.index'));
     }
 }; ?>
 
@@ -62,14 +62,14 @@ new #[Layout('layouts.guest')] class extends Component {
                                   required autocomplete="current-password"/>
 
                     <x-input-error :messages="$errors->get('form.password')" class="mt-2"/>
-                    <div class="mt-2">
-                        @if (Route::has('password.request'))
-                            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                               href="{{ route('password.request') }}" wire:navigate>
-                                {{ __('Forgot your password?') }}
-                            </a>
-                        @endif
-                    </div>
+{{--                    <div class="mt-2">--}}
+{{--                        @if (Route::has('password.request'))--}}
+{{--                            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"--}}
+{{--                               href="{{ route('password.request') }}" wire:navigate>--}}
+{{--                                {{ __('Forgot your password?') }}--}}
+{{--                            </a>--}}
+{{--                        @endif--}}
+{{--                    </div>--}}
                 </div>
 
                 <!-- Remember Me -->
