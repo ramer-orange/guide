@@ -94,10 +94,10 @@ new #[Layout('layouts.guest')] class extends Component
                     <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2"/>
                 </div>
 
-                <div class="flex items-center justify-end">
-                    <x-submit-button class="ms-4">
+                <div class="flex items-center justify-end mt-4">
+                    <x-button.button2>
                         登録
-                    </x-submit-button>
+                    </x-button.button2>
                 </div>
             </div>
         </div>

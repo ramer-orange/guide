@@ -85,10 +85,10 @@
                             <a href="{{ route('itineraries.create') }}"
                                class="text-black hover:text-gray-700 font-semibold">About</a>
                         </div>
-                        <div>
-                            <a href="{{ route('itineraries.create') }}"
-                               class="text-black hover:text-gray-700 font-semibold">Contact</a>
-                        </div>
+{{--                        <div>--}}
+{{--                            <a href="{{ route('itineraries.create') }}"--}}
+{{--                               class="text-black hover:text-gray-700 font-semibold">Contact</a>--}}
+{{--                        </div>--}}
                     </div>
 
                     <!-- ログイン・サインアップボタン -->
@@ -97,7 +97,7 @@
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit"
-                                        class="px-4 py-2 text-sm rounded-full font-bold text-gray-500 border-2 bg-transparent hover:bg-gray-50 transition-all ease-in-out duration-300 dark:border-neutral-700 dark:hover:bg-neutral-800">
+                                        class="px-4 py-2 text-sm rounded-full font-bold text-gray-500 border-2 bg-transparent hover:bg-gray-50 transition-all ease-in-out duration-300 dark:border-neutral-700 dark:hover:bg-neutral-800 cursor-pointer">
                                     Logout
                                 </button>
                             </form>
