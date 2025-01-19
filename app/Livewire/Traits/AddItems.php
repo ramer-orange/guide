@@ -183,7 +183,6 @@ trait AddItems
         ];
 
         $this->packingItems = $template[$type];
-//        dd($this->packingItems);
     }
 
     /**
