@@ -1,0 +1,11 @@
+server {
+    listen 443 ssl default_server;
+    ssl_certificate     /etc/nginx/certs/localhost.pem;
+    ssl_certificate_key /etc/nginx/certs/localhost-key.pem;
+
+    location / {
+        proxy_pass http://host.docker.internal;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Host $host;
+    }
+}

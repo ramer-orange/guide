@@ -11,6 +11,7 @@ use Livewire\WithFileUploads;
 use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
+use Illuminate\Support\Facades\Hash;
 
 class PlansForm extends Component
 {
@@ -27,6 +28,7 @@ class PlansForm extends Component
     public $template_type;
     public $souvenirs = [];
     public $additionalComments = [];
+    public $shared_password;
 
     protected function rules(): array
     {
@@ -246,6 +248,10 @@ class PlansForm extends Component
                 'order' => $index,
             ]);
         }
+
+        $overview->sharedPasswords()->create([
+            'shared_password' => $this->shared_password ? Hash::make($this->shared_password) : null,
+        ]);
 
         return redirect()->route('itineraries.edit', [$overview->id]);
     }
