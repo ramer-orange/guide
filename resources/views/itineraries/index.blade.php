@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>しおり一覧ページ</title>
 
-    @vite('resources/css/app.css')
+    @livewireStyles
+
+    @vite(['resources/js/app.js', 'resources/js/hamburger.js', 'resources/css/app.css', 'resources/js/share-button.js'])
+
+    @livewireScripts
 </head>
 <body>
 <!-- ヘッダー -->
@@ -26,7 +30,18 @@
                                 class="bg-white dark:bg-gray-700 shadow-md rounded-lg p-4 hover:shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-150">
                                 <div class="flex justify-between items-center mb-2">
                                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ $overview->title }}</h2>
-                                    <div class="flex space-x-2">
+                                    <div class="flex space-x-3 items-center">
+                                        <!-- 共有アイコンボタン -->
+                                        <div
+                                            class="webShareButton text-indigo-600 hover:text-indigo-900 transition duration-150 transform hover:scale-110 cursor-pointer h-5 w-5 ml-5"
+                                            aria-label="共有"
+                                            title="共有"
+                                            data-share-url="{{ route('itineraries.edit', $overview->id) }}"
+                                            data-share-title="しおりの編集"
+                                            data-share-description="しおりの編集ページです">
+                                            <x-button.share-button></x-button.share-button>
+                                        </div>
+
                                         <!-- 編集アイコンボタン -->
                                         <a href="{{ route('itineraries.edit', $overview->id) }}"
                                            class="text-indigo-600 hover:text-indigo-900 transition duration-150 transform hover:scale-110"
@@ -42,7 +57,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"
-                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110"
+                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 block"
                                                     onclick="return confirm('本当に削除しますか？');"
                                                     aria-label="削除"
                                                     title="削除">

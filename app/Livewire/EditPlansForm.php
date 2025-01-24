@@ -9,11 +9,13 @@ use App\Models\PlanFile;
 use App\Models\Plan;
 use App\Models\Souvenir;
 use App\Models\TravelOverview;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
+use App\Models\SharedPassword;
 
 
 class EditPlansForm extends Component
@@ -39,6 +41,10 @@ class EditPlansForm extends Component
     public $deleteSouvenirs = [];
     public $additionalComments = [];
     public $deleteAdditionalComments = [];
+
+    public $shared_password_check;
+    public $shared_password;
+    public $showPasswordField = false;
 
     protected function rules(): array
     {
@@ -128,6 +134,12 @@ class EditPlansForm extends Component
 
                 ];
             })->toArray();
+
+        //共有パスワードの存在確認
+        if ($overview->sharedPasswords->shared_password != null)
+        {
+            $this->shared_password_check = true;
+        }
     }
 
     /**
@@ -313,6 +325,16 @@ class EditPlansForm extends Component
         $this->additionalComments = $this->updateOrder($this->additionalComments, $orderedIds);
     }
 
+    /**
+     * 共有パスワード設定ボタンの表示、非表示
+     *
+     * @return void
+     */
+    public function showPasswordFields()
+    {
+        $this->showPasswordField = true;
+    }
+
     public function submit()
     {
         $this->validate();
@@ -353,12 +375,12 @@ class EditPlansForm extends Component
             }
         }
 
-// 削除するプランの処理
+        // 削除するプランの処理
         if (!empty($this->deletedPlans)) {
             Plan::whereIn('id', $this->deletedPlans)->delete();
         }
 
-// 削除するプランファイルの処理
+        // 削除するプランファイルの処理
         if (!empty($this->deletedPlanFiles)) {
             PlanFile::whereIn('id', $this->deletedPlanFiles)->delete();
         }
@@ -441,6 +463,11 @@ class EditPlansForm extends Component
         if (!empty($this->deleteAdditionalComments)) {
             AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
         }
+
+        //共有パスワード設定
+        $this->overview->sharedPasswords()->update([
+            'shared_password' => $this->shared_password ? Hash::make($this->shared_password) : null,
+        ]);
 
         return redirect()->route('itineraries.edit', [$this->overview->id]);
     }

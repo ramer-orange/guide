@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // ローカル環境でのhttps化
+        if (env('APP_ENV') === 'local') { // 環境に応じて設定
+            URL::forceScheme('https');
+        }
     }
 }

@@ -1,4 +1,14 @@
 services:
+    # webコンテナを追加
+    web:
+        image: nginx:latest
+        volumes:
+            - ./nginx/templates:/etc/nginx/templates
+            - ./nginx/certs/:/etc/nginx/certs
+        ports:
+            - 443:443
+        depends_on:
+            - laravel.test
     laravel.test:
         build:
             context: './docker/8.3'

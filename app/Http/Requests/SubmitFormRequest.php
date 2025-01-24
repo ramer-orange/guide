@@ -46,6 +46,7 @@ class SubmitFormRequest extends FormRequest
             'additionalComments.*.additionalComment_title' => 'nullable | string | max:255',
             'additionalComments.*.additionalComment_text' => 'nullable | string',
             'additionalComments.*.order' => 'required | int',
+            'shared_password' => 'nullable | string | min:8 | max:32 | confirmed',
         ];
     }
 }

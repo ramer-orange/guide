@@ -32,4 +32,9 @@ class TravelOverview extends Model
     {
         return $this->hasMany(AdditionalComment::class, 'travel_id');
     }
+
+    public function sharedPasswords()
+    {
+        return $this->hasOne(SharedPassword::class, 'travel_id');
+    }
 }
