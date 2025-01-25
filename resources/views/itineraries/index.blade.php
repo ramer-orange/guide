@@ -1,21 +1,8 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>しおり一覧ページ</title>
+@extends('layouts.app')
 
-    @livewireStyles
+@section('title', 'しおり一覧')
 
-    @vite(['resources/js/app.js', 'resources/js/hamburger.js', 'resources/css/app.css', 'resources/js/share-button.js'])
-
-    @livewireScripts
-</head>
-<body>
-<!-- ヘッダー -->
-<x-header></x-header>
-
-<main>
+@section('content')
     <div class="bg-[#fffdfa]">
         <div class="max-w-7xl mx-auto p-4 pt-24 sm:p-6,pt-24 dark:bg-gray-800 min-h-screen ">
             <h1 class="text-3xl sm:text-4xl font-extrabold mb-6 text-gray-900">しおり一覧</h1>
@@ -104,6 +91,4 @@
             </div>
         </div>
     </div>
-</main>
-</body>
-</html>
+@endsection
