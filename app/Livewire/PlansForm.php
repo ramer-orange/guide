@@ -29,6 +29,7 @@ class PlansForm extends Component
     public $souvenirs = [];
     public $additionalComments = [];
     public $shared_password;
+    public $shared_password_confirmation;
 
     protected function rules(): array
     {

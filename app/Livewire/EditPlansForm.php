@@ -44,6 +44,7 @@ class EditPlansForm extends Component
 
     public $shared_password_check;
     public $shared_password;
+    public $shared_password_confirmation;
     public $showPasswordField = false;
 
     protected function rules(): array
