@@ -7,7 +7,7 @@
                 <input type="text" id="title" wire:model.defer="title"
                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                 @error('title')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
+                <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                 @enderror
             </div>
 
@@ -17,7 +17,7 @@
                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
                           placeholder="美食を求める旅"></textarea>
                 @error('overviewText')
-                <span class="text-red-500 text-sm">{{ $message }}</span>
+                <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                 @enderror
             </div>
         </div>
@@ -53,7 +53,7 @@
                                                        wire:model.defer="plans.{{ $index }}.date"
                                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                                 @error("plans.$index.date") <span
-                                                    class="text-red-500">{{ $message }}</span> @enderror
+                                                    class="text-red-500 error-message">{{ $message }}</span> @enderror
                                             </div>
                                             <div>
                                                 <label for="plans.{{ $index }}.time"
@@ -62,7 +62,7 @@
                                                        wire:model.defer="plans.{{ $index }}.time"
                                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                                 @error("plans.$index.time") <span
-                                                    class="text-red-500">{{ $message }}</span> @enderror
+                                                    class="text-red-500 error-message">{{ $message }}</span> @enderror
                                             </div>
                                         </div>
 
@@ -75,7 +75,7 @@
                                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                                    placeholder="東京駅発">
                                             @error("plans.$index.plans_title")
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                             @enderror
                                         </div>
 
@@ -88,7 +88,7 @@
                                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"
                                                       placeholder="成田エクスプレスで成田空港に向かう"></textarea>
                                             @error("plans.$index.content")
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                             @enderror
                                         </div>
 
@@ -174,7 +174,7 @@
                                                             </button>
                                                         </div>
                                                         @error("plans.{$index}.planFiles.{$fileIndex}")
-                                                        <span class="text-red-500 text-sm ml-2">{{ $message }}</span>
+                                                        <span class="text-red-500 text-sm ml-2 error-message">{{ $message }}</span>
                                                         @enderror
                                                     @endforeach
 
@@ -342,7 +342,7 @@
                                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500"
                                                    placeholder="お土産の名前">
                                             @error("souvenirs.$loop->index.souvenir_name")
-                                            <span class="text-red-500">{{ $message }}</span>
+                                            <span class="text-red-500 error-message">{{ $message }}</span>
                                             @enderror
                                             <button type="button"
                                                     class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 sp2:ml-4 hidden sp2:block"
@@ -404,7 +404,7 @@
                                                    placeholder="タイトル"
                                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500">
                                             @error("additionalComments.$loop->index.additionalComment_title")
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                             @enderror
                                         </div>
                                         <div class="mt-4">
@@ -415,7 +415,7 @@
                                                       placeholder="テキスト"
                                                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 field-sizing-content"></textarea>
                                             @error("additionalComments.$loop->index.additionalComment_text")
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                                            <span class="text-red-500 text-sm error-message error-message">{{ $message }}</span>
                                             @enderror
                                         </div>
                                         <div
@@ -485,7 +485,7 @@
                                            wire:model.defer="shared_password"
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                                     @error('shared_password')
-                                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                                    <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                     @enderror
                                 </div>
 
@@ -497,7 +497,7 @@
                                            wire:model.defer="shared_password_confirmation"
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                                     @error('shared_password_confirmation')
-                                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                                    <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>

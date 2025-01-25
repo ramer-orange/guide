@@ -11,7 +11,13 @@
 
     @livewireStyles
 
-    @vite(['resources/js/app.js', 'resources/js/hamburger.js', 'resources/css/app.css', 'resources/js/share-button.js'])
+    @vite([
+    'resources/js/app.js',
+    'resources/css/app.css',
+    'resources/js/hamburger.js',
+    'resources/js/share-button.js',
+    'resources/js/validation-scroll.js',
+    ])
 
     @livewireScripts
 </head>
