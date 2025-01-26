@@ -146,7 +146,7 @@ return [
     'string' => ':attributeは文字列を指定してください。',
     'timezone' => ':attributeには、有効なゾーンを指定してください。',
     'unique' => ':attributeの値は既に存在しています。',
-    'uploaded' => ':attributeのアップロードに失敗しました。',
+    'uploaded' => 'ファイルのアップロードに失敗しました。',
     'uppercase' => ':attributeは、大文字のみで指定してください。',
     'url' => ':attributeに正しい形式を指定してください。',
     'ulid' => ':attributeに有効なULIDを指定してください。',
@@ -258,7 +258,15 @@ return [
         'year' => '年',
 
         'shared_password' => '共有パスワード',
-
+        'overviewText' => '旅行概要',
+        'plans.*.date' => 'プランの日付',
+        'plans.*.time' => 'プランの時間',
+        'plans.*.plans_title' => 'プランタイトル',
+        'plans.*.planFiles.*' => 'プランファイル',
+        'packingItems.*.packing_name' => '持ち物の名前',
+        'souvenirs.*.souvenirs_name' => 'お土産の名前',
+        'additionalComments.*.additionalComment_title' => 'メモのタイトル',
+        'additionalComments.*.additionalComment_text' => 'メモのテキスト',
     ],
 
 ];

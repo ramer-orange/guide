@@ -342,7 +342,7 @@ class EditPlansForm extends Component
 
         $this->overview->update([
             'title' => $this->title,
-            'overview' => $this->overviewText,
+            'overviewText' => $this->overviewText,
         ]);
 
         // 各プランの更新または作成
