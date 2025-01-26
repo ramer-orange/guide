@@ -1,5 +1,6 @@
 <div class="max-w-4xl mx-auto">
     <form wire:submit.prevent="submit">
+        @csrf
         <!-- タイトルと概要 -->
         <div class="space-y-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">
             <div>
@@ -97,7 +98,7 @@
 
                                         <!-- ファイルアップロード -->
                                         <div class="mt-6">
-                                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード</h3>
+                                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード (10MB以下)</h3>
                                             @foreach($plan['planFiles'] as $fileIndex => $planFile)
                                                 <div class="flex items-center mt-1">
                                                     <!-- inputをhiddenで隠す -->
@@ -117,19 +118,20 @@
                                                         @else
                                                             <!-- ファイル未選択時の表示 -->
                                                             <span class="flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-5 w-5 ml-2 text-gray-500" fill="none"
-                                                     viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                          stroke-width="2"
-                                                          d="M12 4v16m8-8H4"/>
-                                                </svg>
-                                            ファイルを選択する
-                                            </span>
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-5 w-5 ml-2 text-gray-500" fill="none"
+                                                                     viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                          stroke-width="2"
+                                                                          d="M12 4v16m8-8H4"/>
+                                                                </svg>
+                                                                ファイルを選択する
+                                                            </span>
                                                         @endif
                                                     </label>
-                                                    @error("plans.{$index}.planFiles.{$fileIndex}")
-                                                    <span class="text-red-500 text-sm ml-2 error-message">{{ $message }}</span>
+                                                    @error("plans.$index.planFiles.$fileIndex")
+                                                    <span
+                                                        class="text-red-500 text-sm ml-2 error-message">{{ $message }}</span>
                                                     @enderror
 
                                                     <button type="button"

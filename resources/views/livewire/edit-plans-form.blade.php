@@ -1,5 +1,6 @@
 <div class="max-w-4xl mx-auto">
     <form wire:submit.prevent="submit">
+        @csrf
         <!-- タイトルと概要 -->
         <div class="mt-8 space-y-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">
             <div>
@@ -94,7 +95,7 @@
 
                                         <!-- ファイルアップロード -->
                                         <div class="mt-6">
-                                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード</h3>
+                                            <h3 class="text-sm font-medium text-gray-700">ファイルアップロード (10MB以下)</h3>
                                             <div>
                                                 <!-- 既存ファイルの表示 -->
                                                 @if(!empty($plan['existing_planFiles']))
@@ -173,7 +174,7 @@
                                                                 <x-button.trash-button></x-button.trash-button>
                                                             </button>
                                                         </div>
-                                                        @error("plans.{$index}.planFiles.{$fileIndex}")
+                                                        @error("plans.$index.planFiles.$fileIndex")
                                                         <span class="text-red-500 text-sm ml-2 error-message">{{ $message }}</span>
                                                         @enderror
                                                     @endforeach
