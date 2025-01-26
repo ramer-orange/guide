@@ -12,6 +12,7 @@ use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class PlansForm extends Component
 {
@@ -219,7 +220,7 @@ class PlansForm extends Component
             ]);
             foreach ($plan['planFiles'] as $planFile) {
                 if ($planFile) {
-                    $filePath = $planFile->store('files', 'public');
+                    $filePath = Storage::disk('public')->putFile('files', $planFile);
                     $newPlan->planFiles()->create([
                         'path' => $filePath,
                         'file_name' => $planFile->getClientOriginalName(),
