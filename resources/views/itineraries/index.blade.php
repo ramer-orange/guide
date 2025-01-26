@@ -37,20 +37,38 @@
                                             <x-button.create-button></x-button.create-button>
                                         </a>
 
-                                        <!-- 削除アイコンボタン -->
-                                        <form action="{{ route('itineraries.index.destroy', $overview->id) }}"
-                                              method="post"
-                                              class="inline-block">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 block"
-                                                    onclick="return confirm('本当に削除しますか？');"
-                                                    aria-label="削除"
-                                                    title="削除">
-                                                <x-button.trash-button></x-button.trash-button>
-                                            </button>
-                                        </form>
+                                        <!-- 削除ボタン -->
+                                        <button type="button"
+                                                class="openDeleteModalButton text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 block"
+                                                data-url="{{ route('itineraries.index.destroy', $overview->id) }}"
+                                                data-target="#deleteModal-{{ $overview->id }}"
+                                                aria-label="削除"
+                                                title="削除">
+                                            <x-button.trash-button></x-button.trash-button>
+                                        </button>
+
+                                        <!-- 削除確認モーダル -->
+                                        <div id="deleteModal-{{ $overview->id }}"
+                                             class="deleteModal fixed inset-0 flex items-center justify-center bg-gray-900/70 z-50 hidden pl-4 pr-4">
+                                            <div class="modalContent bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-md sm:max-w-lg lg:max-w-xl">
+                                                <h2 class="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-4">削除確認</h2>
+                                                <p class="text-sm sm:text-base text-gray-600 mb-6">本当に削除してもよろしいですか？この操作は取り消せません。</p>
+                                                <div class="flex justify-end space-x-2 sm:space-x-3">
+                                                    <!-- キャンセルボタン -->
+                                                    <button class="cancelButton px-3 py-2 sm:px-4 sm:py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm sm:text-base cursor-pointer">
+                                                        キャンセル
+                                                    </button>
+                                                    <!-- 削除ボタン -->
+                                                    <form method="post" class="deleteForm">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm sm:text-base cursor-pointer">
+                                                            削除する
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- 概要欄 -->

@@ -209,8 +209,7 @@
                         </div>
 
                         <div class="mt-4">
-                            <button type="button" wire:click="allRemovePackingItem"
-                                    onclick="return confirm('本当に全ての持ち物を削除しますか？')">
+                            <button type="button" wire:click="allRemovePackingItem">
                                 <x-button.allRemove-button>全て削除</x-button.allRemove-button>
                             </button>
                         </div>
@@ -278,8 +277,7 @@
                 <div class="mt-6 space-y-6">
                     <div class="p-2 pt-6 pb-6 md:p-6 bg-gray-50 rounded-lg shadow-inner">
                         <div>
-                            <button type="button" wire:click="allRemoveSouvenir"
-                                    onclick="return confirm('本当に全てのお土産を削除しますか？')">
+                            <button type="button" wire:click="allRemoveSouvenir">
                                 <x-button.allRemove-button>全て削除</x-button.allRemove-button>
                             </button>
                         </div>
