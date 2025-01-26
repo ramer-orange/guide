@@ -1,4 +1,4 @@
-<div class="mt-20 flex justify-end">
+<div class="mt-20 flex justify-end absolute top-26 right-4">
     <a href="{{ route('itineraries.index') }}" class="relative inline-block px-4 py-2 font-medium group"
        aria-label="{{ $slot }}" title="{{ $slot }}">
         <span
