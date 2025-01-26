@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('template_types', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('template_name')->nullable()->unique();
             $table->timestamps();
         });

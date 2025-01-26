@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->date('date')->nullable();
             $table->time('time')->nullable();
             $table->string('plans_title')->nullable();

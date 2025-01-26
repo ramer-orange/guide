@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('packing_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('packing_name')->nullable();
             $table->boolean('packing_is_checked')->nullable()->default(false);
             $table->integer('order')->default(0);
