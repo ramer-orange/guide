@@ -1,5 +1,5 @@
 <div class="max-w-4xl mx-auto">
-    <form wire:submit.prevent="submit">
+    <form wire:submit.prevent="submit" enctype="multipart/form-data">
         @csrf
         <!-- タイトルと概要 -->
         <div class="mt-8 space-y-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">

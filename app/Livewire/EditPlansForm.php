@@ -16,6 +16,7 @@ use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
 use App\Models\SharedPassword;
+use Illuminate\Support\Facades\Storage;
 
 
 class EditPlansForm extends Component
@@ -383,6 +384,15 @@ class EditPlansForm extends Component
 
         // 削除するプランファイルの処理
         if (!empty($this->deletedPlanFiles)) {
+            // 削除対象のプランファイルを取得
+            $planFiles = PlanFile::whereIn('id', $this->deletedPlanFiles)->get();
+
+            // ストレージからファイルを削除
+            foreach ($planFiles as $planFile) {
+                Storage::disk('public')->delete($planFile->path);
+            }
+
+            // データベースからレコードを削除
             PlanFile::whereIn('id', $this->deletedPlanFiles)->delete();
         }
 
