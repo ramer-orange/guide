@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('shared_passwords', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('shared_password')->nullable()->default(null);
             $table->timestamps();
         });

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('souvenirs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('souvenir_name');
             $table->boolean('souvenir_is_checked');
             $table->integer('order')->default(0);

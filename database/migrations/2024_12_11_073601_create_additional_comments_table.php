@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('additional_comments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
+            $table->foreignUuid('travel_id')->constrained('travel_overviews')->cascadeOnDelete();
             $table->string('additionalComment_title')->nullable();
             $table->text('additionalComment_text')->nullable();
             $table->integer('order')->default(0);
