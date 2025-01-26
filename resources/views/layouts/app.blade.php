@@ -17,6 +17,7 @@
     'resources/js/hamburger.js',
     'resources/js/share-button.js',
     'resources/js/validation-scroll.js',
+    'resources/js/alert-modal.js',
     ])
 
     @livewireScripts
