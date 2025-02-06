@@ -1,91 +1,47 @@
 <!--Footer-->
-<footer class="bg-white">
-    <div class="container mx-auto px-8">
-        <div class="w-full flex flex-col md:flex-row py-6">
-            <div class="flex-1 mb-6 text-black">
-                <a class="text-pink-600 no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
-                   href="#">
-                    <!--Icon from: http://www.potlabicons.com/ -->
-                    <svg class="h-8 fill-current inline" xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 512.005 512.005">
-                        <rect fill="#2a2a31" x="16.539" y="425.626" width="479.767" height="50.502"
-                              transform="matrix(1,0,0,1,0,0)"/>
-                        <path
-                            class="plane-take-off"
-                            d=" M 510.7 189.151 C 505.271 168.95 484.565 156.956 464.365 162.385 L 330.156 198.367 L 155.924 35.878 L 107.19 49.008 L 211.729 230.183 L 86.232 263.767 L 36.614 224.754 L 0 234.603 L 45.957 314.27 L 65.274 347.727 L 105.802 336.869 L 240.011 300.886 L 349.726 271.469 L 483.935 235.486 C 504.134 230.057 516.129 209.352 510.7 189.151 Z "
-                        />
-                    </svg>
-                    LANDING
+<footer class="bg-white border-t">
+    <div class="max-w-7xl mx-auto px-4 sm:px-10 py-12">
+        <div class="flex flex-col md:flex-row justify-between items-start mb-12">
+            <div class="mb-8 md:mb-0">
+                <a href="{{ route('home') }}" class="flex items-center space-x-2">
+                    <span class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">{{ config('app.name') }}</span>
                 </a>
+                <p class="mt-4 text-gray-600 max-w-sm">旅の計画をもっと簡単に、もっと楽しく。<br>あなたの思い出作りをサポートします。</p>
             </div>
-            <div class="flex-1">
-                <p class="uppercase text-gray-500 md:mb-6">Links</p>
-                <ul class="list-reset mb-6">
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">FAQ</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Help</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Support</a>
-                    </li>
+        </div>
+
+        <!-- リンクセクション -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">サービス</h3>
+                <ul class="space-y-3">
+                    <li><a href="{{ route('itineraries.create') }}" class="text-gray-600 hover:text-gray-900 transition-colors">プラン作成</a></li>
+                    <li><a href="{{ route('register') }}" class="text-gray-600 hover:text-gray-900 transition-colors">会員登録</a></li>
+                    <li><a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 transition-colors">ログイン</a></li>
                 </ul>
             </div>
-            <div class="flex-1">
-                <p class="uppercase text-gray-500 md:mb-6">Legal</p>
-                <ul class="list-reset mb-6">
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Terms</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Privacy</a>
-                    </li>
+
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">サポート</h3>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">お問い合わせ</a></li>
+                    <li><a href="{{ url('/#question') }}" class="text-gray-600 hover:text-gray-900 transition-colors">よくある質問</a></li>
                 </ul>
             </div>
-            <div class="flex-1">
-                <p class="uppercase text-gray-500 md:mb-6">Social</p>
-                <ul class="list-reset mb-6">
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Facebook</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Linkedin</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Twitter</a>
-                    </li>
-                </ul>
-            </div>
-            <div class="flex-1">
-                <p class="uppercase text-gray-500 md:mb-6">Company</p>
-                <ul class="list-reset mb-6">
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#" class="no-underline hover:underline text-gray-800 hover:text-pink-500">Official
-                            Blog</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#" class="no-underline hover:underline text-gray-800 hover:text-pink-500">About
-                            Us</a>
-                    </li>
-                    <li class="mt-2 inline-block mr-2 md:block md:mr-0">
-                        <a href="#"
-                           class="no-underline hover:underline text-gray-800 hover:text-pink-500">Contact</a>
-                    </li>
+
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">法的情報</h3>
+                <ul class="space-y-3">
+                    <li><a href="{{ url('/terms') }}" class="text-gray-600 hover:text-gray-900 transition-colors">利用規約</a></li>
+                    <li><a href="{{ url('/policy')}}" class="text-gray-600 hover:text-gray-900 transition-colors">プライバシーポリシー</a></li>
+                    {{-- <li><a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">特定商取引法に基づく表記</a></li> --}}
                 </ul>
             </div>
         </div>
+
+        <!-- コピーライト -->
+        <div class="mt-12 pt-8 border-t border-gray-200">
+            <p class="text-gray-400 text-sm text-center">&copy; {{ date('Y') }} config('app.name'). All rights reserved.</p>
+        </div>
     </div>
-    <a href="https://www.freepik.com/free-photos-vectors/background" class="text-gray-500">Background vector
-        created
-        by
-        freepik - www.freepik.com</a>
 </footer>

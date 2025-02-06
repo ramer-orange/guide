@@ -39,6 +39,13 @@ Route::get('/itineraries/{id}/shared-access', [SharedPasswordController::class, 
 Route::post('/itineraries/{id}/shared-access', [SharedPasswordController::class, 'verify'])
     ->name('shared-access.verify');
 
+Route::get('/policy', function () {
+    return view('policy');
+});
+Route::get('/terms', function () {
+    return view('terms');
+});
+
 
 
 

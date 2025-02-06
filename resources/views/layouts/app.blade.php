@@ -7,6 +7,18 @@
 
     <title>@yield('title', 'しおり')</title>
 
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('images/ogp/ogp.png') }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:image" content="{{ asset('images/ogp/ogp.png') }}">
+
+    @yield('meta')
+
     <!-- Fonts -->
 
     @livewireStyles
@@ -18,6 +30,7 @@
     'resources/js/share-button.js',
     'resources/js/validation-scroll.js',
     'resources/js/alert-modal.js',
+    'resources/js/accordion.js',
     ])
 
     @livewireScripts
