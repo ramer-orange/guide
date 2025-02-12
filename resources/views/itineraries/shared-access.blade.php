@@ -1,6 +1,22 @@
 @extends('layouts.app')
 
-@section('title', '共有パスワード認証')
+@section('title')
+    共有パスワード認証 - {{ config('app.name') }}
+@endsection
+
+@section('meta')
+    <!-- Primary Meta Tags -->
+    <meta name="description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+    <meta name="robots" content="noindex,nofollow">
+
+    <!-- OGP -->
+    <meta property="og:title" content="共有パスワード認証 | config('app.name')">
+    <meta property="og:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+
+    <!-- Twitter -->
+    <meta name="twitter:title" content="共有パスワード認証 | config('app.name')">
+    <meta name="twitter:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+@endsection
 
 @section('content')
     <div class="bg-[#fffdfa]">

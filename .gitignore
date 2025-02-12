@@ -1,4 +1,10 @@
 /.phpunit.cache
+/public/build
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/pail
 /node_modules
 /public/build
 /public/hot
@@ -22,3 +28,4 @@ yarn-error.log
 /.zed
 /public/css
 /public/js
+.DS_Store

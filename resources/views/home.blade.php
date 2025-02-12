@@ -1,210 +1,672 @@
 @extends('layouts.app')
 
-@section('title', 'トップページ')
+@section('title')
+    {{ config('app.name') }} - 旅行計画をもっと楽しく、もっと簡単に
+@endsection
+
+@section('meta')
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="config('app.name') - 旅の計画をもっと簡単に、もっと楽しく">
+    <meta name="description"
+          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:title" content="config('app.name') - 旅行計画をもっと楽しく、もっと簡単に">
+    <meta property="og:description"
+          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+
+    <!-- Twitter -->
+    <meta property="twitter:title" content="config('app.name') - 旅行計画をもっと楽しく、もっと簡単に">
+    <meta property="twitter:description"
+          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+@endsection
 
 @section('content')
-    <div class="leading-normal tracking-normal text-white bg-gradient-to-r from-[#d53369] to-[#daae51]">
-        <div class="pt-24">
-            <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center">
-                <!--Left Col-->
-                <div class="flex flex-col w-full md:w-2/3 justify-center items-start text-center md:text-left">
-                    <h1 class="my-4 text-5xl font-bold leading-tight">
-                        旅の計画を<br>もっと簡単に、<br>もっと楽しく。
-                    </h1>
-                    <p class="leading-normal text-2xl mb-8">
-                        理想の旅をデザインするしおり作成ツールで、<br>準備の時間も楽しみに。
-                    </p>
-                    <div>
-                        <button
-                            class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg focus:outline-hidden focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
-                            しおりを作る
-                        </button>
-                    </div>
-                </div>
-                <!--Right Col-->
-                <div class="w-full md:w-3/5 py-6 text-center">
-                    <img class="w-full md:w-4/5 z-50" src=""/>
+    <!-- ヒーローセクション -->
+    <div class="relative min-h-screen overflow-hidden">
+        <!-- 背景画像 -->
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/mv/MV.jpeg') }}" alt="背景" class="w-full h-full object-cover">
+            <!-- 画像の上に暗いオーバーレイを追加 -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div class="relative container mx-0 sm:mx-auto px-6 pt-32 pb-16">
+            <div class="max-w-3xl">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
+                    旅の計画を<br>もっと簡単に、<br>もっと楽しく。
+                </h1>
+                <p class="text-base sm:text-xl text-white/90 leading-relaxed mb-8">
+                    思いのままに、あなただけの旅をデザイン。<br>
+                    思い出作りが、これまで以上に楽しくなる。
+                </p>
+                <div class="flex gap-4">
+                    <a href="{{ route('register')}}"
+                       class="group relative inline-flex items-center justify-center px-8 py-4
+                              text-base font-medium text-white transition-all duration-300
+                              bg-gradient-to-r from-blue-500 to-teal-400
+                              hover:from-blue-600 hover:to-teal-500
+                              rounded-full shadow-lg hover:shadow-xl
+                              transform hover:scale-[1.02]
+                              hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+                        無料で始める
+                        <svg class="w-5 h-5 ml-2 transition-transform duration-300
+                                  group-hover:translate-x-1 group-hover:scale-110"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="relative -mt-12 lg:-mt-24">
-            <svg viewBox="0 0 1428 174" version="1.1" xmlns="http://www.w3.org/2000/svg"
-                 xmlns:xlink="http://www.w3.org/1999/xlink">
-                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                    <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                        <path
-                            d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496"
-                            opacity="0.100000001"></path>
-                        <path
-                            d="M100,104.708498 C277.413333,72.2345949 426.147877,52.5246657 546.203633,45.5787101 C666.259389,38.6327546 810.524845,41.7979068 979,55.0741668 C931.069965,56.122511 810.303266,74.8455141 616.699903,111.243176 C423.096539,147.640838 250.863238,145.462612 100,104.708498 Z"
-                            opacity="0.100000001"
-                        ></path>
-                        <path
-                            d="M1046,51.6521276 C1130.83045,29.328812 1279.08318,17.607883 1439,40.1656806 L1439,120 C1271.17211,77.9435312 1140.17211,55.1609071 1046,51.6521276 Z"
-                            id="Path-4" opacity="0.200000003"></path>
-                    </g>
-                    <g transform="translate(-4.000000, 76.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                        <path
-                            d="M0.457,34.035 C57.086,53.198 98.208,65.809 123.822,71.865 C181.454,85.495 234.295,90.29 272.033,93.459 C311.355,96.759 396.635,95.801 461.025,91.663 C486.76,90.01 518.727,86.372 556.926,80.752 C595.747,74.596 622.372,70.008 636.799,66.991 C663.913,61.324 712.501,49.503 727.605,46.128 C780.47,34.317 818.839,22.532 856.324,15.904 C922.689,4.169 955.676,2.522 1011.185,0.432 C1060.705,1.477 1097.39,3.129 1121.236,5.387 C1161.703,9.219 1208.621,17.821 1235.4,22.304 C1285.855,30.748 1354.351,47.432 1440.886,72.354 L1441.191,104.352 L1.121,104.031 L0.457,34.035 Z"
-                        ></path>
-                    </g>
+
+        <!-- 波形の区切り -->
+        <div class="absolute bottom-0 left-0 w-full">
+            <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
+                <defs>
+                    <path id="wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"/>
+                </defs>
+                <g class="parallax">
+                    <use href="#wave" x="48" y="0" fill="rgba(255,255,255,0.7)"/>
+                    <use href="#wave" x="48" y="3" fill="rgba(255,255,255,0.5)"/>
+                    <use href="#wave" x="48" y="5" fill="rgba(255,255,255,0.3)"/>
+                    <use href="#wave" x="48" y="7" fill="#ffffff"/>
                 </g>
             </svg>
         </div>
-        <section class="bg-white border-b py-8">
-            <div class="container max-w-5xl mx-auto m-8">
-                <h2 class="w-full my-2 text-5xl font-bold leading-tight text-center text-gray-800">
-                    About
-                </h2>
-                <div class="w-full mb-4">
-                    <div class="h-1 mx-auto w-64 opacity-25 my-0 py-0 rounded-t　bg-gradient-to-r from-[#d53369] to-[#daae51]"></div>
-                </div>
-                <div>
-                    <div class="flex">
-                        <div class="w-10 h-10">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512">
-                                <path
-                                    d="M323.4 85.2l-96.8 78.4c-16.1 13-19.2 36.4-7 53.1c12.9 17.8 38 21.3 55.3 7.8l99.3-77.2c7-5.4 17-4.2 22.5 2.8s4.2 17-2.8 22.5l-20.9 16.2L512 316.8 512 128l-.7 0-3.9-2.5L434.8 79c-15.3-9.8-33.2-15-51.4-15c-21.8 0-43 7.5-60 21.2zm22.8 124.4l-51.7 40.2C263 274.4 217.3 268 193.7 235.6c-22.2-30.5-16.6-73.1 12.7-96.8l83.2-67.3c-11.6-4.9-24.1-7.4-36.8-7.4C234 64 215.7 69.6 200 80l-72 48 0 224 28.2 0 91.4 83.4c19.6 17.9 49.9 16.5 67.8-3.1c5.5-6.1 9.2-13.2 11.1-20.6l17 15.6c19.5 17.9 49.9 16.6 67.8-2.9c4.5-4.9 7.8-10.6 9.9-16.5c19.4 13 45.8 10.3 62.1-7.5c17.9-19.5 16.6-49.9-2.9-67.8l-134.2-123zM16 128c-8.8 0-16 7.2-16 16L0 352c0 17.7 14.3 32 32 32l32 0c17.7 0 32-14.3 32-32l0-224-80 0zM48 320a16 16 0 1 1 0 32 16 16 0 1 1 0-32zM544 128l0 224c0 17.7 14.3 32 32 32l32 0c17.7 0 32-14.3 32-32l0-208c0-8.8-7.2-16-16-16l-80 0zm32 208a16 16 0 1 1 32 0 16 16 0 1 1 -32 0z"/>
+    </div>
+
+    <!-- 機能紹介セクション -->
+    <section id="features" class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 text-gray-900">
+                主な機能
+            </h2>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+                <!-- 機能カード1: プラン作成 -->
+                <div
+                    class="group relative bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                    <div
+                        class="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-blue-400 to-teal-400 rounded-full opacity-50 blur-2xl group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative">
+                        <div
+                            class="w-14 h-14 mb-6 bg-gradient-to-br from-blue-400 to-teal-400 rounded-xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                         </div>
-                        <h3 class="text-3xl text-gray-800 font-bold leading-none mb-3">
-                            シンプルな操作性
-                        </h3>
+                        <h3 class="text-xl font-bold mb-4">詳細なプラン作成</h3>
+                        <p class="text-gray-600">
+                            日時、写真、メモを自由に組み合わせて、理想の旅程を作成できます。
+                        </p>
                     </div>
-                    <div>
-                        <p class="text-gray-600 mb-8">
-                            誰でも簡単に旅行のしおりを作成。
+                </div>
+
+                <!-- 機能カード2: リスト管理 -->
+                <div
+                    class="group relative bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                    <div
+                        class="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-blue-400 to-teal-400 rounded-full opacity-50 blur-2xl group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative">
+                        <div
+                            class="w-14 h-14 mb-6 bg-gradient-to-br from-blue-400 to-teal-400 rounded-xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">持ち物・お土産リスト</h3>
+                        <p class="text-gray-600">
+                            テンプレート付きの便利なチェックリストで、準備も買い物も抜かりなく。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 機能カード3: 共有機能 -->
+                <div
+                    class="group relative bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100">
+                    <div
+                        class="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-blue-400 to-teal-400 rounded-full opacity-50 blur-2xl group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative">
+                        <div
+                            class="w-14 h-14 mb-6 bg-gradient-to-br from-blue-400 to-teal-400 rounded-xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">簡単共有・編集</h3>
+                        <p class="text-gray-600">
+                            仲間と共同編集できる。旅の準備も皆で楽しく。
                         </p>
                     </div>
                 </div>
             </div>
-        </section>
-        <section class="bg-white border-b py-8">
-            <div class="container mx-auto flex flex-wrap pt-4 pb-12">
-                <h2 class="w-full my-2 text-5xl font-bold leading-tight text-center text-gray-800">
-                    Title
-                </h2>
-                <div class="w-full mb-4">
-                    <div class="h-1 mx-auto w-64 opacity-25 my-0 py-0 rounded-t　bg-gradient-to-r from-[#d53369] to-[#daae51]"></div>
-                </div>
-                <div class="w-full md:w-1/3 p-6 flex flex-col grow shrink">
-                    <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow-sm">
-                        <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                            <p class="w-full text-gray-600 text-xs md:text-sm px-6">
-                                xGETTING STARTED
-                            </p>
-                            <div class="w-full font-bold text-xl text-gray-800 px-6">
-                                Lorem ipsum dolor sit amet.
-                            </div>
-                            <p class="text-gray-800 text-base px-6 mb-5">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc
-                                commodo
-                                posuere et sit amet ligula.
-                            </p>
-                        </a>
-                    </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow-sm p-6">
-                        <div class="flex items-center justify-start">
-                            <button
-                                class="mx-auto lg:mx-0 hover:underline bg-gradient-to-r from-[#d53369] to-[#daae51] text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg focus:outline-hidden focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
-                                Action
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-full md:w-1/3 p-6 flex flex-col grow shrink">
-                    <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow-sm">
-                        <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                            <p class="w-full text-gray-600 text-xs md:text-sm px-6">
-                                xGETTING STARTED
-                            </p>
-                            <div class="w-full font-bold text-xl text-gray-800 px-6">
-                                Lorem ipsum dolor sit amet.
-                            </div>
-                            <p class="text-gray-800 text-base px-6 mb-5">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc
-                                commodo
-                                posuere et sit amet ligula.
-                            </p>
-                        </a>
-                    </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow-sm p-6">
-                        <div class="flex items-center justify-center">
-                            <button
-                                class="mx-auto lg:mx-0 hover:underline bg-gradient-to-r from-[#d53369] to-[#daae51] text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg focus:outline-hidden focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
-                                Action
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="w-full md:w-1/3 p-6 flex flex-col grow shrink">
-                    <div class="flex-1 bg-white rounded-t rounded-b-none overflow-hidden shadow-sm">
-                        <a href="#" class="flex flex-wrap no-underline hover:no-underline">
-                            <p class="w-full text-gray-600 text-xs md:text-sm px-6">
-                                xGETTING STARTED
-                            </p>
-                            <div class="w-full font-bold text-xl text-gray-800 px-6">
-                                Lorem ipsum dolor sit amet.
-                            </div>
-                            <p class="text-gray-800 text-base px-6 mb-5">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam at ipsum eu nunc
-                                commodo
-                                posuere et sit amet ligula.
-                            </p>
-                        </a>
-                    </div>
-                    <div class="flex-none mt-auto bg-white rounded-b rounded-t-none overflow-hidden shadow-sm p-6">
-                        <div class="flex items-center justify-end">
-                            <button
-                                class="mx-auto lg:mx-0 hover:underline bg-gradient-to-r from-[#d53369] to-[#daae51] text-white font-bold rounded-full my-6 py-4 px-8 shadow-lg focus:outline-hidden focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
-                                Action
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <!-- Change the colour #f8fafc to match the previous section colour -->
-        <svg class="wave-top" viewBox="0 0 1439 147" version="1.1" xmlns="http://www.w3.org/2000/svg"
-             xmlns:xlink="http://www.w3.org/1999/xlink">
-            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                <g transform="translate(-1.000000, -14.000000)" fill-rule="nonzero">
-                    <g class="wave" fill="#f8fafc">
-                        <path
-                            d="M1440,84 C1383.555,64.3 1342.555,51.3 1317,45 C1259.5,30.824 1206.707,25.526 1169,22 C1129.711,18.326 1044.426,18.475 980,22 C954.25,23.409 922.25,26.742 884,32 C845.122,37.787 818.455,42.121 804,45 C776.833,50.41 728.136,61.77 713,65 C660.023,76.309 621.544,87.729 584,94 C517.525,105.104 484.525,106.438 429,108 C379.49,106.484 342.823,104.484 319,102 C278.571,97.783 231.737,88.736 205,84 C154.629,75.076 86.296,57.743 0,32 L0,0 L1440,0 L1440,84 Z"
-                        ></path>
-                    </g>
-                    <g transform="translate(1.000000, 15.000000)" fill="#FFFFFF">
-                        <g transform="translate(719.500000, 68.500000) rotate(-180.000000) translate(-719.500000, -68.500000) ">
-                            <path
-                                d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496"
-                                opacity="0.100000001"></path>
-                            <path
-                                d="M100,104.708498 C277.413333,72.2345949 426.147877,52.5246657 546.203633,45.5787101 C666.259389,38.6327546 810.524845,41.7979068 979,55.0741668 C931.069965,56.122511 810.303266,74.8455141 616.699903,111.243176 C423.096539,147.640838 250.863238,145.462612 100,104.708498 Z"
-                                opacity="0.100000001"
-                            ></path>
-                            <path
-                                d="M1046,51.6521276 C1130.83045,29.328812 1279.08318,17.607883 1439,40.1656806 L1439,120 C1271.17211,77.9435312 1140.17211,55.1609071 1046,51.6521276 Z"
-                                opacity="0.200000003"></path>
-                        </g>
-                    </g>
-                </g>
-            </g>
-        </svg>
-        <section class="container mx-auto text-center py-6 mb-12">
-            <h2 class="w-full my-2 text-5xl font-bold leading-tight text-center text-white">
-                Call to Action
+        </div>
+    </section>
+
+    <!-- 使い方セクション -->
+    <section class="py-24 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 text-gray-900">
+                3ステップで簡単作成
             </h2>
-            <div class="w-full mb-4">
-                <div class="h-1 mx-auto bg-white w-1/6 opacity-25 my-0 py-0 rounded-t"></div>
+            <div class="grid lg:grid-cols-3 gap-12">
+                <!-- ステップ1 -->
+                <div class="relative group">
+                    <div
+                        class="absolute -inset-1 bg-gradient-to-r from-blue-400 to-teal-400 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative bg-white p-8 rounded-lg">
+                        <div class="text-6xl font-bold text-blue-400 mb-4">01</div>
+                        <h3 class="text-2xl font-bold mb-4">プランを作成</h3>
+                        <p class="text-gray-600">
+                            旅行のタイトルと日程を設定するだけで、すぐにプラン作成を始められます。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ステップ2 -->
+                <div class="relative group">
+                    <div
+                        class="absolute -inset-1 bg-gradient-to-r from-blue-400 to-teal-400 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative bg-white p-8 rounded-lg">
+                        <div class="text-6xl font-bold text-teal-400 mb-4">02</div>
+                        <h3 class="text-2xl font-bold mb-4">スケジュールを追加</h3>
+                        <p class="text-gray-600">
+                            時間、場所、写真を追加。ドラッグ&ドロップで簡単に予定を調整できます。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ステップ3 -->
+                <div class="relative group">
+                    <div
+                        class="absolute -inset-1 bg-gradient-to-r from-blue-400 to-teal-400 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative bg-white p-8 rounded-lg">
+                        <div class="text-6xl font-bold text-blue-400 mb-4">03</div>
+                        <h3 class="text-2xl font-bold mb-4">仲間と共有</h3>
+                        <p class="text-gray-600">
+                            URLを共有するだけで、みんなで同時に編集できます。
+                        </p>
+                    </div>
+                </div>
             </div>
-            <h3 class="my-4 text-3xl leading-tight">
-                Main Hero Message to sell yourself!
-            </h3>
-            <button
-                class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full my-6 py-4 px-8 shadow-lg focus:outline-hidden focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
-                Action!
-            </button>
-        </section>
-    </div>
+        </div>
+    </section>
+
+    <!-- デモセクション -->
+    <section class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8">
+                    <h2 class="text-3xl sm:text-4xl font-bold leading-relaxed">
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
+                            直感的な操作で、
+                        </span>
+                        <br>
+                        プラン作成が驚くほど簡単に
+                    </h2>
+                    <div class="space-y-6">
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-teal-400 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">ドラッグ&ドロップで予定を調整</h3>
+                                <p class="text-gray-600">予定の順番変更も、時間の調整も、マウス操作だけで完結。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-400 to-teal-400 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold mb-2">写真とファイルを自由に追加</h3>
+                                <p class="text-gray-600">チケットの画像や、参考にしたいWebサイトなども一緒に保存。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="relative rounded-xl overflow-hidden shadow-2xl max-h-[500px] mx-auto max-w-4xl">
+                        <img src="{{ asset('images/mockup/mockup.png') }}" alt="デモ画面"
+                             class="w-full h-full object-contain">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- お客様の声セクション -->
+    <section class="py-24 bg-gray-50" id="voice">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 text-gray-900">
+                ユーザーからの声
+            </h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- レビュー1 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <img class="h-12 w-12 rounded-full object-cover"
+                                 src="{{ asset('images/voice/voice1.png') }}" alt="ユーザー1">
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold">20代前半・女性</h4>
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        友達との旅行計画が格段に楽になりました。みんなで同時に編集できるのが便利です！
+                    </p>
+                </div>
+
+                <!-- レビュー2 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <img class="h-12 w-12 rounded-full object-cover"
+                                 src="{{ asset('images/voice/voice2.png') }}" alt="ユーザー1">
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold">20代前半・男性</h4>
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        旅行に必要な情報をこれ一つで一元管理できるので、とっても便利です！！！
+                    </p>
+                </div>
+
+                <!-- レビュー3 -->
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="flex-shrink-0">
+                            <img class="h-12 w-12 rounded-full object-cover"
+                                 src="{{ asset('images/voice/voice3.png') }}" alt="ユーザー1">
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-bold">20代後半・女性</h4>
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        持ち物リストにチェックマークをつけれるので、忘れ物を防ぐことができます！！
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Q&A セクション -->
+    <section class="py-24 bg-white" id="question">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-16 text-gray-900">
+                よくある質問
+            </h2>
+            <div class="w-full max-w-3xl mx-auto">
+                <div class="divide-y divide-slate-200 px-6 border-gray-200 border rounded-lg mb-4 cursor-pointer">
+                    <div x-data="{ expanded: false }" class="py-2">
+                        <div>
+                            <div
+                                id="faqs-title-01"
+                                type="button"
+                                class="flex items-center justify-between w-full text-left font-semibold py-2 text-lg"
+                                @click="expanded = !expanded"
+                                :aria-expanded="expanded"
+                                aria-controls="faqs-text-01"
+                            >
+                                <span>無料で使えますか？</span>
+                                <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center rotate-90 transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            id="faqs-text-01"
+                            role="region"
+                            aria-labelledby="faqs-title-01"
+                            class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+                            :class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                        >
+                            <div class="overflow-hidden">
+                                <p class="pb-3 text-base">
+                                    全ての機能を無料で使用することができます。<br>
+                                    (会員登録が必要です。会員登録ももちろん無料です。)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-slate-200 px-6 border-gray-200 border rounded-lg mb-4 cursor-pointer">
+                    <div x-data="{ expanded: false }" class="py-2">
+                        <div>
+                            <div
+                                id="faqs-title-01"
+                                type="button"
+                                class="flex items-center justify-between w-full text-left font-semibold py-2 text-lg"
+                                @click="expanded = !expanded"
+                                :aria-expanded="expanded"
+                                aria-controls="faqs-text-01"
+                            >
+                                <span>共有したプランは誰でも編集できますか？</span>
+                                <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center rotate-90 transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            id="faqs-text-01"
+                            role="region"
+                            aria-labelledby="faqs-title-01"
+                            class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+                            :class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                        >
+                            <div class="overflow-hidden">
+                                <p class="pb-3 text-base">
+                                    プラン作成者が共有パスワード設定していただければ、誰でも編集することが可能です。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-slate-200 px-6 border-gray-200 border rounded-lg mb-4 cursor-pointer">
+                    <div x-data="{ expanded: false }" class="py-2">
+                        <div>
+                            <div
+                                id="faqs-title-01"
+                                type="button"
+                                class="flex items-center justify-between w-full text-left font-semibold py-2 text-lg"
+                                @click="expanded = !expanded"
+                                :aria-expanded="expanded"
+                                aria-controls="faqs-text-01"
+                            >
+                                <span>共有パスワードを忘れてしまいました。</span>
+                                <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center rotate-90 transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            id="faqs-text-01"
+                            role="region"
+                            aria-labelledby="faqs-title-01"
+                            class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+                            :class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                        >
+                            <div class="overflow-hidden">
+                                <p class="pb-3 text-base">
+                                    プラン作成者が、しおり編集ページにて共有パスワードの変更が可能となっております。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-slate-200 px-6 border-gray-200 border rounded-lg mb-4 cursor-pointer">
+                    <div x-data="{ expanded: false }" class="py-2">
+                        <div>
+                            <div
+                                id="faqs-title-01"
+                                type="button"
+                                class="flex items-center justify-between w-full text-left font-semibold py-2 text-lg"
+                                @click="expanded = !expanded"
+                                :aria-expanded="expanded"
+                                aria-controls="faqs-text-01"
+                            >
+                                <span>スマートフォンでも使えますか？</span>
+                                <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center rotate-90 transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            id="faqs-text-01"
+                            role="region"
+                            aria-labelledby="faqs-title-01"
+                            class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+                            :class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                        >
+                            <div class="overflow-hidden">
+                                <p class="pb-3 text-base">
+                                    はい、スマートフォンやタブレットなど、様々なデバイスに対応しています。専用アプリのインストールは不要で、ブラウザから快適にご利用いただけます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divide-y divide-slate-200 px-6 border-gray-200 border rounded-lg mb-4 cursor-pointer">
+                    <div x-data="{ expanded: false }" class="py-2">
+                        <div>
+                            <div
+                                id="faqs-title-01"
+                                type="button"
+                                class="flex items-center justify-between w-full text-left font-semibold py-2 text-lg"
+                                @click="expanded = !expanded"
+                                :aria-expanded="expanded"
+                                aria-controls="faqs-text-01"
+                            >
+                                <span>過去のプランは保存されますか？</span>
+                                <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                    <rect y="7" width="16" height="2" rx="1"
+                                          class="transform origin-center rotate-90 transition duration-200 ease-out"
+                                          :class="{'!rotate-180': expanded}"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div
+                            id="faqs-text-01"
+                            role="region"
+                            aria-labelledby="faqs-title-01"
+                            class="grid text-sm text-slate-600 overflow-hidden transition-all duration-300 ease-in-out"
+                            :class="expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                        >
+                            <div class="overflow-hidden">
+                                <p class="pb-3 text-base">
+                                    はい、作成した全てのプランは、いつでも確認・編集が可能です。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 追加の質問がある場合のCTA -->
+            {{--            <div class="text-center mt-12">--}}
+            {{--                <p class="text-gray-600 mb-4">その他のご質問がございましたら、お気軽にお問い合わせください。</p>--}}
+            {{--                <a href="#contact"--}}
+            {{--                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-blue-400 to-teal-400 rounded-full hover:from-blue-500 hover:to-teal-500 transition-all duration-200">--}}
+            {{--                    お問い合わせ--}}
+            {{--                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">--}}
+            {{--                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"--}}
+            {{--                              d="M14 5l7 7m0 0l-7 7m7-7H3"/>--}}
+            {{--                    </svg>--}}
+            {{--                </a>--}}
+            {{--            </div>--}}
+        </div>
+    </section>
+
+    <!-- CTA セクション -->
+    <section class="relative py-24">
+        <!-- 背景画像とオーバーレイ -->
+        <div class="absolute inset-0">
+            <img src="{{ asset('images/cta/cta.jpeg') }}" alt="背景" class="w-full h-full object-cover">
+            <!-- 白色オーバーレイ -->
+            <div class="absolute inset-0 bg-white/70"></div>
+        </div>
+
+        <!-- コンテンツ -->
+        <div class="relative container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold text-gray-900 mb-12 text-center">旅の思い出作りを、<br class = "block sm:hidden">もっとスマートに</h2>
+            <a href="{{ route('register') }}"
+               class="group inline-flex items-center justify-center px-8 py-4
+                   text-base font-medium text-white transition-all duration-300
+                   bg-gradient-to-r from-blue-500 to-teal-400
+                   hover:from-blue-600 hover:to-teal-500
+                   rounded-full shadow-lg hover:shadow-xl
+                   transform hover:scale-[1.02]
+                   hover:shadow-[0_0_25px_rgba(59,130,246,0.5)]">
+                無料で始める
+                <svg class="w-5 h-5 ml-2 transition-transform duration-300
+                       group-hover:translate-x-1 group-hover:scale-110"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+            </a>
+        </div>
+    </section>
 @endsection
+
+<style>
+    /* 波形アニメーション */
+    .waves {
+        position: relative;
+        width: 100%;
+        height: 15vh;
+        margin-bottom: -7px;
+        min-height: 100px;
+        max-height: 150px;
+    }
+
+    .parallax > use {
+        animation: move-forever 25s cubic-bezier(.55, .5, .45, .5) infinite;
+    }
+
+    .parallax > use:nth-child(1) {
+        animation-delay: -2s;
+        animation-duration: 7s;
+    }
+
+    .parallax > use:nth-child(2) {
+        animation-delay: -3s;
+        animation-duration: 10s;
+    }
+
+    .parallax > use:nth-child(3) {
+        animation-delay: -4s;
+        animation-duration: 13s;
+    }
+
+    .parallax > use:nth-child(4) {
+        animation-delay: -5s;
+        animation-duration: 20s;
+    }
+
+    @keyframes move-forever {
+        0% {
+            transform: translate3d(-90px, 0, 0);
+        }
+        100% {
+            transform: translate3d(85px, 0, 0);
+        }
+    }
+</style>
+

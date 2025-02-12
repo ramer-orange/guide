@@ -7,6 +7,22 @@
 
     <title>@yield('title', 'しおり')</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('images/ogp/ogp.png') }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:image" content="{{ asset('images/ogp/ogp.png') }}">
+
+    @yield('meta')
+
     <!-- Fonts -->
 
     @livewireStyles
