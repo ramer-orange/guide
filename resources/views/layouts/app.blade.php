@@ -7,6 +7,10 @@
 
     <title>@yield('title', 'しおり')</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
@@ -30,7 +34,6 @@
     'resources/js/share-button.js',
     'resources/js/validation-scroll.js',
     'resources/js/alert-modal.js',
-    'resources/js/accordion.js',
     ])
 
     @livewireScripts

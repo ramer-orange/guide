@@ -241,8 +241,8 @@
                 </div>
                 <div class="relative">
                     <div class="relative rounded-xl overflow-hidden shadow-2xl max-h-[500px] mx-auto max-w-4xl">
-                        <img src="{{ asset('images/mockup/mockup.jpg') }}" alt="デモ画面"
-                             class="w-full h-full object-cover">
+                        <img src="{{ asset('images/mockup/mockup.png') }}" alt="デモ画面"
+                             class="w-full h-full object-contain">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     </div>
                 </div>
@@ -265,7 +265,7 @@
                                  src="{{ asset('images/voice/voice1.png') }}" alt="ユーザー1">
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-bold">田中さん</h4>
+                            <h4 class="text-lg font-bold">20代前半・女性</h4>
                             <div class="flex text-yellow-400">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path
@@ -303,7 +303,7 @@
                                  src="{{ asset('images/voice/voice2.png') }}" alt="ユーザー1">
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-bold">田中さん</h4>
+                            <h4 class="text-lg font-bold">20代前半・男性</h4>
                             <div class="flex text-yellow-400">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path
@@ -329,7 +329,7 @@
                         </div>
                     </div>
                     <p class="text-gray-600">
-                        友達との旅行計画が格段に楽になりました。みんなで同時に編集できるのが便利です！
+                        旅行に必要な情報をこれ一つで一元管理できるので、とっても便利です！！！
                     </p>
                 </div>
 
@@ -341,7 +341,7 @@
                                  src="{{ asset('images/voice/voice3.png') }}" alt="ユーザー1">
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-bold">田中さん</h4>
+                            <h4 class="text-lg font-bold">20代後半・女性</h4>
                             <div class="flex text-yellow-400">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                     <path
@@ -367,7 +367,7 @@
                         </div>
                     </div>
                     <p class="text-gray-600">
-                        友達との旅行計画が格段に楽になりました。みんなで同時に編集できるのが便利です！
+                        持ち物リストにチェックマークをつけれるので、忘れ物を防ぐことができます！！
                     </p>
                 </div>
             </div>

@@ -4,7 +4,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start mb-12">
             <div class="mb-8 md:mb-0">
                 <a href="{{ route('home') }}" class="flex items-center space-x-2">
-                    <span class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">{{ config('app.name') }}</span>
+                    <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="h-12">
                 </a>
                 <p class="mt-4 text-gray-600 max-w-sm">旅の計画をもっと簡単に、もっと楽しく。<br>あなたの思い出作りをサポートします。</p>
             </div>
@@ -24,7 +24,7 @@
             <div>
                 <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">サポート</h3>
                 <ul class="space-y-3">
-                    <li><a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">お問い合わせ</a></li>
+                    {{-- <li><a href="#" class="text-gray-600 hover:text-gray-900 transition-colors">お問い合わせ</a></li> --}}
                     <li><a href="{{ url('/#question') }}" class="text-gray-600 hover:text-gray-900 transition-colors">よくある質問</a></li>
                 </ul>
             </div>
@@ -41,7 +41,7 @@
 
         <!-- コピーライト -->
         <div class="mt-12 pt-8 border-t border-gray-200">
-            <p class="text-gray-400 text-sm text-center">&copy; {{ date('Y') }} config('app.name'). All rights reserved.</p>
+            <p class="text-gray-400 text-sm text-center">&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
         </div>
     </div>
 </footer>
