@@ -6,7 +6,10 @@ services:
             - ./nginx/templates:/etc/nginx/templates
             - ./nginx/certs/:/etc/nginx/certs
         ports:
+            - 80:80
             - 443:443
+        networks:
+            - sail
         depends_on:
             - laravel.test
     laravel.test:
@@ -112,7 +115,7 @@ services:
         networks:
             - sail
     phpmyadmin:
-        image: arm64v8/phpmyadmin
+        image: phpmyadmin/phpmyadmin:latest
         ports:
             - '8080:80'
         environment:
