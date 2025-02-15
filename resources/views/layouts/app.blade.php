@@ -21,6 +21,8 @@
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:image" content="{{ asset('images/ogp/ogp.png') }}">
 
+    <meta name="color-scheme" content="light dark">
+
     @yield('meta')
 
     <!-- Fonts -->

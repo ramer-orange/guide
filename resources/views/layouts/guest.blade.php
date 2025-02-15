@@ -11,6 +11,8 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
 
+    <meta name="color-scheme" content="light dark">
+
     <!-- Scripts -->
     @livewireStyles
 

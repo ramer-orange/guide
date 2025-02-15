@@ -34,7 +34,7 @@
                     プラン
                 </h2>
 
-                <div class="mt-8 p-2 md:p-6 bg-gray-50 rounded-lg shadow-inner relative">
+                <div class="mt-8 p-4 md:p-6 bg-gray-50 rounded-lg shadow-inner relative">
                     <div wire:sortable="updatePlanOrder" wire:sortable.options="{ animation: 100, scroll: false  }"
                          class="flex gap-4 flex-col">
                         @foreach($plans as $index => $plan)
@@ -42,7 +42,7 @@
                                  wire:key="plan-{{ $plan['id'] }}">
                                 <div wire:sortable.handle class="cursor-grab">
                                     <div>
-                                        <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2">
+                                        <div class="translate-x-1 -translate-y-2 md:-translate-x-2 md:-translate-y-2 pt-4">
                                             <x-button.drag-button></x-button.drag-button>
                                         </div>
                                         <!-- 日付と時間 -->
