@@ -23,6 +23,8 @@
 
     <meta name="color-scheme" content="light dark">
 
+    <meta name="google-adsense-account" content="ca-pub-1288717134141444">
+
     @yield('meta')
 
     <!-- Fonts -->
