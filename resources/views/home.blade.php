@@ -208,7 +208,7 @@
                             直感的な操作で、
                         </span>
                         <br>
-                        プラン作成が驚くほど簡単に
+                        しおり作成が驚くほど簡単に
                     </h2>
                     <div class="space-y-6">
                         <div class="flex items-start gap-4">
