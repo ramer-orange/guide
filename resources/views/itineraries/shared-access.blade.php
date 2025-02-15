@@ -6,15 +6,15 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+    <meta name="description" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
     <meta name="robots" content="noindex,nofollow">
 
     <!-- OGP -->
-    <meta property="og:title" content="PLAGINE | {{ config('app.name') }}">
+    <meta property="og:title" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
     <meta property="og:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
 
     <!-- Twitter -->
-    <meta name="twitter:title" content="PLAGINE | {{ config('app.name') }}">
+    <meta name="twitter:title" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
     <meta name="twitter:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
 @endsection
 
