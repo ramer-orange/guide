@@ -6,18 +6,17 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="config('app.name') - 利用規約">
-    <meta name="description" content="config('app.name')の利用規約です。本サイトの利用にあたってのルールや注意事項についてご確認ください。">
+    <meta name="title" content="{{ config('app.name') }} - 利用規約">
+    <meta name="description" content="{{ config('app.name') }}の利用規約です。本サイトの利用にあたってのルールや注意事項についてご確認ください。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="config('app.name') - 利用規約">
-    <meta property="og:description" content="config('app.name')の利用規約です。ユーザーが安心してサービスをご利用いただくために、利用条件や注意事項を定めています。">
+    <meta property="og:title" content="{{ config('app.name') }} - 利用規約">
+    <meta property="og:description" content="{{ config('app.name') }}の利用規約です。ユーザーが安心してサービスをご利用いただくために、利用条件や注意事項を定めています。">
     <!-- OGP画像は共通の場合、レイアウト側で設定している場合はここに記載しなくてもOK -->
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="config('app.name') - 利用規約">
-    <meta property="twitter:description" content="config('app.name')の利用規約です。本サイト利用に際するルールや注意事項について詳しくご説明しています。">
-    <!-- Twitter用の画像も共通の場合は、レイアウト側での設定を検討してください -->
+    <meta property="twitter:title" content="{{ config('app.name') }} - 利用規約">
+    <meta property="twitter:description" content="{{ config('app.name') }}の利用規約です。本サイト利用に際するルールや注意事項について詳しくご説明しています。">
 @endsection
 
 
