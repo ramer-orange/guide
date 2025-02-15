@@ -6,16 +6,16 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="しおり一覧 - config('app.name')">
-    <meta name="description" content="config('app.name')のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
+    <meta name="title" content="しおり一覧 - {{ config('app.name') }}">
+    <meta name="description" content="{{ config('app.name') }}のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="しおり一覧 - config('app.name')">
-    <meta property="og:description" content="config('app.name')のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
+    <meta property="og:title" content="しおり一覧 - {{ config('app.name') }}">
+    <meta property="og:description" content="{{ config('app.name') }}のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="しおり一覧 - config('app.name')">
-    <meta property="twitter:description" content="config('app.name')のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
+    <meta property="twitter:title" content="しおり一覧 - {{ config('app.name') }}">
+    <meta property="twitter:description" content="{{ config('app.name') }}のしおり一覧ページです。作成した旅行しおりを管理・編集できます。共有機能を使って他のメンバーと旅行プランを共有することもできます。">
 @endsection
 
 @section('content')

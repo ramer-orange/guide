@@ -6,19 +6,19 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="config('app.name') - 旅の計画をもっと簡単に、もっと楽しく">
+    <meta name="title" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
     <meta name="description"
-          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+          content="{{ config('app.name') }}は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="config('app.name') - 旅行計画をもっと楽しく、もっと簡単に">
+    <meta property="og:title" content="{{ config('app.name') }} - 旅行計画をもっと楽しく、もっと簡単に">
     <meta property="og:description"
-          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+          content="{{ config('app.name') }}は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="config('app.name') - 旅行計画をもっと楽しく、もっと簡単に">
+    <meta property="twitter:title" content="{{ config('app.name') }} - 旅行計画をもっと楽しく、もっと簡単に">
     <meta property="twitter:description"
-          content="config('app.name')は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
+          content="{{ config('app.name') }}は、旅行計画を簡単に作成・共有できるサービスです。スケジュール管理、持ち物リスト、メンバーとの共同編集など、旅行の準備に必要な機能が全て無料で使えます。">
 @endsection
 
 @section('content')

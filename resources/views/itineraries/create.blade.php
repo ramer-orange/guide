@@ -6,16 +6,16 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="しおり作成 - config('app.name')">
-    <meta name="description" content="config('app.name')のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
+    <meta name="title" content="しおり作成 - {{ config('app.name') }}">
+    <meta name="description" content="{{ config('app.name') }}のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="しおり作成 - config('app.name')">
-    <meta property="og:description" content="config('app.name')のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
+    <meta property="og:title" content="しおり作成 - {{ config('app.name') }}">
+    <meta property="og:description" content="{{ config('app.name') }}のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="しおり作成 - config('app.name')">
-    <meta property="twitter:description" content="config('app.name')のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
+    <meta property="twitter:title" content="しおり作成 - {{ config('app.name') }}">
+    <meta property="twitter:description" content="{{ config('app.name') }}のしおり作成ページです。旅行の日程、プラン、持ち物リストなどを簡単に作成できます。メンバーとの共有機能で、みんなで旅行の準備を進めることができます。">
 @endsection
 
 @section('content')

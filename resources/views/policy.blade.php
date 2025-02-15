@@ -6,16 +6,16 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="config('app.name') - プライバシーポリシー">
-    <meta name="description" content="config('app.name')のプライバシーポリシーです。ユーザーの個人情報の取り扱いや管理方法について、当社の方針を明示しています。">
+    <meta name="title" content="{{ config('app.name') }} - プライバシーポリシー">
+    <meta name="description" content="{{ config('app.name') }}のプライバシーポリシーです。ユーザーの個人情報の取り扱いや管理方法について、当社の方針を明示しています。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="config('app.name') - プライバシーポリシー">
-    <meta property="og:description" content="config('app.name')のプライバシーポリシーです。個人情報の収集方法、利用目的、第三者提供、開示方法などについてご確認いただけます。">
+    <meta property="og:title" content="{{ config('app.name') }} - プライバシーポリシー">
+    <meta property="og:description" content="{{ config('app.name') }}のプライバシーポリシーです。個人情報の収集方法、利用目的、第三者提供、開示方法などについてご確認いただけます。">
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="config('app.name') - プライバシーポリシー">
-    <meta property="twitter:description" content="config('app.name')のプライバシーポリシーです。ユーザーの個人情報の取り扱いに関する詳細な方針を掲載しています。">
+    <meta property="twitter:title" content="{{ config('app.name') }} - プライバシーポリシー">
+    <meta property="twitter:description" content="{{ config('app.name') }}のプライバシーポリシーです。ユーザーの個人情報の取り扱いに関する詳細な方針を掲載しています。">
 @endsection
 
 

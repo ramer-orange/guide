@@ -6,16 +6,16 @@
 
 @section('meta')
     <!-- Primary Meta Tags -->
-    <meta name="title" content="しおり編集 - config('app.name')">
-    <meta name="description" content="config('app.name')のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
+    <meta name="title" content="しおり編集 - {{ config('app.name') }}">
+    <meta name="description" content="{{ config('app.name') }}のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="しおり編集 - config('app.name')">
-    <meta property="og:description" content="config('app.name')のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
+    <meta property="og:title" content="しおり編集 - {{ config('app.name') }}">
+    <meta property="og:description" content="{{ config('app.name') }}のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
 
     <!-- Twitter -->
-    <meta property="twitter:title" content="しおり編集 - config('app.name')">
-    <meta property="twitter:description" content="config('app.name')のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
+    <meta property="twitter:title" content="しおり編集 - {{ config('app.name') }}">
+    <meta property="twitter:description" content="{{ config('app.name') }}のしおり編集ページです。旅行の日程、プラン、持ち物リスト、お土産リストなどを簡単に編集できます。ドラッグ&ドロップで順序の変更も可能です。">
 @endsection
 
 @section('content')
