@@ -10,11 +10,11 @@
     <meta name="robots" content="noindex,nofollow">
 
     <!-- OGP -->
-    <meta property="og:title" content="共有パスワード認証 | config('app.name')">
+    <meta property="og:title" content="PLAGINE | {{ config('app.name') }}">
     <meta property="og:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
 
     <!-- Twitter -->
-    <meta name="twitter:title" content="共有パスワード認証 | config('app.name')">
+    <meta name="twitter:title" content="PLAGINE | {{ config('app.name') }}">
     <meta name="twitter:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
 @endsection
 
