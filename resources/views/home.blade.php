@@ -26,7 +26,7 @@
     <div class="relative min-h-screen overflow-hidden">
         <!-- 背景画像 -->
         <div class="absolute inset-0">
-            <img src="{{ asset('images/mv/MV.jpeg') }}" alt="背景" class="w-full h-full object-cover">
+            <img src="{{ asset('images/mv/MV.webp') }}" alt="背景" class="w-full h-full object-cover lg:object-none">
             <!-- 画像の上に暗いオーバーレイを追加 -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/50 to-transparent"></div>
         </div>
@@ -241,8 +241,8 @@
                 </div>
                 <div class="relative">
                     <div class="relative rounded-xl overflow-hidden shadow-2xl max-h-[500px] mx-auto max-w-4xl">
-                        <img src="{{ asset('images/mockup/mockup.png') }}" alt="デモ画面"
-                             class="w-full h-full object-contain">
+                        <img src="{{ asset('images/mockup/mockup.webp') }}" alt="デモ画面"
+                             class="w-full h-full object-contain" loading="lazy">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     </div>
                 </div>
@@ -262,7 +262,7 @@
                     <div class="flex items-center mb-4">
                         <div class="flex-shrink-0">
                             <img class="h-12 w-12 rounded-full object-cover"
-                                 src="{{ asset('images/voice/voice1.png') }}" alt="ユーザー1">
+                                 src="{{ asset('images/voice/voice1.webp') }}" alt="ユーザー1" loading="lazy">
                         </div>
                         <div class="ml-4">
                             <h4 class="text-lg font-bold">20代前半・女性</h4>
@@ -300,7 +300,7 @@
                     <div class="flex items-center mb-4">
                         <div class="flex-shrink-0">
                             <img class="h-12 w-12 rounded-full object-cover"
-                                 src="{{ asset('images/voice/voice2.png') }}" alt="ユーザー1">
+                                 src="{{ asset('images/voice/voice2.webp') }}" alt="ユーザー1" loading="lazy">
                         </div>
                         <div class="ml-4">
                             <h4 class="text-lg font-bold">20代前半・男性</h4>
@@ -338,7 +338,7 @@
                     <div class="flex items-center mb-4">
                         <div class="flex-shrink-0">
                             <img class="h-12 w-12 rounded-full object-cover"
-                                 src="{{ asset('images/voice/voice3.png') }}" alt="ユーザー1">
+                                 src="{{ asset('images/voice/voice3.webp') }}" alt="ユーザー1" loading="lazy">
                         </div>
                         <div class="ml-4">
                             <h4 class="text-lg font-bold">20代後半・女性</h4>
@@ -577,19 +577,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 追加の質問がある場合のCTA -->
-            {{--            <div class="text-center mt-12">--}}
-            {{--                <p class="text-gray-600 mb-4">その他のご質問がございましたら、お気軽にお問い合わせください。</p>--}}
-            {{--                <a href="#contact"--}}
-            {{--                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-blue-400 to-teal-400 rounded-full hover:from-blue-500 hover:to-teal-500 transition-all duration-200">--}}
-            {{--                    お問い合わせ--}}
-            {{--                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">--}}
-            {{--                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"--}}
-            {{--                              d="M14 5l7 7m0 0l-7 7m7-7H3"/>--}}
-            {{--                    </svg>--}}
-            {{--                </a>--}}
-            {{--            </div>--}}
         </div>
     </section>
 
@@ -597,7 +584,7 @@
     <section class="relative py-24">
         <!-- 背景画像とオーバーレイ -->
         <div class="absolute inset-0">
-            <img src="{{ asset('images/cta/cta.jpeg') }}" alt="背景" class="w-full h-full object-cover">
+            <img src="{{ asset('images/cta/cta.webp') }}" alt="背景" class="w-full h-full object-cover" loading="lazy">
             <!-- 白色オーバーレイ -->
             <div class="absolute inset-0 bg-white/70"></div>
         </div>

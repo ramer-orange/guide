@@ -14,12 +14,12 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="{{ asset('images/ogp/ogp.png') }}">
+    <meta property="og:image" content="{{ asset('images/ogp/ogp.webp') }}">
 
     <!-- Twitter -->
     <meta property="twitter:url" content="{{ url()->current() }}">
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:image" content="{{ asset('images/ogp/ogp.png') }}">
+    <meta property="twitter:image" content="{{ asset('images/ogp/ogp.webp') }}">
 
     <meta name="color-scheme" content="light dark">
 
