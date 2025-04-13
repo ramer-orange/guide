@@ -35,4 +35,6 @@
 - **データベース:** MySQL 8.0
 - **開発環境:** Docker
 
+## ER図
+![Editor _ Mermaid Chart-2025-04-13-023724](https://github.com/user-attachments/assets/c763dea6-b6b7-4a25-8620-c0f4d08aaa12)
 
