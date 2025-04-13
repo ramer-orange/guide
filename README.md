@@ -34,3 +34,5 @@
 - **フロントエンド:** Livewire, JavaScript, Tailwind CSS
 - **データベース:** MySQL 8.0
 - **開発環境:** Docker
+
+
