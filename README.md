@@ -64,3 +64,33 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Production Docker Deployment
+
+This repository includes a production-oriented Docker stack in `docker-compose.prod.yml`.
+
+1. Copy the production environment template and edit the values for your VPS.
+
+```bash
+cp .env.production.example .env
+```
+
+2. Generate an application key.
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --force
+```
+
+3. Build and start the containers.
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+4. Run the database migrations.
+
+```bash
+docker compose -f docker-compose.prod.yml exec app php artisan migrate --force
+```
+
+The production stack serves the app through Nginx on `APP_PORT`, runs PHP-FPM in the app container, and persists MySQL data and uploaded files in Docker volumes.

@@ -4,22 +4,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItinerariesController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SharedPasswordController;
 use App\Http\Middleware\CheckAuthOrSharedAccess;
 
 //Route::view('/', 'welcome');
 //
-//Route::view('dashboard', 'dashboard')
-//    ->middleware(['auth', 'verified'])
-//    ->name('dashboard');
-//
-//Route::view('profile', 'profile')
-//    ->middleware(['auth'])
-//    ->name('profile');
-
 require __DIR__.'/auth.php';
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/dashboard', [ItinerariesController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
 
 Route::get('/itineraries/index', [ItinerariesController::class, 'index'])
     ->middleware('auth')
@@ -46,11 +43,12 @@ Route::get('/terms', function () {
     return view('terms');
 });
 
-
-
-
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
-
