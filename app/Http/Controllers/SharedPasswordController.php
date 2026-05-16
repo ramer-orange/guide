@@ -12,6 +12,8 @@ class SharedPasswordController extends Controller
     public function show($id)
     {
         $travelOverview = TravelOverview::findOrFail($id);
+        abort_unless($travelOverview->sharedPasswords?->isActive(), 404);
+
         return view('itineraries.shared-access', compact('travelOverview'));
     }
 
@@ -22,15 +24,16 @@ class SharedPasswordController extends Controller
         ]);
 
         $overview = TravelOverview::findOrFail($id);
-        if (! $overview->sharedPasswords || ! Hash::check($request->input('shared_password'), $overview->sharedPasswords->shared_password)) {
+        if (! $overview->sharedPasswords?->isActive()
+            || ! Hash::check($request->input('shared_password'), $overview->sharedPasswords->shared_password)) {
             return back()->withErrors([
-                'shared_password' => ['共有パスワードが一致しません']
+                'shared_password' => ['閲覧用パスワードが一致しないか、共有が無効です']
             ]);
         }
 
         $request->session()->passwordConfirmed();
 
-        // セッションで共有パスワードからの認証を管理
+        // セッションで閲覧用パスワードからの認証を管理
         session()->put("access_granted_$id", true);
 
         return redirect()->route('itineraries.edit', ['overview' => $id]);

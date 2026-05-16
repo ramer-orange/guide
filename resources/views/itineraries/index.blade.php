@@ -29,21 +29,23 @@
                 @else
                     <div class="space-y-4">
                         @foreach ($overviews as $overview)
+                            @php($isOwner = $overview->user_id === auth()->id())
                             <div
                                 class="bg-white dark:bg-gray-700 shadow-md rounded-lg p-4 hover:shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-150">
                                 <div class="flex justify-between items-center mb-2">
                                     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ $overview->title }}</h2>
                                     <div class="flex space-x-3 items-center">
                                         <!-- 共有アイコンボタン -->
-                                        <div
-                                            class="webShareButton text-indigo-600 hover:text-indigo-900 transition duration-150 transform hover:scale-110 cursor-pointer h-5 w-5 ml-5"
-                                            aria-label="共有"
-                                            title="共有"
+                                        <button
+                                            type="button"
+                                            class="webShareButton text-indigo-600 hover:text-indigo-900 transition duration-150 transform hover:scale-110 cursor-pointer h-6 w-6 ml-5"
+                                            aria-label="共有URLをコピー"
+                                            title="共有URLをコピー"
                                             data-share-url="{{ route('itineraries.edit', $overview->id) }}"
                                             data-share-title="しおりの編集"
                                             data-share-description="しおりの編集ページです">
                                             <x-button.share-button></x-button.share-button>
-                                        </div>
+                                        </button>
 
                                         <!-- 編集アイコンボタン -->
                                         <a href="{{ route('itineraries.edit', $overview->id) }}"
@@ -53,45 +55,51 @@
                                             <x-button.create-button></x-button.create-button>
                                         </a>
 
-                                        <!-- 削除ボタン -->
-                                        <button type="button"
-                                                class="openDeleteModalButton text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 block"
-                                                data-url="{{ route('itineraries.index.destroy', $overview->id) }}"
-                                                data-target="#deleteModal-{{ $overview->id }}"
-                                                aria-label="削除"
-                                                title="削除">
-                                            <x-button.trash-button></x-button.trash-button>
-                                        </button>
+                                        @if ($isOwner)
+                                            <!-- 削除ボタン -->
+                                            <button type="button"
+                                                    class="openDeleteModalButton text-red-600 hover:text-red-900 transition duration-150 transform hover:scale-110 block"
+                                                    data-url="{{ route('itineraries.index.destroy', $overview->id) }}"
+                                                    data-target="#deleteModal-{{ $overview->id }}"
+                                                    aria-label="削除"
+                                                    title="削除">
+                                                <x-button.trash-button></x-button.trash-button>
+                                            </button>
 
-                                        <!-- 削除確認モーダル -->
-                                        <div id="deleteModal-{{ $overview->id }}"
-                                             class="deleteModal fixed inset-0 flex items-center justify-center bg-gray-900/70 z-50 hidden pl-4 pr-4">
-                                            <div class="modalContent bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-md sm:max-w-lg lg:max-w-xl">
-                                                <h2 class="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-4">削除確認</h2>
-                                                <p class="text-sm sm:text-base text-gray-600 mb-6">本当に削除してもよろしいですか？この操作は取り消せません。</p>
-                                                <div class="flex justify-end space-x-2 sm:space-x-3">
-                                                    <!-- キャンセルボタン -->
-                                                    <button class="cancelButton px-3 py-2 sm:px-4 sm:py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm sm:text-base cursor-pointer">
-                                                        キャンセル
-                                                    </button>
-                                                    <!-- 削除ボタン -->
-                                                    <form method="post" class="deleteForm">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm sm:text-base cursor-pointer">
-                                                            削除する
+                                            <!-- 削除確認モーダル -->
+                                            <div id="deleteModal-{{ $overview->id }}"
+                                                 class="deleteModal fixed inset-0 flex items-center justify-center bg-gray-900/70 z-50 hidden pl-4 pr-4">
+                                                <div class="modalContent bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-md sm:max-w-lg lg:max-w-xl">
+                                                    <h2 class="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-4">削除確認</h2>
+                                                    <p class="text-sm sm:text-base text-gray-600 mb-6">本当に削除してもよろしいですか？この操作は取り消せません。</p>
+                                                    <div class="flex justify-end space-x-2 sm:space-x-3">
+                                                        <!-- キャンセルボタン -->
+                                                        <button class="cancelButton px-3 py-2 sm:px-4 sm:py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm sm:text-base cursor-pointer">
+                                                            キャンセル
                                                         </button>
-                                                    </form>
+                                                        <!-- 削除ボタン -->
+                                                        <form method="post" class="deleteForm">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm sm:text-base cursor-pointer">
+                                                                削除する
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                                 <!-- 概要欄 -->
                                 <p class="text-gray-600 dark:text-gray-300 mb-2">{{ $overview->overviewText }}</p>
                                 <!-- 作成日 -->
                                 <p class="text-gray-500 dark:text-gray-400 text-sm">
-                                    作成日: {{ $overview->created_at->format('Y-m-d') }}</p>
+                                    作成日: {{ $overview->created_at->format('Y-m-d') }}
+                                    @unless ($isOwner)
+                                        <span class="ml-2 rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">共有されたしおり</span>
+                                    @endunless
+                                </p>
                             </div>
                         @endforeach
 

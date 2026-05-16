@@ -16,6 +16,7 @@ use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
 use App\Models\SharedPassword;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 
@@ -46,11 +47,16 @@ class EditPlansForm extends Component
     public $shared_password_check;
     public $shared_password;
     public $shared_password_confirmation;
+    public $viewer_share_expires_at;
     public $showPasswordField = false;
+    public bool $isOwner = false;
+    public bool $canEdit = false;
 
     protected function rules(): array
     {
-        return (new SubmitFormRequest())->rules();
+        return array_merge((new SubmitFormRequest())->rules(), [
+            'viewer_share_expires_at' => 'nullable|date|after:now',
+        ]);
     }
 
 
@@ -62,7 +68,11 @@ class EditPlansForm extends Component
      */
     public function mount(TravelOverview $overview)
     {
+        abort_unless(Gate::allows('view', $overview), 403);
+
         $this->overview = $overview;
+        $this->isOwner = Gate::allows('manageViewerShare', $overview);
+        $this->canEdit = Gate::allows('update', $overview);
         $this->title = $overview->title;
         $this->overviewText = $overview->overviewText;
 
@@ -99,6 +109,7 @@ class EditPlansForm extends Component
 
         // 持ち物リストをロード
         $this->packingItems = $overview->packingItems
+            ->where('user_id', auth()->id())
             ->sortBy('order')
             ->values()
             ->map(function ($packingItem) {
@@ -109,6 +120,10 @@ class EditPlansForm extends Component
                     'order' => $packingItem->order,
                 ];
             })->toArray();
+
+        if (count($this->packingItems) === 0) {
+            $this->packingItems[] = $this->getDefaultPackingItems();
+        }
 
         // お土産リストをロード
         $this->souvenirs = $overview->souvenirs
@@ -137,10 +152,10 @@ class EditPlansForm extends Component
                 ];
             })->toArray();
 
-        //共有パスワードの存在確認
-        if ($overview->sharedPasswords->shared_password != null)
-        {
+        // 閲覧用パスワードの存在確認
+        if ($overview->sharedPasswords?->isActive()) {
             $this->shared_password_check = true;
+            $this->viewer_share_expires_at = $overview->sharedPasswords->expires_at?->format('Y-m-d\TH:i');
         }
     }
 
@@ -328,17 +343,42 @@ class EditPlansForm extends Component
     }
 
     /**
-     * 共有パスワード設定ボタンの表示、非表示
+     * 閲覧用パスワード設定ボタンの表示、非表示
      *
      * @return void
      */
     public function showPasswordFields()
     {
+        Gate::authorize('manageViewerShare', $this->overview);
+
         $this->showPasswordField = true;
+    }
+
+    public function disableViewerShare()
+    {
+        Gate::authorize('manageViewerShare', $this->overview);
+
+        $this->overview->sharedPasswords()->updateOrCreate(
+            ['travel_id' => $this->overview->id],
+            [
+                'shared_password' => null,
+                'expires_at' => null,
+                'disabled_at' => now(),
+            ]
+        );
+
+        session()->forget("access_granted_{$this->overview->id}");
+        $this->shared_password_check = false;
+        $this->shared_password = null;
+        $this->shared_password_confirmation = null;
+        $this->viewer_share_expires_at = null;
+        $this->showPasswordField = false;
     }
 
     public function submit()
     {
+        Gate::authorize('update', $this->overview);
+
         $this->validate();
 
         $this->overview->update([
@@ -407,19 +447,34 @@ class EditPlansForm extends Component
 
         //全て削除ボタンを押された時データベースの値も削除
         if ($this->allRemovePackingItemFlag == 1) {
-            PackingItem::where('travel_id', $this->overview->id)->delete();
+            PackingItem::where('travel_id', $this->overview->id)
+                ->where('user_id', auth()->id())
+                ->delete();
         }
 
         // 持ち物リスト更新
         // 持ち物リストを更新または作成
         foreach ($this->packingItems as $index => $packingItemData) {
-            $packingItem = $this->overview->packingItems()->firstOrNew(
-                ['id' => $packingItemData['id'] ?? null] // 検索条件
-            );
+            $packingItemId = $packingItemData['id'] ?? null;
+            $packingItem = is_numeric($packingItemId)
+                ? PackingItem::where('id', $packingItemId)
+                    ->where('travel_id', $this->overview->id)
+                    ->where('user_id', auth()->id())
+                    ->first()
+                : null;
+
+            if (! $packingItem) {
+                $packingItem = new PackingItem([
+                    'travel_id' => $this->overview->id,
+                    'user_id' => auth()->id(),
+                ]);
+            }
 
             $packingItem->packing_name = $packingItemData['packing_name'];
             $packingItem->packing_is_checked = $packingItemData['packing_is_checked'];
             $packingItem->order = $index;
+            $packingItem->travel_id = $this->overview->id;
+            $packingItem->user_id = auth()->id();
 
             // 保存 (更新または新規作成)
             $packingItem->save();
@@ -427,7 +482,10 @@ class EditPlansForm extends Component
 
         // 削除した持ち物をデータベースから削除
         if (!empty($this->deletePackingItems)) {
-            PackingItem::whereIn('id', $this->deletePackingItems)->delete();
+            PackingItem::whereIn('id', $this->deletePackingItems)
+                ->where('travel_id', $this->overview->id)
+                ->where('user_id', auth()->id())
+                ->delete();
         }
 
         // 全て削除ボタンが押された場合、関連するお土産を全削除
@@ -475,10 +533,20 @@ class EditPlansForm extends Component
             AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
         }
 
-        //共有パスワード設定
-        $this->overview->sharedPasswords()->update([
-            'shared_password' => $this->shared_password ? Hash::make($this->shared_password) : null,
-        ]);
+        if (Gate::allows('manageViewerShare', $this->overview) && $this->showPasswordField) {
+            $sharedPassword = $this->overview->sharedPasswords;
+
+            $this->overview->sharedPasswords()->updateOrCreate(
+                ['travel_id' => $this->overview->id],
+                [
+                    'shared_password' => $this->shared_password
+                        ? Hash::make($this->shared_password)
+                        : $sharedPassword?->shared_password,
+                    'expires_at' => $this->viewer_share_expires_at ?: null,
+                    'disabled_at' => null,
+                ]
+            );
+        }
 
         return redirect()->route('itineraries.edit', [$this->overview->id]);
     }
@@ -487,4 +555,5 @@ class EditPlansForm extends Component
     {
         return view('livewire.edit-plans-form');
     }
+
 }

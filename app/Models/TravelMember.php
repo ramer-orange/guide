@@ -4,14 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PackingItem extends Model
+class TravelMember extends Model
 {
+    public const ROLE_OWNER = 'owner';
+    public const ROLE_MEMBER = 'member';
+
     protected $fillable = [
         'travel_id',
         'user_id',
-        'packing_name',
-        'packing_is_checked',
-        'order',
+        'role',
     ];
 
     public function travelOverview()

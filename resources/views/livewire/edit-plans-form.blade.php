@@ -1,6 +1,13 @@
 <div class="max-w-4xl mx-auto">
     <form wire:submit.prevent="submit" enctype="multipart/form-data">
         @csrf
+        @unless ($canEdit)
+            <div class="mt-8 rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+                閲覧用共有リンクで表示中です。編集するには作成者にメンバー追加を依頼してください。
+            </div>
+        @endunless
+
+        <fieldset @disabled(! $canEdit) class="@unless($canEdit) opacity-75 @endunless">
         <!-- タイトルと概要 -->
         <div class="mt-8 space-y-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">
             <div>
@@ -442,9 +449,9 @@
             </div>
         </section>
 
-        <!-- 共有パスワード -->
-        @auth
-            <seciton>
+        <!-- 閲覧用共有 -->
+        @if ($isOwner)
+            <section>
                 <!-- コンテナ -->
                 <div class="mt-12 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-3 sm:p-8 mb-8">
                     <h2 class="flex items-center justify-center text-2xl font-semibold text-gray-800">
@@ -453,10 +460,10 @@
                             <path
                                 d="M336 352c97.2 0 176-78.8 176-176S433.2 0 336 0S160 78.8 160 176c0 18.7 2.9 36.8 8.3 53.7L7 391c-4.5 4.5-7 10.6-7 17l0 80c0 13.3 10.7 24 24 24l80 0c13.3 0 24-10.7 24-24l0-40 40 0c13.3 0 24-10.7 24-24l0-40 40 0c6.4 0 12.5-2.5 17-7l33.3-33.3c16.9 5.4 35 8.3 53.7 8.3zM376 96a40 40 0 1 1 0 80 40 40 0 1 1 0-80z"/>
                         </svg>
-                        共有パスワード設定
+                        閲覧用共有リンク
                     </h2>
                     <p class="flex items-center justify-center text-base text-gray-800 mt-4">
-                        共有パスワードは他の誰かと共同編集したいときなどに使います。
+                        URL と閲覧用パスワードを知っている人は、このしおりを閲覧できます。編集はできません。
                     </p>
 
                     <!-- 「変更する」ボタン -->
@@ -466,8 +473,15 @@
                                 <button
                                     type="button" wire:click="showPasswordFields"
                                     class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer">
-                                    {{  $shared_password_check ? '変更する' : '設定する'}}
+                                    {{  $shared_password_check ? '設定を変更する' : '閲覧共有を設定する'}}
                                 </button>
+                                @if ($shared_password_check)
+                                    <button
+                                        type="button" wire:click="disableViewerShare"
+                                        class="ml-3 px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 cursor-pointer">
+                                        無効化する
+                                    </button>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -477,9 +491,9 @@
                         <div class="mt-6 space-y-6">
                             <div class="p-2 pt-6 pb-6 md:p-6 bg-gray-50 rounded-lg shadow-inner">
                                 <div>
-                                    <p class="text-sm text-gray-500">※8文字~32文字で設定してください。</p>
+                                    <p class="text-sm text-gray-500">※閲覧用パスワードは8文字~32文字で設定してください。</p>
                                     <label for="shared_password"
-                                           class="block text-sm font-medium text-gray-700 mt-4">共有パスワード</label>
+                                           class="block text-sm font-medium text-gray-700 mt-4">閲覧用パスワード</label>
                                     <input type="password" id="shared_password"
                                            wire:model.defer="shared_password"
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -491,7 +505,7 @@
                                 <!-- 確認用入力欄 -->
                                 <div class="mt-6">
                                     <label for="shared_password_confirmation"
-                                           class="block text-sm font-medium text-gray-700">共有パスワード（確認用）</label>
+                                           class="block text-sm font-medium text-gray-700">閲覧用パスワード（確認用）</label>
                                     <input type="password" id="shared_password_confirmation"
                                            wire:model.defer="shared_password_confirmation"
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -499,12 +513,23 @@
                                     <span class="text-red-500 text-sm error-message">{{ $message }}</span>
                                     @enderror
                                 </div>
+
+                                <div class="mt-6">
+                                    <label for="viewer_share_expires_at"
+                                           class="block text-sm font-medium text-gray-700">有効期限（任意）</label>
+                                    <input type="datetime-local" id="viewer_share_expires_at"
+                                           wire:model.defer="viewer_share_expires_at"
+                                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                    @error('viewer_share_expires_at')
+                                    <span class="text-red-500 text-sm error-message">{{ $message }}</span>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
                     @endif
                 </div>
-            </seciton>
-        @endauth
+            </section>
+        @endif
 
         <!-- 更新ボタン -->
         <div class="mt-6 flex justify-center">
@@ -512,5 +537,6 @@
                 更新する
             </x-button.button2>
         </div>
+        </fieldset>
     </form>
 </div>

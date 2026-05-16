@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title')
-    共有パスワード認証 - {{ config('app.name') }}
+    閲覧用パスワード認証 - {{ config('app.name') }}
 @endsection
 
 @section('meta')
@@ -11,11 +11,11 @@
 
     <!-- OGP -->
     <meta property="og:title" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
-    <meta property="og:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+    <meta property="og:description" content="旅行プランの閲覧用共有ページです。閲覧用パスワードを入力して旅行プランの詳細をご覧いただけます。">
 
     <!-- Twitter -->
     <meta name="twitter:title" content="{{ config('app.name') }} - 旅の計画をもっと簡単に、もっと楽しく">
-    <meta name="twitter:description" content="旅行プランの共有アクセスページです。共有パスワードを入力して旅行プランの詳細をご覧いただけます。">
+    <meta name="twitter:description" content="旅行プランの閲覧用共有ページです。閲覧用パスワードを入力して旅行プランの詳細をご覧いただけます。">
 @endsection
 
 @section('content')
@@ -23,9 +23,9 @@
         <div class="max-w-4xl mx-auto">
             <div class="min-h-screen flex items-center justify-center pl-4 pr-4">
                 <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-xl">
-                    <h2 class="text-xl font-semibold text-gray-700 text-center">共有パスワード入力</h2>
+                    <h2 class="text-xl font-semibold text-gray-700 text-center">閲覧用パスワード入力</h2>
                     <p class="text-gray-600 mt-4 text-center">
-                        このページを閲覧するには、共有パスワードを入力してください。</p>
+                        このしおりを閲覧するには、閲覧用パスワードを入力してください。閲覧用共有では編集できません。</p>
                     <a class="text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-blue-500 mt-4 block text-right"
                        href="{{ route('login') }}">
                         ログインへ
@@ -36,7 +36,7 @@
                         @csrf
                         <div class="mt-4">
                             <label for="shared_password"
-                                   class="block text-sm font-medium text-gray-700">共有パスワード</label>
+                                   class="block text-sm font-medium text-gray-700">閲覧用パスワード</label>
                             <input type="password" id="shared_password" name="shared_password"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                             @error('shared_password')

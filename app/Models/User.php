@@ -45,4 +45,26 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function packingItems()
+    {
+        return $this->hasMany(PackingItem::class);
+    }
+
+    public function ownedTravelOverviews()
+    {
+        return $this->hasMany(TravelOverview::class);
+    }
+
+    public function travelMemberships()
+    {
+        return $this->hasMany(TravelMember::class);
+    }
+
+    public function joinedTravelOverviews()
+    {
+        return $this->belongsToMany(TravelOverview::class, 'travel_members', 'user_id', 'travel_id')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
 }

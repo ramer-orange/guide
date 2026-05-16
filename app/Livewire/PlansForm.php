@@ -31,10 +31,13 @@ class PlansForm extends Component
     public $additionalComments = [];
     public $shared_password;
     public $shared_password_confirmation;
+    public $viewer_share_expires_at;
 
     protected function rules(): array
     {
-        return (new SubmitFormRequest())->rules();
+        return array_merge((new SubmitFormRequest())->rules(), [
+            'viewer_share_expires_at' => 'nullable|date|after:now',
+        ]);
     }
 
     public function mount()
@@ -210,6 +213,11 @@ class PlansForm extends Component
             'title' => $this->title,
             'overviewText' => $this->overviewText,
         ]);
+        $overview->travelMembers()->create([
+            'user_id' => auth()->id(),
+            'role' => 'owner',
+        ]);
+
         foreach ($this->plans as $index => $plan) {
             $newPlan = $overview->plans()->create([
                 'date' => $plan['date'] ?: null,
@@ -231,6 +239,7 @@ class PlansForm extends Component
         $overview->templateType = $this->template_type;
         foreach ($this->packingItems as $index => $packingItem) {
             $overview->packingItems()->create([
+                'user_id' => auth()->id(),
                 'packing_name' => $packingItem['packing_name'],
                 'packing_is_checked' => $packingItem['packing_is_checked'],
                 'order' => $index,
@@ -253,6 +262,8 @@ class PlansForm extends Component
 
         $overview->sharedPasswords()->create([
             'shared_password' => $this->shared_password ? Hash::make($this->shared_password) : null,
+            'expires_at' => $this->viewer_share_expires_at ?: null,
+            'disabled_at' => null,
         ]);
 
         return redirect()->route('itineraries.edit', [$overview->id]);

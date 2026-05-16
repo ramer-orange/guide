@@ -24,6 +24,18 @@ class TravelOverview extends Model
         return $this->hasMany(PackingItem::class, 'travel_id');
     }
 
+    public function travelMembers()
+    {
+        return $this->hasMany(TravelMember::class, 'travel_id');
+    }
+
+    public function memberUsers()
+    {
+        return $this->belongsToMany(User::class, 'travel_members', 'travel_id', 'user_id')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
     public function souvenirs()
     {
         return $this->hasMany(Souvenir::class, 'travel_id');

@@ -5,7 +5,6 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItinerariesController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\SharedPasswordController;
-use App\Http\Middleware\CheckAuthOrSharedAccess;
 
 //Route::view('/', 'welcome');
 //
@@ -28,11 +27,16 @@ Route::get('/itineraries/create', [ItinerariesController::class, 'create'])
     ->middleware('auth')
     ->name('itineraries.create');
 Route::get('/itineraries/{overview}/edit', [ItinerariesController::class, 'edit'])
-    ->middleware(CheckAuthOrSharedAccess::class)
     ->name('itineraries.edit');
 Route::delete('/itineraries/index/{overview}', [ItinerariesController::class, 'destroy'])
     ->middleware('auth')
     ->name('itineraries.index.destroy');
+Route::post('/itineraries/{overview}/members', [ItinerariesController::class, 'storeMember'])
+    ->middleware('auth')
+    ->name('itineraries.members.store');
+Route::delete('/itineraries/{overview}/members/{member}', [ItinerariesController::class, 'destroyMember'])
+    ->middleware('auth')
+    ->name('itineraries.members.destroy');
 
 Route::get('/itineraries/{id}/shared-access', [SharedPasswordController::class, 'show'])
     ->name('shared-access.show');
