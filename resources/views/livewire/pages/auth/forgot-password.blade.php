@@ -59,9 +59,9 @@ new #[Layout('layouts.guest')] class extends Component
             </div>
 
             <div class="flex items-center justify-end">
-                <x-submit-button class="ms-4">
+                <x-primary-button class="ms-4">
                     メールを送信
-                </x-submit-button>
+                </x-primary-button>
             </div>
         </form>
     </div>
