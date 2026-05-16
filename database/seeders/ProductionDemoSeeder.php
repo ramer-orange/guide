@@ -24,8 +24,10 @@ class ProductionDemoSeeder extends Seeder
             ],
         );
 
+        User::where('email', 'tezst@test.com')->update(['email' => 'test@test.com']);
+
         $testUser = User::updateOrCreate(
-            ['email' => 'tezst@test.com'],
+            ['email' => 'test@test.com'],
             [
                 'name' => 'Test User',
                 'password' => Hash::make('11111111'),
