@@ -21,7 +21,7 @@ class CheckAuthOrSharedAccess
             return $next($request);
         }
 
-        // 共有パスワードを入力した際の認証
+        // 閲覧用パスワードを入力した際の認証
         $travelId = $request->route('overview')->id;
         if (session()->has("access_granted_$travelId")) {
             return $next($request);

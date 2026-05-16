@@ -432,7 +432,7 @@
                                 :aria-expanded="expanded"
                                 aria-controls="faqs-text-01"
                             >
-                                <span>共有したプランは誰でも編集できますか？</span>
+                                <span>共有したプランは誰が編集できますか？</span>
                                 <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
                                      xmlns="http://www.w3.org/2000/svg">
                                     <rect y="7" width="16" height="2" rx="1"
@@ -453,7 +453,7 @@
                         >
                             <div class="overflow-hidden">
                                 <p class="pb-3 text-base">
-                                    プラン作成者が共有パスワード設定していただければ、誰でも編集することが可能です。
+                                    作成者がメールアドレスで追加したユーザーは共同編集できます。閲覧用パスワードで共有されたユーザーは閲覧のみ可能です。
                                 </p>
                             </div>
                         </div>
@@ -471,7 +471,7 @@
                                 :aria-expanded="expanded"
                                 aria-controls="faqs-text-01"
                             >
-                                <span>共有パスワードを忘れてしまいました。</span>
+                                <span>閲覧用パスワードを忘れてしまいました。</span>
                                 <svg class="fill-indigo-500 shrink-0 ml-8" width="16" height="16"
                                      xmlns="http://www.w3.org/2000/svg">
                                     <rect y="7" width="16" height="2" rx="1"
@@ -492,7 +492,7 @@
                         >
                             <div class="overflow-hidden">
                                 <p class="pb-3 text-base">
-                                    プラン作成者が、しおり編集ページにて共有パスワードの変更が可能となっております。
+                                    作成者が、しおり編集ページにて閲覧用パスワードの変更や無効化を行えます。
                                 </p>
                             </div>
                         </div>
@@ -656,4 +656,3 @@
         }
     }
 </style>
-
