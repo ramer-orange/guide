@@ -16,6 +16,7 @@ WORKDIR /var/www/html
 COPY . .
 COPY --from=assets /var/www/html/public/build ./public/build
 COPY conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf
+COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
 
 ENV SKIP_COMPOSER=1
 ENV WEBROOT=/var/www/html/public
@@ -27,7 +28,9 @@ ENV APP_DEBUG=false
 ENV LOG_CHANNEL=stderr
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-RUN composer install --no-dev --optimize-autoloader
+RUN php -m | grep -E '^pdo_pgsql$' \
+    && php -m | grep -E '^pgsql$' \
+    && composer install --no-dev --optimize-autoloader
 
 EXPOSE 80
 
