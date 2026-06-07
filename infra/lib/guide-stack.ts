@@ -16,8 +16,20 @@ export class GuideStack extends cdk.Stack {
       );
     }
 
-    // デフォルトVPC
-    const vpc = ec2.Vpc.fromLookup(this, 'Vpc', { isDefault: true });
+    // 専用VPC（NAT Gatewayなし、パブリックサブネットのみ）
+    const vpc = new ec2.Vpc(this, 'Vpc', {
+      vpcName: 'guide-vpc',
+      ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/16'),
+      maxAzs: 1,
+      natGateways: 0,
+      subnetConfiguration: [
+        {
+          name: 'public',
+          subnetType: ec2.SubnetType.PUBLIC,
+          cidrMask: 24,
+        },
+      ],
+    });
 
     // S3: 添付ファイル用
     const filesBucket = new s3.Bucket(this, 'FilesBucket', {
@@ -98,6 +110,7 @@ export class GuideStack extends cdk.Stack {
     // EC2インスタンス（t4g.small, Ubuntu 24.04 LTS ARM, EBS gp3 20GB）
     const instance = new ec2.Instance(this, 'Instance', {
       vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       instanceType: ec2.InstanceType.of(
         ec2.InstanceClass.T4G,
         ec2.InstanceSize.SMALL,
