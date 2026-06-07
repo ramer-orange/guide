@@ -8,8 +8,13 @@ export class GuideStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const allowedSshCidr: string =
-      this.node.tryGetContext('allowedSshCidr') ?? '0.0.0.0/0';
+    const allowedSshCidrs: string[] =
+      this.node.tryGetContext('allowedSshCidrs') ?? [];
+    if (allowedSshCidrs.length === 0) {
+      throw new Error(
+        'allowedSshCidrs is required. Set it in cdk.json context as an array: ["x.x.x.x/32"]',
+      );
+    }
 
     // デフォルトVPC
     const vpc = ec2.Vpc.fromLookup(this, 'Vpc', { isDefault: true });
@@ -53,11 +58,13 @@ export class GuideStack extends cdk.Stack {
       description: 'Guide app: SSH/HTTP/HTTPS',
       allowAllOutbound: true,
     });
-    sg.addIngressRule(
-      ec2.Peer.ipv4(allowedSshCidr),
-      ec2.Port.tcp(22),
-      'SSH from allowed CIDR',
-    );
+    allowedSshCidrs.forEach((cidr) => {
+      sg.addIngressRule(
+        ec2.Peer.ipv4(cidr),
+        ec2.Port.tcp(22),
+        `SSH from ${cidr}`,
+      );
+    });
     sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80), 'HTTP');
     sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(443), 'HTTPS');
 

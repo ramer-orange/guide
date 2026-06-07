@@ -1,7 +1,7 @@
 {
   "app": "npx ts-node --prefer-ts-exts bin/infra.ts",
   "context": {
-    "allowedSshCidr": "133.19.169.7/32",
+    "allowedSshCidrs": ["133.19.169.7/32", "125.8.217.63/32"],
     "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
     "@aws-cdk/aws-iam:minimizePolicies": true
   }
