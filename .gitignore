@@ -29,3 +29,10 @@ yarn-error.log
 /public/css
 /public/js
 .DS_Store
+infra/node_modules/
+infra/cdk.out/
+infra/dist/
+
+infra/node_modules/
+infra/cdk.out/
+infra/dist/
