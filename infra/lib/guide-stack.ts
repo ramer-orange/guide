@@ -36,10 +36,13 @@ export class GuideStack extends cdk.Stack {
       ],
     });
 
-    // IAM Role（EC2からS3へのアクセス権限）
+    // IAM Role（EC2からS3・SSMへのアクセス権限）
     const role = new iam.Role(this, 'Ec2Role', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
       description: 'Guide app EC2 role',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
+      ],
     });
     filesBucket.grantReadWrite(role);
     backupsBucket.grantReadWrite(role);

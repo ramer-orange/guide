@@ -95,6 +95,7 @@ class EditPlansForm extends Component
                         return [
                             'id' => $planFile->id,
                             'path' => $planFile->path,
+                            'url' => $planFile->url(),
                             'file_name' => $planFile->file_name,
                         ];
                     })->toArray()
@@ -407,7 +408,7 @@ class EditPlansForm extends Component
             if (!empty($planData['planFiles'])) {
                 foreach ($planData['planFiles'] as $planFile) {
                     if ($planFile) {
-                        $filePath = $planFile->store('files', 'public');
+                        $filePath = $planFile->store('files', config('filesystems.uploads'));
                         $plan->planFiles()->create([
                             'path' => $filePath,
                             'file_name' => $planFile->getClientOriginalName(),
@@ -429,18 +430,11 @@ class EditPlansForm extends Component
 
             // ストレージからファイルを削除
             foreach ($planFiles as $planFile) {
-                Storage::disk('public')->delete($planFile->path);
+                Storage::disk(config('filesystems.uploads'))->delete($planFile->path);
             }
 
             // データベースからレコードを削除
             PlanFile::whereIn('id', $this->deletedPlanFiles)->delete();
-        }
-
-        if (!empty($this->deletedPlans)) {
-            Plan::whereIn('id', $this->deletedPlans)->delete();
-        }
-        if (!empty($this->deletedPlanFiles)) {
-            Planfile::whereIn('id', $this->deletedPlanFiles)->delete();
         }
 
         $this->overview->templateType = $this->template_type;

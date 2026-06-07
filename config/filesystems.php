@@ -15,6 +15,10 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'uploads' => env('FILESYSTEM_UPLOADS_DISK', 'public'),
+
+    'temporary_url_ttl' => env('FILESYSTEM_TEMPORARY_URL_TTL', 10),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks

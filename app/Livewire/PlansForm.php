@@ -228,7 +228,7 @@ class PlansForm extends Component
             ]);
             foreach ($plan['planFiles'] as $planFile) {
                 if ($planFile) {
-                    $filePath = Storage::disk('public')->putFile('files', $planFile);
+                    $filePath = Storage::disk(config('filesystems.uploads'))->putFile('files', $planFile);
                     $newPlan->planFiles()->create([
                         'path' => $filePath,
                         'file_name' => $planFile->getClientOriginalName(),

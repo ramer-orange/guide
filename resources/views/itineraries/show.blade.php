@@ -55,7 +55,7 @@
                                 @if ($plan->planFiles->isNotEmpty())
                                     <div class="mt-4 space-y-2">
                                         @foreach ($plan->planFiles as $planFile)
-                                            <a href="{{ Storage::url($planFile->path) }}"
+                                            <a href="{{ $planFile->url() }}"
                                                target="_blank"
                                                class="block text-sm text-blue-600 hover:underline">
                                                 {{ $planFile->file_name }}
