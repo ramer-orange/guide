@@ -24,6 +24,7 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters 'commands=[
               "set -e",
+              "git config --global --add safe.directory /home/ubuntu/guide",
               "cd /home/ubuntu/guide",
               "git pull origin main",
               "docker compose -f docker-compose.prod.yml up -d --build",
