@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy
 
 on:
   push:
@@ -6,8 +6,45 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-infra:
     runs-on: ubuntu-latest
+    # infra/ に変更があった時だけ実行
+    if: |
+      contains(join(github.event.commits.*.modified, ','), 'infra/') ||
+      contains(join(github.event.commits.*.added, ','), 'infra/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AWS認証
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Node.jsセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+
+      - name: 依存パッケージインストール
+        run: cd infra && npm ci
+
+      - name: CDK差分確認（ログのみ）
+        run: cd infra && npx cdk diff
+        continue-on-error: true
+
+      - name: CDKデプロイ
+        run: cd infra && npx cdk deploy --require-approval never
+
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+    # deploy-infra がスキップされた場合も実行する
+    if: always()
 
     steps:
       - name: AWS認証
