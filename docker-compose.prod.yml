@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: '.'
+      dockerfile: 'docker/8.3/Dockerfile'
+      args:
+        WWWGROUP: '1000'
+    image: 'guide-prod/app'
+    environment:
+      WWWUSER: '1000'
+      SUPERVISOR_PHP_USER: 'sail'
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - guide
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+    volumes:
+      - './nginx/templates/prod.conf.template:/etc/nginx/templates/default.conf.template'
+    networks:
+      - guide
+    depends_on:
+      - app
+
+  postgres:
+    image: 'postgres:17-alpine'
+    environment:
+      PGPASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: '${DB_DATABASE}'
+      POSTGRES_USER: '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+    volumes:
+      - 'guide-postgres:/var/lib/postgresql/data'
+    networks:
+      - guide
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -q -d ${DB_DATABASE} -U ${DB_USERNAME}'
+      retries: 3
+      timeout: 5s
+
+networks:
+  guide:
+    driver: bridge
+
+volumes:
+  guide-postgres:
+    driver: local
