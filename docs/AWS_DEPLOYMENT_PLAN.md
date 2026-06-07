@@ -245,7 +245,6 @@ docker compose -f docker-compose.prod.yml exec app php artisan view:cache
 
 初回のみ必要な作業:
 - EC2上で `.env` を作成する（テンプレートは「環境変数」セクション参照）
-- `composer require league/flysystem-aws-s3-v3` でS3ドライバを追加する
 
 GitHub Actions化する場合は、EC2へSSHして同じコマンドを実行する。
 秘密情報はGitHub Secretsに入れる。
