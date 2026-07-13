@@ -3,7 +3,6 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as rds from 'aws-cdk-lib/aws-rds';
@@ -154,17 +153,6 @@ export class GuideStack extends cdk.Stack {
       'PostgreSQL from app instances',
     );
 
-    const redisSecurityGroup = new ec2.SecurityGroup(this, 'RedisSecurityGroup', {
-      vpc,
-      description: 'Guide Redis',
-      allowAllOutbound: true,
-    });
-    redisSecurityGroup.addIngressRule(
-      appSecurityGroup,
-      ec2.Port.tcp(6379),
-      'Redis from app instances',
-    );
-
     const database = new rds.DatabaseInstance(this, 'Database', {
       vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
@@ -185,29 +173,6 @@ export class GuideStack extends cdk.Stack {
       deletionProtection: true,
       storageEncrypted: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-    });
-
-    const redisSubnetGroup = new elasticache.CfnSubnetGroup(
-      this,
-      'RedisSubnetGroup',
-      {
-        description: 'Guide Redis isolated subnets',
-        subnetIds: vpc
-          .selectSubnets({ subnetType: ec2.SubnetType.PRIVATE_ISOLATED })
-          .subnetIds,
-      },
-    );
-
-    const redis = new elasticache.CfnReplicationGroup(this, 'Redis', {
-      replicationGroupDescription: 'Guide Redis cache',
-      engine: 'redis',
-      cacheNodeType: 'cache.t4g.micro',
-      numCacheClusters: 2,
-      automaticFailoverEnabled: true,
-      multiAzEnabled: true,
-      atRestEncryptionEnabled: true,
-      cacheSubnetGroupName: redisSubnetGroup.ref,
-      securityGroupIds: [redisSecurityGroup.securityGroupId],
     });
 
     const role = new iam.Role(this, 'AppInstanceRole', {
@@ -343,10 +308,6 @@ export class GuideStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DatabaseSecretArn', {
       value: database.secret?.secretArn ?? '',
       description: 'PostgreSQL認証情報のSecrets Manager ARN',
-    });
-    new cdk.CfnOutput(this, 'RedisEndpoint', {
-      value: redis.attrPrimaryEndPointAddress,
-      description: 'Redis primary endpoint',
     });
     new cdk.CfnOutput(this, 'AppKeySecretArn', {
       value: appKeySecret.secretArn,

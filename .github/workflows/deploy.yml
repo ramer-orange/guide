@@ -133,7 +133,6 @@ jobs: # 実行するジョブの一覧
             echo "cloudfront_url=$(get_output CloudFrontUrl)"
             echo "database_endpoint=$(get_output DatabaseEndpoint)"
             echo "database_secret_arn=$(get_output DatabaseSecretArn)"
-            echo "redis_endpoint=$(get_output RedisEndpoint)"
             echo "files_bucket_name=$(get_output FilesBucketName)"
             echo "app_key_secret_arn=$(get_output AppKeySecretArn)"
           } >> "$GITHUB_OUTPUT"
@@ -201,11 +200,8 @@ jobs: # 実行するジョブの一覧
           DB_PASSWORD=${db_password}
           SESSION_DRIVER=database
           SESSION_SECURE_COOKIE=true
-          CACHE_STORE=redis
+          CACHE_STORE=database
           QUEUE_CONNECTION=database
-          REDIS_CLIENT=phpredis
-          REDIS_HOST=__REDIS_ENDPOINT__
-          REDIS_PORT=6379
           FILESYSTEM_DISK=s3
           FILESYSTEM_UPLOADS_DISK=s3
           AWS_DEFAULT_REGION=__AWS_REGION__
@@ -222,7 +218,6 @@ jobs: # 実行するジョブの一覧
             -e 's#__CLOUDFRONT_URL__#${{ steps.stack.outputs.cloudfront_url }}#g' \
             -e 's#__DATABASE_ENDPOINT__#${{ steps.stack.outputs.database_endpoint }}#g' \
             -e 's#__DATABASE_SECRET_ARN__#${{ steps.stack.outputs.database_secret_arn }}#g' \
-            -e 's#__REDIS_ENDPOINT__#${{ steps.stack.outputs.redis_endpoint }}#g' \
             -e 's#__FILES_BUCKET_NAME__#${{ steps.stack.outputs.files_bucket_name }}#g' \
             -e 's#__ARTIFACT_KEY__#${{ steps.artifact.outputs.artifact_key }}#g' \
             -e 's#__APP_KEY_SECRET_ARN__#${{ steps.stack.outputs.app_key_secret_arn }}#g' \

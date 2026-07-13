@@ -7,7 +7,7 @@ notification/configuration components from the ideal diagram.
 """
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2AutoScaling
-from diagrams.aws.database import ElastiCache, RDSPostgresqlInstance
+from diagrams.aws.database import RDSPostgresqlInstance
 from diagrams.aws.general import User as AwsUser
 from diagrams.aws.management import (
     Cloudformation,
@@ -87,13 +87,11 @@ with Diagram(
             nat_a = NATGateway("NAT Gateway A")
             app_a = EC2AutoScaling("Laravel EC2 A\nASG・自動復旧")
             db_a = RDSPostgresqlInstance("PostgreSQL Writer")
-            redis_a = ElastiCache("Redis Primary")
 
         with Cluster("Availability Zone B", graph_attr=cluster_attr):
             nat_b = NATGateway("NAT Gateway B")
             app_b = EC2AutoScaling("Laravel EC2 B\nASG・自動復旧")
             db_b = RDSPostgresqlInstance("PostgreSQL Standby\n自動Failover")
-            redis_b = ElastiCache("Redis Replica")
 
         apps = [app_a, app_b]
         nat_gateways = [nat_a, nat_b]
@@ -123,10 +121,8 @@ with Diagram(
     cloudfront >> Edge(label="HTTP origin") >> internet_gateway >> alb
     alb >> Edge(label="HTTP :80") >> apps
     apps >> Edge(label="PostgreSQL :5432") >> db_a
-    apps >> Edge(label="Redis :6379") >> redis_a
     apps >> Edge(label="S3 API") >> files_bucket
     db_a >> Edge(label="同期") >> db_b
-    redis_a >> Edge(label="非同期複製") >> redis_b
     github_role >> Edge(label="release tar.gz") >> files_bucket
     ssm >> Edge(label="Docker Compose deploy") >> apps
 

@@ -60,13 +60,10 @@ test('RDS PostgreSQLがMulti-AZとDeletionProtectionで作成される', () => {
   });
 });
 
-test('Redisは2ノード構成で自動フェイルオーバーを有効にする', () => {
+test('Redisは作成しない', () => {
   const template = makeStack();
-  template.hasResourceProperties('AWS::ElastiCache::ReplicationGroup', {
-    AutomaticFailoverEnabled: true,
-    MultiAZEnabled: true,
-    NumCacheClusters: 2,
-  });
+  template.resourceCountIs('AWS::ElastiCache::ReplicationGroup', 0);
+  template.resourceCountIs('AWS::ElastiCache::SubnetGroup', 0);
 });
 
 test('監査ログ用S3バケットは公開アクセスをブロックする', () => {
