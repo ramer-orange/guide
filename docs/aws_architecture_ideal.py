@@ -1,137 +1,166 @@
 """
-Guide アプリ 理想的な AWS アーキテクチャ図（フルプロダクショングレード）
+Guide アプリ 理想的な AWS アーキテクチャ図。
 
-含むサービス:
-- CloudFront + WAF（CDN・DDoS対策）
-- Route 53（DNS）
-- ACM（SSL証明書）
-- ALB（ロードバランサー）
-- Auto Scaling EC2（アプリ層、プライベートサブネット）
-- RDS PostgreSQL Multi-AZ（DB層、プライベートサブネット）
-- ElastiCache Redis（セッション・キャッシュ）
-- S3（ファイル・バックアップ）
-- Secrets Manager（シークレット管理）
-- CloudWatch（監視・アラート）
-- GitHub Actions + SSM（CI/CD）
+主要なリクエスト経路を左から右へ配置し、監視・監査・設定管理などの
+補助サービスは下段へ分離して、1枚で読みやすい構成にしている。
 """
-from diagrams import Diagram, Cluster, Edge
-from diagrams.aws.compute import EC2, EC2AutoScaling
-from diagrams.aws.network import (
-    Route53, ALB, InternetGateway, NATGateway, CloudFront
-)
-from diagrams.aws.database import RDSPostgresqlInstance, ElastiCache
-from diagrams.aws.storage import S3
-from diagrams.aws.security import ACM, IAMRole, SecretsManager, WAF
-from diagrams.aws.management import (
-    SystemsManagerParameterStore, Cloudwatch
-)
+from diagrams import Cluster, Diagram, Edge
+from diagrams.aws.compute import EC2AutoScaling
+from diagrams.aws.database import ElastiCache, RDSPostgresqlInstance
 from diagrams.aws.general import User as AwsUser
+from diagrams.aws.integration import SNS
+from diagrams.aws.management import (
+    Cloudtrail,
+    Cloudwatch,
+    Config,
+    SystemsManagerParameterStore,
+)
+from diagrams.aws.network import (
+    ALB,
+    CloudFront,
+    Endpoint,
+    InternetGateway,
+    NATGateway,
+    Route53,
+)
+from diagrams.aws.security import ACM, Guardduty, IAMRole, SecretsManager, WAF
+from diagrams.aws.storage import S3
 from diagrams.onprem.vcs import Github
 
+
+cluster_attr = {
+    "margin": "32",
+    "fontsize": "15",
+    "fontname": "Helvetica",
+}
+
+support_edge = {
+    "style": "dashed",
+    "color": "#7c8a9a",
+    "constraint": "false",
+}
+
 with Diagram(
-    "Guide App - Full Production AWS Architecture",
+    "Guide App - Ideal AWS Architecture",
     filename="/Users/kai/guide/docs/aws_architecture_ideal",
     outformat="png",
     show=False,
-    direction="TB",
+    direction="LR",
+    curvestyle="ortho",
     graph_attr={
-        "fontsize": "12",
+        "fontsize": "20",
+        "fontname": "Helvetica",
         "bgcolor": "white",
-        "pad": "1.0",
-        "splines": "ortho",
-        "nodesep": "0.6",
-        "ranksep": "1.0",
+        "pad": "1.4",
+        "margin": "0.6",
+        "nodesep": "0.9",
+        "ranksep": "1.3",
+        "dpi": "180",
+    },
+    node_attr={
+        "fontsize": "12",
+        "fontname": "Helvetica",
+        "margin": "0.20,0.14",
+    },
+    edge_attr={
+        "fontsize": "11",
+        "fontname": "Helvetica",
+        "penwidth": "1.5",
+        "color": "#526274",
     },
 ):
     user = AwsUser("ユーザー")
-    github = Github("GitHub Actions\n(CI/CD)")
 
-    with Cluster("AWS Cloud (ap-northeast-1)"):
+    with Cluster("Global Edge", graph_attr=cluster_attr):
+        route53 = Route53("Route 53\nDNS")
+        cloudfront = CloudFront("CloudFront\nCDN・DDoS軽減")
+        waf = WAF("WAF Web ACL\nSQLi/XSS・レート制限")
+        edge_acm = ACM("ACM us-east-1\nCloudFront証明書")
 
-        # エッジ層
-        with Cluster("Edge"):
-            waf = WAF("WAF\n(SQLi/XSS防御\nレートリミット)")
-            cf = CloudFront("CloudFront\n(CDN・DDoS軽減)")
-            route53 = Route53("Route 53\nexample.com")
-            acm = ACM("ACM\nSSL証明書")
+    with Cluster("VPC  ap-northeast-1  /  Multi-AZ", graph_attr=cluster_attr):
+        internet_gateway = InternetGateway("Internet Gateway")
 
-        # 監視
-        cloudwatch = Cloudwatch("CloudWatch\n(メトリクス・アラート\nログ集約)")
+        alb = ALB("ALB\n2 AZのPublic Subnet\nHTTPS:443")
 
-        with Cluster("VPC (10.0.0.0/16)"):
+        with Cluster("Availability Zone A", graph_attr=cluster_attr):
+            nat_a = NATGateway("NAT Gateway A")
+            app_a = EC2AutoScaling("Laravel EC2 A\nASG・自動復旧")
+            db_a = RDSPostgresqlInstance("PostgreSQL Writer\n同期レプリケーション")
+            redis_a = ElastiCache("Redis Primary")
 
-            igw = InternetGateway("Internet Gateway")
+        with Cluster("Availability Zone B", graph_attr=cluster_attr):
+            nat_b = NATGateway("NAT Gateway B")
+            app_b = EC2AutoScaling("Laravel EC2 B\nASG・自動復旧")
+            db_b = RDSPostgresqlInstance("PostgreSQL Standby B\n自動Failover")
+            redis_b = ElastiCache("Redis Replica B")
 
-            # パブリックサブネット
-            with Cluster("Public Subnets  AZ-a / AZ-c"):
-                alb = ALB("ALB\n(HTTPS:443)")
-                nat_a = NATGateway("NAT GW AZ-a")
-                nat_c = NATGateway("NAT GW AZ-c")
+        apps = [app_a, app_b]
+        nat_gateways = [nat_a, nat_b]
 
-            # プライベートサブネット - App層
-            with Cluster("Private Subnets (App)  AZ-a / AZ-c"):
-                asg = EC2AutoScaling("Auto Scaling Group\n(CPU > 70% でスケールアウト)")
-                ec2_a = EC2("EC2\nnginx + Laravel\nAZ-a")
-                ec2_c = EC2("EC2\nnginx + Laravel\nAZ-c")
+        with Cluster("VPC Endpoints", graph_attr=cluster_attr):
+            s3_endpoint = Endpoint("S3 Gateway\nEndpoint")
+            interface_endpoints = Endpoint(
+                "Interface Endpoints\nSSM・Secrets・Logs"
+            )
 
-            # プライベートサブネット - DB層
-            with Cluster("Private Subnets (DB)  AZ-a / AZ-c"):
-                rds_primary = RDSPostgresqlInstance("RDS PostgreSQL\nPrimary AZ-a\n自動バックアップ")
-                rds_standby = RDSPostgresqlInstance("RDS PostgreSQL\nStandby AZ-c\nMulti-AZ")
-                redis = ElastiCache("ElastiCache Redis\n(セッション・キャッシュ)")
+    with Cluster("Platform Services  ap-northeast-1", graph_attr=cluster_attr):
+        files_bucket = S3("Files Bucket\n添付ファイル・非公開")
+        audit_bucket = S3("Audit Logs Bucket\nCloudTrail・ALBログ")
+        secrets = SecretsManager("Secrets Manager\nDB認証・APP_KEY")
+        parameters = SystemsManagerParameterStore("Parameter Store\nアプリ設定")
+        ec2_role = IAMRole("EC2 IAM Role\n最小権限")
+        github_role = IAMRole("GitHub OIDC Role\n一時認証・最小権限")
+        regional_acm = ACM("ACM ap-northeast-1\nALB証明書")
 
-        # S3
-        with Cluster("S3 Buckets"):
-            files_bucket = S3("guide-production-files\n添付ファイル（非公開）")
-            backups_bucket = S3("guide-production-backups\n7日で自動削除")
+        regional_acm >> Edge(style="invis") >> ec2_role
+        ec2_role >> Edge(style="invis") >> github_role
+        github_role >> Edge(style="invis") >> secrets
+        secrets >> Edge(style="invis") >> parameters
+        parameters >> Edge(style="invis") >> files_bucket
+        files_bucket >> Edge(style="invis") >> audit_bucket
 
-        # セキュリティ・設定
-        secrets = SecretsManager("Secrets Manager\nDBパスワード\nAPP_KEY等")
-        ssm_param = SystemsManagerParameterStore("SSM Parameter Store\nアプリ設定")
-        iam_role = IAMRole("EC2 IAM Role\nS3 / SSM / Secrets\nCloudWatch")
+    with Cluster("Operations  ap-northeast-1", graph_attr=cluster_attr):
+        cloudwatch = Cloudwatch("CloudWatch\nログ・メトリクス")
+        sns = SNS("SNS\n運用通知")
+        cloudtrail = Cloudtrail("CloudTrail\n監査ログ")
+        guardduty = Guardduty("GuardDuty\n脅威検知")
+        config = Config("AWS Config\n構成・準拠確認")
 
-    # ユーザー → Route53 → CloudFront → WAF → ALB
-    user >> Edge(label="HTTPS") >> route53
-    route53 >> cf
-    acm >> Edge(style="dashed", label="SSL") >> cf
-    cf >> waf
-    waf >> alb
-    igw >> alb
+        cloudwatch >> Edge(style="invis") >> sns
+        sns >> Edge(style="invis") >> cloudtrail
+        cloudtrail >> Edge(style="invis") >> guardduty
+        guardduty >> Edge(style="invis") >> config
 
-    # ALB → EC2（Auto Scaling）
-    alb >> ec2_a
-    alb >> ec2_c
-    asg >> Edge(style="dashed") >> ec2_a
-    asg >> Edge(style="dashed") >> ec2_c
+    github = Github("GitHub Actions\nCI/CD")
 
-    # NAT Gateway（プライベートからの外向き通信）
-    ec2_a >> nat_a
-    ec2_c >> nat_c
+    # Main request and data path.
+    user >> Edge(label="HTTPS") >> route53 >> cloudfront
+    cloudfront >> Edge(label="HTTPS") >> internet_gateway >> alb
+    alb >> Edge(label="HTTP") >> apps
+    apps >> Edge(label="PostgreSQL :5432") >> db_a
+    apps >> Edge(label="Redis :6379") >> redis_a
+    apps >> Edge(label="S3 API") >> s3_endpoint >> files_bucket
+    db_a >> Edge(label="同期") >> db_b
+    redis_a >> Edge(label="非同期複製") >> redis_b
 
-    # EC2 → RDS
-    ec2_a >> Edge(label=":5432") >> rds_primary
-    ec2_c >> Edge(label=":5432") >> rds_primary
-    rds_primary >> Edge(label="レプリケーション", style="dashed") >> rds_standby
+    # Supporting relationships. Dashed lines are associations, permissions, or operations.
+    waf >> Edge(**support_edge) >> cloudfront
+    edge_acm >> Edge(**support_edge) >> cloudfront
+    regional_acm >> Edge(**support_edge) >> alb
+    for app, nat_gateway in zip(apps, nat_gateways):
+        app >> Edge(**support_edge) >> nat_gateway
+        nat_gateway >> Edge(**support_edge) >> internet_gateway
+    apps >> Edge(**support_edge) >> interface_endpoints
+    interface_endpoints >> Edge(**support_edge) >> secrets
+    interface_endpoints >> Edge(**support_edge) >> parameters
+    ec2_role >> Edge(**support_edge) >> apps
 
-    # EC2 → Redis
-    ec2_a >> Edge(label="セッション/キャッシュ") >> redis
-    ec2_c >> redis
+    github >> Edge(**support_edge) >> github_role
+    github_role >> Edge(**support_edge) >> apps
 
-    # EC2 → S3
-    ec2_a >> Edge(label="ファイル保存") >> files_bucket
-    rds_primary >> Edge(label="自動バックアップ", style="dashed") >> backups_bucket
-
-    # 監視
-    ec2_a >> Edge(style="dotted", label="メトリクス") >> cloudwatch
-    ec2_c >> Edge(style="dotted") >> cloudwatch
-    rds_primary >> Edge(style="dotted") >> cloudwatch
-    alb >> Edge(style="dotted") >> cloudwatch
-
-    # シークレット・設定
-    secrets >> Edge(style="dotted") >> ec2_a
-    ssm_param >> Edge(style="dotted") >> ec2_a
-    iam_role >> Edge(style="dashed") >> ec2_a
-    iam_role >> Edge(style="dashed") >> ec2_c
-
-    # GitHub Actions → SSM → EC2（SSH不要）
-    github >> Edge(label="SSM Session Manager\n(ポート22不要)", style="dashed") >> ssm_param
+    apps >> Edge(**support_edge) >> cloudwatch
+    cloudwatch >> Edge(**support_edge) >> sns
+    guardduty >> Edge(**support_edge) >> sns
+    config >> Edge(**support_edge) >> sns
+    cloudtrail >> Edge(**support_edge) >> audit_bucket
+    alb >> Edge(**support_edge) >> audit_bucket

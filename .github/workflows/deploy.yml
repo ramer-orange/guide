@@ -1,91 +1,272 @@
-name: Deploy
+name: Deploy # ワークフローの名前（GitHub Actions画面に表示される）
 
-on:
-  push:
+on: # トリガー条件の定義
+  push: # pushイベントで起動
     branches:
-      - main
+      - main # mainブランチへのpushのみ対象
 
-jobs:
-  changes:
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs: # 実行するジョブの一覧
+
+  validate:
     runs-on: ubuntu-latest
-    outputs:
-      infra: ${{ steps.filter.outputs.infra }}
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: guide_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d guide_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
+
+      - name: PHPセットアップ
+        uses: shivammathur/setup-php@v2
         with:
-          filters: |
-            infra:
-              - 'infra/**'
-
-  deploy-infra:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.infra == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: AWS認証
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          php-version: '8.3'
+          extensions: pdo_sqlite, pdo_pgsql
 
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: infra/package-lock.json
+
+      - name: アプリ検証
+        run: |
+          composer install --no-interaction --prefer-dist
+          npm ci
+          npm run build
+          DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
+
+      - name: CDK検証
+        run: |
+          cd infra
+          npm ci
+          npm test -- --runInBand
+          npm run build
+
+  changes: # どのファイルが変更されたかを判定するジョブ
+    runs-on: ubuntu-latest # GitHubが提供するUbuntu環境で実行
+    outputs:
+      infra: ${{ steps.filter.outputs.infra }} # infra/に変更があったかどうかを後続ジョブに渡す
+    steps:
+      - uses: actions/checkout@v4 # リポジトリのコードをチェックアウト（ファイル変更の検知に必要）
+      - uses: dorny/paths-filter@v3 # 変更されたファイルのパスでフィルタリングするアクション
+        id: filter # このステップをfilterという名前で参照できるようにする
+        with:
+          filters: | # フィルタのルールを定義
+            infra: # "infra"というフィルタ名
+              - 'infra/**' # infra/以下のファイルが変更された場合にtrueになる
+
+  deploy-infra: # CDK（インフラ）をデプロイするジョブ
+    runs-on: ubuntu-latest
+    needs: [changes, validate] # 変更検知と検証が完了してから実行する
+    if: needs.changes.outputs.infra == 'true' # infra/に変更があった場合のみ実行（それ以外はスキップ）
+
+    steps:
+      - uses: actions/checkout@v4 # リポジトリのコードをチェックアウト
+
+      - name: AWS認証
+        uses: aws-actions/configure-aws-credentials@v4 # AWS公式の認証アクション
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # GitHub OIDCでAssumeするIAM Role
+          aws-region: ${{ secrets.AWS_REGION }} # GitHub Secretsからリージョンを取得（ap-northeast-1）
+
+      - name: Node.jsセットアップ
+        uses: actions/setup-node@v4 # Node.jsをインストールするアクション（CDKの実行に必要）
+        with:
+          node-version: '20' # Node.js 20を使用
+          cache: 'npm' # node_modulesをキャッシュして次回の実行を高速化
+          cache-dependency-path: infra/package-lock.json # キャッシュのキーとして使うファイル
 
       - name: 依存パッケージインストール
-        run: cd infra && npm ci
+        run: cd infra && npm ci # package-lock.jsonに基づいて正確にインストール（npm installより厳格）
 
       - name: CDK差分確認（ログのみ）
-        run: cd infra && npx cdk diff
-        continue-on-error: true
+        run: cd infra && npx cdk diff # 現在のAWS環境との差分をログに出力（適用はしない）
 
       - name: CDKデプロイ
-        run: cd infra && npx cdk deploy --require-approval never
+        run: cd infra && npx cdk deploy --require-approval never # 承認プロンプトなしでCDKをデプロイ
 
-  deploy-app:
+  deploy-app: # アプリ（Laravel）をEC2にデプロイするジョブ
     runs-on: ubuntu-latest
-    needs: [changes, deploy-infra]
-    # deploy-infra がスキップされた場合も実行する
-    if: always() && !failure()
+    needs: [changes, validate, deploy-infra] # 検証と必要なインフラ更新が終わってから実行
+    if: always() && !failure() # deploy-infraがスキップされた場合も実行するが、失敗した場合は実行しない
 
     steps:
       - name: AWS認証
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: SSM経由でデプロイ
+      - uses: actions/checkout@v4
+
+      - name: CDK Output取得
+        id: stack
         run: |
+          outputs=$(aws cloudformation describe-stacks \
+            --stack-name GuideStack \
+            --query 'Stacks[0].Outputs' \
+            --output json)
+
+          get_output() {
+            echo "$outputs" | jq -r ".[] | select(.OutputKey == \"$1\") | .OutputValue"
+          }
+
+          {
+            echo "cloudfront_url=$(get_output CloudFrontUrl)"
+            echo "database_endpoint=$(get_output DatabaseEndpoint)"
+            echo "database_secret_arn=$(get_output DatabaseSecretArn)"
+            echo "redis_endpoint=$(get_output RedisEndpoint)"
+            echo "files_bucket_name=$(get_output FilesBucketName)"
+            echo "app_key_secret_arn=$(get_output AppKeySecretArn)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: デプロイ成果物をS3へアップロード
+        id: artifact
+        run: |
+          artifact_key="deployments/guide-${GITHUB_SHA}.tar.gz"
+          tar \
+            --exclude='.git' \
+            --exclude='vendor' \
+            --exclude='node_modules' \
+            --exclude='infra/node_modules' \
+            --exclude='infra/cdk.out' \
+            --exclude='storage/app/private/*' \
+            --exclude='storage/app/public/*' \
+            --exclude='.env' \
+            --exclude='production.env' \
+            -czf /tmp/guide-release.tar.gz .
+          aws s3 cp /tmp/guide-release.tar.gz \
+            "s3://${{ steps.stack.outputs.files_bucket_name }}/${artifact_key}" \
+            --only-show-errors
+          echo "artifact_key=${artifact_key}" >> "$GITHUB_OUTPUT"
+
+      - name: SSM経由でASGへデプロイ
+        run: |
+          cat > /tmp/guide-deploy.sh <<'REMOTE_SCRIPT'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+
+          app_dir=/home/ubuntu/guide
+          release=/tmp/guide-release.tar.gz
+
+          rm -rf "$app_dir"
+          mkdir -p "$app_dir"
+          aws s3 cp "s3://__FILES_BUCKET_NAME__/__ARTIFACT_KEY__" "$release" --only-show-errors
+          tar -xzf "$release" -C "$app_dir"
+          chown -R ubuntu:ubuntu "$app_dir"
+          cd "$app_dir"
+
+          db_secret=$(aws secretsmanager get-secret-value \
+            --secret-id "__DATABASE_SECRET_ARN__" \
+            --query SecretString \
+            --output text)
+          db_username=$(echo "$db_secret" | jq -r '.username')
+          db_password=$(echo "$db_secret" | jq -r '.password')
+          app_key=$(aws secretsmanager get-secret-value \
+            --secret-id "__APP_KEY_SECRET_ARN__" \
+            --query SecretString \
+            --output text)
+
+          cat > production.env <<ENV
+          APP_NAME=Guide
+          APP_ENV=production
+          APP_KEY=${app_key}
+          APP_DEBUG=false
+          APP_URL=__CLOUDFRONT_URL__
+          LOG_CHANNEL=stderr
+          LOG_LEVEL=info
+          DB_CONNECTION=pgsql
+          DB_HOST=__DATABASE_ENDPOINT__
+          DB_PORT=5432
+          DB_DATABASE=guide
+          DB_USERNAME=${db_username}
+          DB_PASSWORD=${db_password}
+          SESSION_DRIVER=database
+          SESSION_SECURE_COOKIE=true
+          CACHE_STORE=redis
+          QUEUE_CONNECTION=database
+          REDIS_CLIENT=phpredis
+          REDIS_HOST=__REDIS_ENDPOINT__
+          REDIS_PORT=6379
+          FILESYSTEM_DISK=s3
+          FILESYSTEM_UPLOADS_DISK=s3
+          AWS_DEFAULT_REGION=__AWS_REGION__
+          AWS_BUCKET=__FILES_BUCKET_NAME__
+          AWS_USE_PATH_STYLE_ENDPOINT=false
+          MAIL_MAILER=log
+          ENV
+          chown ubuntu:ubuntu production.env
+
+          sudo -u ubuntu ./scripts/deploy-production.sh
+          REMOTE_SCRIPT
+
+          sed -i \
+            -e 's#__CLOUDFRONT_URL__#${{ steps.stack.outputs.cloudfront_url }}#g' \
+            -e 's#__DATABASE_ENDPOINT__#${{ steps.stack.outputs.database_endpoint }}#g' \
+            -e 's#__DATABASE_SECRET_ARN__#${{ steps.stack.outputs.database_secret_arn }}#g' \
+            -e 's#__REDIS_ENDPOINT__#${{ steps.stack.outputs.redis_endpoint }}#g' \
+            -e 's#__FILES_BUCKET_NAME__#${{ steps.stack.outputs.files_bucket_name }}#g' \
+            -e 's#__ARTIFACT_KEY__#${{ steps.artifact.outputs.artifact_key }}#g' \
+            -e 's#__APP_KEY_SECRET_ARN__#${{ steps.stack.outputs.app_key_secret_arn }}#g' \
+            -e 's#__AWS_REGION__#${{ secrets.AWS_REGION }}#g' \
+            /tmp/guide-deploy.sh
+
+          ssm_params=$(jq -n --rawfile script /tmp/guide-deploy.sh '{commands: [$script]}')
           COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --targets "Key=tag:GuideRole,Values=app" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "sudo -u ubuntu -i bash -c \"set -e && cd /home/ubuntu/guide && git reset --hard HEAD && git pull origin main && docker compose -f docker-compose.prod.yml up -d --build && docker compose -f docker-compose.prod.yml exec -T app composer install --no-dev --optimize-autoloader && docker compose -f docker-compose.prod.yml exec -T app bash -c '"'"'npm ci && npm run build'"'"' && docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force && docker compose -f docker-compose.prod.yml exec -T app php artisan config:cache && docker compose -f docker-compose.prod.yml exec -T app php artisan route:cache && docker compose -f docker-compose.prod.yml exec -T app php artisan view:cache\""
-            ]' \
+            --parameters "$ssm_params" \
+            --comment "Deploy Guide app" \
             --query "Command.CommandId" \
             --output text)
 
           echo "Command ID: $COMMAND_ID"
 
-          # 完了まで待機（最大10分）
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID }}"
+          for attempt in {1..90}; do
+            statuses=$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query 'CommandInvocations[].Status' \
+              --output text)
 
-          # 結果を表示
-          aws ssm get-command-invocation \
+            if [ -z "$statuses" ]; then
+              sleep 10
+              continue
+            fi
+
+            if echo "$statuses" | grep -Eq 'Failed|Cancelled|TimedOut|Cancelling'; then
+              aws ssm list-command-invocations \
+                --command-id "$COMMAND_ID" \
+                --details \
+                --output text
+              exit 1
+            fi
+
+            if ! echo "$statuses" | grep -Eq 'Pending|InProgress|Delayed'; then
+              break
+            fi
+
+            sleep 10
+          done
+
+          aws ssm list-command-invocations \
             --command-id "$COMMAND_ID" \
-            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
-            --query "[Status, StandardOutputContent, StandardErrorContent]" \
+            --details \
             --output text
