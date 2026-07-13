@@ -79,7 +79,7 @@ jobs: # 実行するジョブの一覧
   deploy-infra: # CDK（インフラ）をデプロイするジョブ
     runs-on: ubuntu-latest
     needs: [changes, validate] # 変更検知と検証が完了してから実行する
-    if: env.AWS_DEPLOY_PAUSED != 'true' && needs.changes.outputs.infra == 'true' # infra/に変更があった場合のみ実行（それ以外はスキップ）
+    if: ${{ false }} # AWS課金停止中のため、明示的にインフラデプロイを止める
 
     steps:
       - uses: actions/checkout@v4 # リポジトリのコードをチェックアウト
@@ -109,7 +109,7 @@ jobs: # 実行するジョブの一覧
   deploy-app: # アプリ（Laravel）をEC2にデプロイするジョブ
     runs-on: ubuntu-latest
     needs: [changes, validate, deploy-infra] # 検証と必要なインフラ更新が終わってから実行
-    if: env.AWS_DEPLOY_PAUSED != 'true' && always() && !failure() # deploy-infraがスキップされた場合も実行するが、失敗した場合は実行しない
+    if: ${{ false }} # AWS課金停止中のため、明示的にアプリデプロイを止める
 
     steps:
       - name: AWS認証
