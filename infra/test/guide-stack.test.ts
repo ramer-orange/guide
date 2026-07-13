@@ -66,6 +66,27 @@ test('Redisは作成しない', () => {
   template.resourceCountIs('AWS::ElastiCache::SubnetGroup', 0);
 });
 
+test('本番アプリ用ECR Repositoryを作成する', () => {
+  const template = makeStack();
+  template.hasResourceProperties('AWS::ECR::Repository', {
+    RepositoryName: 'guide-production-app',
+    ImageScanningConfiguration: {
+      ScanOnPush: true,
+    },
+    LifecyclePolicy: Match.objectLike({
+      LifecyclePolicyText: Match.serializedJson(
+        Match.objectLike({
+          rules: Match.arrayWith([
+            Match.objectLike({
+              description: 'Keep recent production images only',
+            }),
+          ]),
+        }),
+      ),
+    }),
+  });
+});
+
 test('監査ログ用S3バケットは公開アクセスをブロックする', () => {
   const template = makeStack();
   template.resourceCountIs('AWS::S3::Bucket', 1);

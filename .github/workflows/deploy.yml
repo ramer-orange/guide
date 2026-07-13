@@ -135,27 +135,28 @@ jobs: # 実行するジョブの一覧
             echo "database_secret_arn=$(get_output DatabaseSecretArn)"
             echo "files_bucket_name=$(get_output FilesBucketName)"
             echo "app_key_secret_arn=$(get_output AppKeySecretArn)"
+            echo "app_repository_uri=$(get_output AppRepositoryUri)"
           } >> "$GITHUB_OUTPUT"
 
-      - name: デプロイ成果物をS3へアップロード
-        id: artifact
+      - name: QEMUセットアップ
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker Buildxセットアップ
+        uses: docker/setup-buildx-action@v3
+
+      - name: ECRログイン
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker imageをECRへpush
+        id: image
         run: |
-          artifact_key="deployments/guide-${GITHUB_SHA}.tar.gz"
-          tar \
-            --exclude='.git' \
-            --exclude='vendor' \
-            --exclude='node_modules' \
-            --exclude='infra/node_modules' \
-            --exclude='infra/cdk.out' \
-            --exclude='storage/app/private/*' \
-            --exclude='storage/app/public/*' \
-            --exclude='.env' \
-            --exclude='production.env' \
-            -czf /tmp/guide-release.tar.gz .
-          aws s3 cp /tmp/guide-release.tar.gz \
-            "s3://${{ steps.stack.outputs.files_bucket_name }}/${artifact_key}" \
-            --only-show-errors
-          echo "artifact_key=${artifact_key}" >> "$GITHUB_OUTPUT"
+          image_uri="${{ steps.stack.outputs.app_repository_uri }}:${GITHUB_SHA}"
+          docker buildx build \
+            --platform linux/arm64 \
+            --tag "$image_uri" \
+            --push \
+            .
+          echo "image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
 
       - name: SSM経由でASGへデプロイ
         run: |
@@ -164,13 +165,8 @@ jobs: # 実行するジョブの一覧
           set -Eeuo pipefail
 
           app_dir=/home/ubuntu/guide
-          release=/tmp/guide-release.tar.gz
 
-          rm -rf "$app_dir"
           mkdir -p "$app_dir"
-          aws s3 cp "s3://__FILES_BUCKET_NAME__/__ARTIFACT_KEY__" "$release" --only-show-errors
-          tar -xzf "$release" -C "$app_dir"
-          chown -R ubuntu:ubuntu "$app_dir"
           cd "$app_dir"
 
           db_secret=$(aws secretsmanager get-secret-value \
@@ -211,7 +207,43 @@ jobs: # 実行するジョブの一覧
           ENV
           chown ubuntu:ubuntu production.env
 
-          sudo -u ubuntu ./scripts/deploy-production.sh
+          cat > docker-compose.prod.yml <<'COMPOSE'
+          services:
+            app:
+              image: '${IMAGE_URI:?IMAGE_URI is required}'
+              env_file:
+                - production.env
+              ports:
+                - '80:80'
+              healthcheck:
+                test: ['CMD-SHELL', 'curl --fail --silent http://127.0.0.1/up || exit 1']
+                interval: 5s
+                timeout: 5s
+                retries: 10
+                start_period: 10s
+              restart: unless-stopped
+          COMPOSE
+          chown ubuntu:ubuntu docker-compose.prod.yml
+
+          IMAGE_URI="__IMAGE_URI__"
+          registry="${IMAGE_URI%/*}"
+          aws ecr get-login-password --region "__AWS_REGION__" \
+            | docker login --username AWS --password-stdin "$registry"
+
+          sudo -u ubuntu env IMAGE_URI="__IMAGE_URI__" docker compose -f docker-compose.prod.yml pull
+          sudo -u ubuntu env IMAGE_URI="__IMAGE_URI__" docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+          for _ in $(seq 1 60); do
+            if sudo -u ubuntu env IMAGE_URI="__IMAGE_URI__" docker compose -f docker-compose.prod.yml exec -T app php -v > /dev/null 2>&1; then
+              break
+            fi
+            sleep 5
+          done
+
+          sudo -u ubuntu env IMAGE_URI="__IMAGE_URI__" docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force --isolated
+          sudo -u ubuntu env IMAGE_URI="__IMAGE_URI__" docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
+
+          curl --fail --silent --show-error --retry 30 --retry-delay 5 --retry-all-errors http://127.0.0.1/up > /dev/null
           REMOTE_SCRIPT
 
           sed -i \
@@ -219,9 +251,9 @@ jobs: # 実行するジョブの一覧
             -e 's#__DATABASE_ENDPOINT__#${{ steps.stack.outputs.database_endpoint }}#g' \
             -e 's#__DATABASE_SECRET_ARN__#${{ steps.stack.outputs.database_secret_arn }}#g' \
             -e 's#__FILES_BUCKET_NAME__#${{ steps.stack.outputs.files_bucket_name }}#g' \
-            -e 's#__ARTIFACT_KEY__#${{ steps.artifact.outputs.artifact_key }}#g' \
             -e 's#__APP_KEY_SECRET_ARN__#${{ steps.stack.outputs.app_key_secret_arn }}#g' \
             -e 's#__AWS_REGION__#${{ secrets.AWS_REGION }}#g' \
+            -e 's#__IMAGE_URI__#${{ steps.image.outputs.image_uri }}#g' \
             /tmp/guide-deploy.sh
 
           ssm_params=$(jq -n --rawfile script /tmp/guide-deploy.sh '{commands: [$script]}')

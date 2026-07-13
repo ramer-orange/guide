@@ -1,9 +1,6 @@
 services:
   app:
-    build:
-      context: '.'
-      dockerfile: 'Dockerfile'
-    image: 'guide-prod/app'
+    image: '${IMAGE_URI:?IMAGE_URI is required}'
     env_file:
       - production.env
     ports:

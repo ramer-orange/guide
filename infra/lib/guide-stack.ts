@@ -3,6 +3,7 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as rds from 'aws-cdk-lib/aws-rds';
@@ -80,6 +81,19 @@ export class GuideStack extends cdk.Stack {
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
       lifecycleRules: [{ expiration: cdk.Duration.days(90) }],
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    const appRepository = new ecr.Repository(this, 'AppRepository', {
+      repositoryName: 'guide-production-app',
+      imageScanOnPush: true,
+      encryption: ecr.RepositoryEncryption.AES_256,
+      lifecycleRules: [
+        {
+          description: 'Keep recent production images only',
+          maxImageCount: 20,
+        },
+      ],
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -186,6 +200,7 @@ export class GuideStack extends cdk.Stack {
     });
     filesBucket.grantReadWrite(role);
     auditBucket.grantWrite(role);
+    appRepository.grantPull(role);
     appKeySecret.grantRead(role);
     database.secret?.grantRead(role);
 
@@ -300,6 +315,10 @@ export class GuideStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FilesBucketName', {
       value: filesBucket.bucketName,
       description: '添付ファイル用S3バケット',
+    });
+    new cdk.CfnOutput(this, 'AppRepositoryUri', {
+      value: appRepository.repositoryUri,
+      description: '本番アプリDocker image用ECR Repository URI',
     });
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: database.dbInstanceEndpointAddress,

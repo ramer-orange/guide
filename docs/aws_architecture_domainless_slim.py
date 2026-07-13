@@ -6,7 +6,7 @@ security/operations services, while removing custom-domain and extra
 notification/configuration components from the ideal diagram.
 """
 from diagrams import Cluster, Diagram, Edge
-from diagrams.aws.compute import EC2AutoScaling
+from diagrams.aws.compute import EC2AutoScaling, ECR
 from diagrams.aws.database import RDSPostgresqlInstance
 from diagrams.aws.general import User as AwsUser
 from diagrams.aws.management import (
@@ -68,10 +68,12 @@ with Diagram(
     with Cluster("CI/CD  /  GitHub OIDC", graph_attr=cluster_attr):
         github = Github("GitHub Actions\nmain push")
         github_role = IAMRole("GitHub OIDC Role\nmainブランチのみ")
+        ecr = ECR("ECR\nDocker image")
         cloudformation = Cloudformation("CDK Deploy\nCloudFormation")
         ssm = SystemsManagerRunCommand("SSM Run Command\nASGへデプロイ")
 
         github >> Edge(label="OIDC AssumeRole") >> github_role
+        github_role >> Edge(label="build/push image") >> ecr
         github_role >> Edge(label="infra変更時") >> cloudformation
         github_role >> Edge(label="send-command") >> ssm
 
@@ -123,8 +125,8 @@ with Diagram(
     apps >> Edge(label="PostgreSQL :5432") >> db_a
     apps >> Edge(label="S3 API") >> files_bucket
     db_a >> Edge(label="同期") >> db_b
-    github_role >> Edge(label="release tar.gz") >> files_bucket
-    ssm >> Edge(label="Docker Compose deploy") >> apps
+    ssm >> Edge(label="Docker Compose pull/up") >> apps
+    ecr >> Edge(label="docker pull") >> apps
 
     # Supporting relationships.
     waf >> Edge(**support_edge) >> cloudfront

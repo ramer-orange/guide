@@ -10,7 +10,13 @@ if [ ! -f production.env ]; then
     exit 1
 fi
 
-"${compose[@]}" up -d --build
+if [ -z "${IMAGE_URI:-}" ]; then
+    echo "IMAGE_URI is required before deployment." >&2
+    exit 1
+fi
+
+"${compose[@]}" pull
+"${compose[@]}" up -d --remove-orphans
 
 for _ in $(seq 1 60); do
     if "${compose[@]}" exec -T app php -v > /dev/null 2>&1; then
