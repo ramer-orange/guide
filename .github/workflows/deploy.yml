@@ -51,7 +51,7 @@ jobs: # 実行するジョブの一覧
           composer install --no-interaction --prefer-dist
           npm ci
           npm run build
-          DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
+          APP_KEY=base64:54QOuuDvHgF5PcqsqkwmaUGE6vtM28BKGPFItCUxCsk= DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
 
       - name: CDK検証
         run: |
