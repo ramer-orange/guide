@@ -13,6 +13,9 @@ concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+env:
+  AWS_DEPLOY_PAUSED: 'true'
+
 jobs: # 実行するジョブの一覧
 
   validate:
@@ -76,7 +79,7 @@ jobs: # 実行するジョブの一覧
   deploy-infra: # CDK（インフラ）をデプロイするジョブ
     runs-on: ubuntu-latest
     needs: [changes, validate] # 変更検知と検証が完了してから実行する
-    if: needs.changes.outputs.infra == 'true' # infra/に変更があった場合のみ実行（それ以外はスキップ）
+    if: env.AWS_DEPLOY_PAUSED != 'true' && needs.changes.outputs.infra == 'true' # infra/に変更があった場合のみ実行（それ以外はスキップ）
 
     steps:
       - uses: actions/checkout@v4 # リポジトリのコードをチェックアウト
@@ -106,7 +109,7 @@ jobs: # 実行するジョブの一覧
   deploy-app: # アプリ（Laravel）をEC2にデプロイするジョブ
     runs-on: ubuntu-latest
     needs: [changes, validate, deploy-infra] # 検証と必要なインフラ更新が終わってから実行
-    if: always() && !failure() # deploy-infraがスキップされた場合も実行するが、失敗した場合は実行しない
+    if: env.AWS_DEPLOY_PAUSED != 'true' && always() && !failure() # deploy-infraがスキップされた場合も実行するが、失敗した場合は実行しない
 
     steps:
       - name: AWS認証
