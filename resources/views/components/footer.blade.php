@@ -16,7 +16,7 @@
                 <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">サービス</h3>
                 <ul class="space-y-3">
                     <li><a href="{{ route('itineraries.create') }}" class="text-gray-600 hover:text-gray-900 transition-colors">プラン作成</a></li>
-                    <li><a href="{{ route('register') }}" class="text-gray-600 hover:text-gray-900 transition-colors">会員登録</a></li>
+                    <li><a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 transition-colors">Googleでログイン</a></li>
                     <li><a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 transition-colors">ログイン</a></li>
                 </ul>
             </div>

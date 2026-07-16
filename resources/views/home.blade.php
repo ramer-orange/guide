@@ -22,6 +22,11 @@
 @endsection
 
 @section('content')
+    @if (session('auth_error'))
+        <div role="alert" class="mx-auto mt-4 max-w-4xl rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800">
+            {{ session('auth_error') }}
+        </div>
+    @endif
     <!-- ヒーローセクション -->
     <div class="relative min-h-screen overflow-hidden">
         <!-- 背景画像 -->
@@ -42,7 +47,7 @@
                     思い出作りが、これまで以上に楽しくなる。
                 </p>
                 <div class="flex gap-4">
-                    <a href="{{ route('register')}}"
+                    <a href="{{ route('login')}}"
                        class="group relative inline-flex items-center justify-center px-8 py-4
                               text-base font-medium text-white transition-all duration-300
                               bg-gradient-to-r from-blue-500 to-teal-400
@@ -592,7 +597,7 @@
         <!-- コンテンツ -->
         <div class="relative container mx-auto px-6 text-center">
             <h2 class="text-4xl font-bold text-gray-900 mb-12 text-center">旅の思い出作りを、<br class = "block sm:hidden">もっとスマートに</h2>
-            <a href="{{ route('register') }}"
+            <a href="{{ route('login') }}"
                class="group inline-flex items-center justify-center px-8 py-4
                    text-base font-medium text-white transition-all duration-300
                    bg-gradient-to-r from-blue-500 to-teal-400

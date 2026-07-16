@@ -516,7 +516,7 @@
 
                                 <div class="mt-6">
                                     <label for="viewer_share_expires_at"
-                                           class="block text-sm font-medium text-gray-700">有効期限（任意）</label>
+                                           class="block text-sm font-medium text-gray-700">有効期限</label>
                                     <input type="datetime-local" id="viewer_share_expires_at"
                                            wire:model.defer="viewer_share_expires_at"
                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">

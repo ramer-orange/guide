@@ -43,7 +43,7 @@
                                       transition-all duration-200 text-sm">
                                 ログイン
                             </a>
-                            <a href="{{ route('register') }}"
+                            <a href="{{ route('login') }}"
                                class="hidden sm:inline-flex items-center justify-center px-5 py-2.5 text-sm
                                       font-medium text-white bg-gradient-to-r from-blue-400 to-teal-400
                                       hover:from-blue-500 hover:to-teal-500 rounded-full
@@ -86,7 +86,7 @@
                         </form>
                     @else
                         <a href="{{ route('login') }}" class="block text-lg font-medium text-gray-600 hover:text-gray-900">ログイン</a>
-                        <a href="{{ route('register') }}" class="block text-lg font-medium text-gray-600 hover:text-gray-900">新規登録</a>
+                        <a href="{{ route('login') }}" class="block text-lg font-medium text-gray-600 hover:text-gray-900">Googleでログイン</a>
                     @endauth
                 </nav>
             </div>

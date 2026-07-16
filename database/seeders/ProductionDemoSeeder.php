@@ -10,7 +10,6 @@ use App\Models\TravelOverview;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class ProductionDemoSeeder extends Seeder
 {
@@ -20,7 +19,6 @@ class ProductionDemoSeeder extends Seeder
             ['email' => 'ra.mer.web1111@gmail.com'],
             [
                 'name' => 'Ramer',
-                'password' => Hash::make('11111111'),
             ],
         );
 
@@ -30,7 +28,6 @@ class ProductionDemoSeeder extends Seeder
             ['email' => 'test@test.com'],
             [
                 'name' => 'Test User',
-                'password' => Hash::make('11111111'),
             ],
         );
 

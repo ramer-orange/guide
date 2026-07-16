@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\SharedAccess;
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckAuthOrSharedAccess
 {
@@ -16,17 +17,17 @@ class CheckAuthOrSharedAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check())
-        {
+        if (Auth::check()) {
             return $next($request);
         }
 
-        // 閲覧用パスワードを入力した際の認証
-        $travelId = $request->route('overview')->id;
-        if (session()->has("access_granted_$travelId")) {
+        $overview = $request->route('overview');
+        if ($overview && SharedAccess::hasValidAccess($request, $overview)) {
             return $next($request);
         }
 
-        return redirect()->route('shared-access.show', ['id' => $travelId]);
+        abort_unless($overview, 404);
+
+        return redirect()->route('shared-access.show', ['id' => $overview->id]);
     }
 }

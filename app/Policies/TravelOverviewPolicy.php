@@ -4,13 +4,14 @@ namespace App\Policies;
 
 use App\Models\TravelOverview;
 use App\Models\User;
+use App\Support\SharedAccess;
 
 class TravelOverviewPolicy
 {
     public function view(?User $user, TravelOverview $overview): bool
     {
         return $this->update($user, $overview)
-            || session()->has("access_granted_{$overview->id}");
+            || SharedAccess::hasValidAccess(request(), $overview);
     }
 
     public function update(?User $user, TravelOverview $overview): bool

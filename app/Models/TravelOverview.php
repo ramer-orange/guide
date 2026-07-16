@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 
 class TravelOverview extends Model
 {
     use HasUuids;
+
     protected $fillable = [
         'user_id',
         'title',
-        'overviewText'
+        'overviewText',
     ];
 
     public function plans()
@@ -41,7 +42,6 @@ class TravelOverview extends Model
         return $this->hasMany(Souvenir::class, 'travel_id');
     }
 
-
     public function additionalComments()
     {
         return $this->hasMany(AdditionalComment::class, 'travel_id');
@@ -49,6 +49,14 @@ class TravelOverview extends Model
 
     public function sharedPasswords()
     {
-        return $this->hasOne(SharedPassword::class, 'travel_id');
+        return $this->hasOne(SharedPassword::class, 'travel_id')->ofMany([
+            'created_at' => 'max',
+            'id' => 'max',
+        ]);
+    }
+
+    public function sharedPasswordHistory()
+    {
+        return $this->hasMany(SharedPassword::class, 'travel_id');
     }
 }

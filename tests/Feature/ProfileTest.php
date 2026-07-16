@@ -41,13 +41,26 @@ test('email verification status is unchanged when the email address is unchanged
     $this->assertNotNull($user->refresh()->email_verified_at);
 });
 
+test('profile email rejects carriage returns and line feeds', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    Volt::test('profile.update-profile-information-form')
+        ->set('name', 'Test User')
+        ->set('email', "attacker@example.com\r\nBcc: victim@example.com")
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['email']);
+
+    $this->assertSame($user->email, $user->fresh()->email);
+});
+
 test('user can delete their account', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
 
     $component = Volt::test('profile.delete-user-form')
-        ->set('password', 'password')
         ->call('deleteUser');
 
     $component
@@ -56,20 +69,4 @@ test('user can delete their account', function () {
 
     $this->assertGuest();
     $this->assertNull($user->fresh());
-});
-
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user);
-
-    $component = Volt::test('profile.delete-user-form')
-        ->set('password', 'wrong-password')
-        ->call('deleteUser');
-
-    $component
-        ->assertHasErrors('password')
-        ->assertNoRedirect();
-
-    $this->assertNotNull($user->fresh());
 });

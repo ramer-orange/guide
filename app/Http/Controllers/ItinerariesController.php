@@ -26,10 +26,12 @@ class ItinerariesController extends Controller
 
         return view('itineraries.index', compact('overviews'));
     }
+
     public function create(Request $request)
     {
         return view('itineraries.create');
     }
+
     public function edit(TravelOverview $overview)
     {
         if (! Gate::allows('view', $overview)) {
@@ -74,6 +76,7 @@ class ItinerariesController extends Controller
         $validated = $request->validate([
             'email' => [
                 'required',
+                'not_regex:/[\r\n]/',
                 'email',
                 Rule::exists('users', 'email'),
             ],
@@ -108,14 +111,6 @@ class ItinerariesController extends Controller
 
     private function hasSharedPassword(TravelOverview $overview): bool
     {
-        return $overview->sharedPasswords?->isActive()
-            ?? $overview->sharedPasswords()
-                ->whereNotNull('shared_password')
-                ->whereNull('disabled_at')
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')
-                        ->orWhere('expires_at', '>', now());
-                })
-                ->exists();
+        return $overview->sharedPasswords?->isActive() ?? false;
     }
 }

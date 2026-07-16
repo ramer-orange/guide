@@ -20,6 +20,7 @@ class ProfileUpdateRequest extends FormRequest
             'email' => [
                 'required',
                 'string',
+                'not_regex:/[\r\n]/',
                 'lowercase',
                 'email',
                 'max:255',
