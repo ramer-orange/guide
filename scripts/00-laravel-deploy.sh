@@ -15,5 +15,6 @@ chmod -R ug+rwX storage bootstrap/cache
 php artisan storage:link || true
 php artisan migrate --force
 php artisan db:seed --class=ProductionDemoSeeder --force
+php artisan livewire:publish --assets --no-interaction
 php artisan config:cache
 php artisan view:cache
