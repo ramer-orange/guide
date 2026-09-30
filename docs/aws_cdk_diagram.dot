@@ -1,0 +1,840 @@
+digraph "Diagram" {
+  splines = "ortho";
+  pad = 1;
+  nodesep = 0.6;
+  ranksep = 0.75;
+  fontname = "Sans-Serif";
+  fontsize = 15;
+  dpi = 200;
+  rankdir = "BT";
+  compound = true;
+  fontcolor = "#222222";
+  edge [
+    color = "#D5871488";
+    penwidth = 2;
+    arrowhead = "dot";
+    arrowtail = "dot";
+  ];
+  node [
+    shape = "box";
+    style = "rounded";
+    fixedsize = true;
+    width = 1.7;
+    height = 1.7;
+    labelloc = "c";
+    imagescale = true;
+    fontname = "Sans-Serif";
+    fontsize = 8;
+    margin = 8;
+  ];
+  subgraph "GuideStack" {
+    subgraph "cluster-SubGraph.GuideStack" {
+      graph [
+        label = "GuideStack";
+        labelloc = "b";
+        labeljust = "l";
+        margin = 10;
+        fontsize = 16;
+        penwidth = 2;
+        pencolor = "#888888";
+        style = "filled,rounded";
+        fillcolor = "#e4e4e4";
+      ];
+      "GuideStack/Vpc" [
+        label = " Vpc";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Amazon-Virtual-Private-Cloud_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/AlbSecurityGroup" [
+        label = " AlbSecurityGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/security_group.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/TaskSecurityGroup" [
+        label = " TaskSecurityGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/security_group.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/DatabaseSecurityGroup" [
+        label = "\nDatabaseSecurityGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/security_group.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/EndpointSecurityGroup" [
+        label = "\nEndpointSecurityGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/security_group.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/FilesBucket" [
+        label = " FilesBucket";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-S3-Standard_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/AuditBucket" [
+        label = " AuditBucket";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Storage/64/Arch_Amazon-S3-Standard_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/ApplicationRepository" [
+        label = "\nApplicationRepository";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_Amazon-Elastic-Container-Registry_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.682;
+      ];
+      "GuideStack/AppKeySecret" [
+        label = " AppKeySecret";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Secrets-Manager_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/GoogleOAuthSecret" [
+        label = " GoogleOAuthSecret";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Secrets-Manager_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/Database" [
+        label = " Database";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Compute/Res_48_Dark/Res_Amazon-EC2_Instance_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/AppNameParameter" [
+        label = " AppNameParameter";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_AWS-Systems-Manager_Parameter-Store_48_Dark.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/AppEnvironmentParameter" [
+        label = "\nAppEnvironmentParamet";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_AWS-Systems-Manager_Parameter-Store_48_Dark.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/AppUrlParameter" [
+        label = " AppUrlParameter";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_AWS-Systems-Manager_Parameter-Store_48_Dark.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/EcsExecutionRole" [
+        label = " EcsExecutionRole";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/EcsTaskRole" [
+        label = " EcsTaskRole";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/Cluster" [
+        label = " Cluster";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Compute/64/Arch_Amazon-Elastic-Container-Service_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/ApplicationLogGroup" [
+        label = " ApplicationLogGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_Amazon-Cloudwatch_Logs_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/MigrationLogGroup" [
+        label = " MigrationLogGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_Amazon-Cloudwatch_Logs_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/ApplicationTaskDefinition" [
+        label = "\nApplicationTaskDefini";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Task_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/MigrationTaskDefinition" [
+        label = "\nMigrationTaskDefiniti";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Task_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/AlbCertificate" [
+        label = " AlbCertificate";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Certificate-Manager_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/Alb" [
+        label = " Alb";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Networking-Content/64/Arch_Elastic-Load-Balancing_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/ApplicationTargetGroup" [
+        label = "\nApplicationTargetGrou";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Elastic-Load-Balancing_Application-Load-Balancer_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.682;
+      ];
+      "GuideStack/ApplicationAliasRecord" [
+        label = " Route53 RecordSet";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Networking-and-Content-Delivery/Res_48_Dark/Res_Amazon-Route-53-Hosted-Zone_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/AlbWebAcl" [
+        label = " WAFv2 WebACL\nAlbWebAcl";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-WAF_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.4819999999999998;
+      ];
+      "GuideStack/AlbWebAclAssociation" [
+        label = " WAFV2\nWEBACLASSOCIATION\nAlbWebAclAssociation";
+        fontsize = 12;
+      ];
+      "GuideStack/OperationsTopic" [
+        label = " OperationsTopic";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_App-Integration/Arch_64/Arch_AWS-Simple-Notification-Service_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/HighTaskCpuAlarm" [
+        label = " HighTaskCpuAlarm";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/Target5xxAlarm" [
+        label = " Target5xxAlarm";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/HighDatabaseCpuAlarm" [
+        label = " HighDatabaseCpuAlarm";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_Amazon-CloudWatch_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/CloudTrailLogGroup" [
+        label = " CloudTrailLogGroup";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Management-Governance/Res_48_Dark/Res_Amazon-Cloudwatch_Logs_48_Dark_gen.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.266;
+      ];
+      "GuideStack/AuditTrail" [
+        label = " AuditTrail";
+        fontsize = 12;
+      ];
+      "GuideStack/GuardDutyDetector" [
+        label = " GUARDDUTY DETECTOR\nGuardDutyDetector";
+        fontsize = 12;
+      ];
+      "GuideStack/GuardDutyFindingsRule" [
+        label = "\nGuardDutyFindingsRule";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_App-Integration/Arch_64/Arch_Amazon-EventBridge_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.682;
+      ];
+      "GuideStack/ConfigRecorderRole" [
+        label = " ConfigRecorderRole";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/ConfigurationRecorder" [
+        label = " Config\nConfigurationRecorder\nConfigurationRecorder";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_AWS-Config_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 2;
+        height = 2.6979999999999995;
+      ];
+      "GuideStack/ConfigDeliveryChannel" [
+        label = " Config\nDeliveryChannel\nConfigDeliveryChannel";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_AWS-Config_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.898;
+      ];
+      "GuideStack/ConfigComplianceRule" [
+        label = " ConfigComplianceRule";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_App-Integration/Arch_64/Arch_Amazon-EventBridge_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/GitHubOidcProvider" [
+        label = " GitHubOidcProvider";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Management-Governance/64/Arch_AWS-CloudFormation_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/GitHubActionsRole" [
+        label = " GitHubActionsRole";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      "GuideStack/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole" [
+        label = " ServiceRole";
+        fontsize = 12;
+        image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Service/Arch_Security-Identity-Compliance/64/Arch_AWS-Identity-and-Access-Management_64@5x.png";
+        imagescale = "true";
+        imagepos = "tc";
+        penwidth = 0;
+        shape = "node";
+        fixedsize = "true";
+        labelloc = "b";
+        width = 1.2;
+        height = 1.466;
+      ];
+      subgraph "cluster-SubGraph.ApplicationService" {
+        graph [
+          label = "ApplicationService";
+          labelloc = "b";
+          labeljust = "l";
+          margin = 10;
+          fontsize = 16;
+          penwidth = 2;
+          pencolor = "#888888";
+          style = "filled,rounded";
+          fillcolor = "#d6d6d6";
+        ];
+        "GuideStack/ApplicationService/Service" [
+          label = " ECS Service Service";
+          fontsize = 12;
+          image = "/Users/kai/guide/node_modules/cdk-dia/icons/aws/Resource/Res_Containers/Res_48_Dark/Res_Amazon-Elastic-Container-Service_Service_48_Dark_gen.png";
+          imagescale = "true";
+          imagepos = "tc";
+          penwidth = 0;
+          shape = "node";
+          fixedsize = "true";
+          labelloc = "b";
+          width = 2;
+          height = 2.266;
+        ];
+        "GuideStack/ApplicationService/TaskCount/Target" [
+          label = " Target";
+          fontsize = 12;
+        ];
+      }
+    }
+  }
+  "GuideStack/Vpc" -> "GuideStack/EndpointSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/AlbSecurityGroup" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/TaskSecurityGroup" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/TaskSecurityGroup" -> "GuideStack/AlbSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/DatabaseSecurityGroup" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/DatabaseSecurityGroup" -> "GuideStack/TaskSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/EndpointSecurityGroup" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/EndpointSecurityGroup" -> "GuideStack/TaskSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/Database" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/Database" -> "GuideStack/DatabaseSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/ApplicationRepository" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/AppKeySecret" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/GoogleOAuthSecret" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/Database" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/AppNameParameter" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/AppEnvironmentParameter" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/AppUrlParameter" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/ApplicationLogGroup" [
+    dir = "both";
+  ];
+  "GuideStack/EcsExecutionRole" -> "GuideStack/MigrationLogGroup" [
+    dir = "both";
+  ];
+  "GuideStack/EcsTaskRole" -> "GuideStack/FilesBucket" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/FilesBucket" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/ApplicationRepository" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/AppKeySecret" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/GoogleOAuthSecret" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/Database" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/AppNameParameter" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/AppEnvironmentParameter" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/AppUrlParameter" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/EcsExecutionRole" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/EcsTaskRole" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTaskDefinition" -> "GuideStack/ApplicationLogGroup" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/FilesBucket" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/ApplicationRepository" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/AppKeySecret" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/GoogleOAuthSecret" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/Database" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/AppNameParameter" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/AppEnvironmentParameter" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/AppUrlParameter" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/EcsExecutionRole" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/EcsTaskRole" [
+    dir = "both";
+  ];
+  "GuideStack/MigrationTaskDefinition" -> "GuideStack/MigrationLogGroup" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/Service" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/Service" -> "GuideStack/TaskSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/Service" -> "GuideStack/Cluster" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/Service" -> "GuideStack/ApplicationTaskDefinition" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/Service" -> "GuideStack/ApplicationTargetGroup" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/TaskCount/Target" -> "GuideStack/ApplicationService/Service" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationService/TaskCount/Target" -> "GuideStack/Cluster" [
+    dir = "both";
+  ];
+  "GuideStack/Alb" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/Alb" -> "GuideStack/AlbSecurityGroup" [
+    dir = "both";
+  ];
+  "GuideStack/Alb" -> "GuideStack/AuditBucket" [
+    dir = "both";
+  ];
+  "GuideStack/Alb" -> "GuideStack/AlbCertificate" [
+    dir = "both";
+  ];
+  "GuideStack/Alb" -> "GuideStack/ApplicationTargetGroup" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationTargetGroup" -> "GuideStack/Vpc" [
+    dir = "both";
+  ];
+  "GuideStack/ApplicationAliasRecord" -> "GuideStack/Alb" [
+    dir = "both";
+  ];
+  "GuideStack/AlbWebAclAssociation" -> "GuideStack/AlbWebAcl" [
+    dir = "both";
+  ];
+  "GuideStack/AlbWebAclAssociation" -> "GuideStack/Alb" [
+    dir = "both";
+  ];
+  "GuideStack/HighTaskCpuAlarm" -> "GuideStack/ApplicationService/Service" [
+    dir = "both";
+  ];
+  "GuideStack/HighTaskCpuAlarm" -> "GuideStack/Cluster" [
+    dir = "both";
+  ];
+  "GuideStack/HighTaskCpuAlarm" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/Target5xxAlarm" -> "GuideStack/Alb" [
+    dir = "both";
+  ];
+  "GuideStack/Target5xxAlarm" -> "GuideStack/ApplicationTargetGroup" [
+    dir = "both";
+  ];
+  "GuideStack/Target5xxAlarm" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/HighDatabaseCpuAlarm" -> "GuideStack/Database" [
+    dir = "both";
+  ];
+  "GuideStack/HighDatabaseCpuAlarm" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/AuditTrail" -> "GuideStack/CloudTrailLogGroup" [
+    dir = "both";
+  ];
+  "GuideStack/AuditTrail" -> "GuideStack/AuditBucket" [
+    dir = "both";
+  ];
+  "GuideStack/GuardDutyFindingsRule" -> "GuideStack/GuardDutyDetector" [
+    dir = "both";
+  ];
+  "GuideStack/GuardDutyFindingsRule" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigRecorderRole" -> "GuideStack/AuditBucket" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigRecorderRole" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigurationRecorder" -> "GuideStack/ConfigRecorderRole" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigDeliveryChannel" -> "GuideStack/AuditBucket" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigDeliveryChannel" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/ConfigComplianceRule" -> "GuideStack/OperationsTopic" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/GitHubOidcProvider" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/ApplicationService/Service" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/ApplicationRepository" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/EcsExecutionRole" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/EcsTaskRole" [
+    dir = "both";
+  ];
+  "GuideStack/GitHubActionsRole" -> "GuideStack/Cluster" [
+    dir = "both";
+  ];
+}
