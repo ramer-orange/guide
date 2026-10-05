@@ -70,13 +70,13 @@ API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されま�
 
 ## Render の既存 Web Service で移行 UI を動かす
 
-Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service は branch `codex/next-typescript-migration`、Dockerfile path `Dockerfile.render-next` で `https://guide-2s9j.onrender.com/` に稼働しています（commit `50c50c2096c6ee25859dfcf4ccb642df108f304b`）。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
+Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service は branch `codex/next-typescript-migration`、Dockerfile path `Dockerfile.render-next` で `https://guide-2s9j.onrender.com/` に稼働しています（commit `f18a68045fb76d83a97a993fc8c07ab378b314f9`）。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
 
 既存 Service の環境変数と秘密情報を引き継ぎ、`APP_KEY`、`APP_URL=https://guide-2s9j.onrender.com`、セッション設定を維持してください。PostgreSQL 接続先は新しい空の PostgreSQL 17 free database（Oregon）に設定済みです。旧 database のデータはコピーしていません。free database は 2026-11-04 に期限切れになります。Google OAuth を使う場合は `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI=https://guide-2s9j.onrender.com/auth/google/callback` と Google 側 callback 登録が必要です。現在の OAuth redirect はGoogleへ到達しますが、`GOOGLE_CLIENT_ID` 未設定により Google が `Missing required parameter: client_id` を返します。Next の metadata origin は build arg `NEXT_PUBLIC_SITE_URL` で設定し、既定値は `https://guide-2s9j.onrender.com` です。
 
 コンテナ起動時に `php artisan migrate --force` を実行します。現在の公開 URL はホーム・規約ページと asset 配信、session/CSRF、guest access を確認済みです。ログインは Google へ通常遷移しますが、Google credentials 未設定のため認証完了は未確認です。空DBのため公開画面からしおりを作成しておらず、ログイン後の保存・共有・添付は未検証です。seeder やテスト用ログインルートはありません。新規 migration をデプロイする前に、DB backup と migration の内容を確認してください。
 
-添付を Cloudflare R2 に保存する場合、Render の環境変数に `FILESYSTEM_UPLOADS_DISK=r2`、`R2_ENDPOINT`、`R2_BUCKET`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY` を設定します。R2 disk は非公開で、ブラウザーは同一オリジンの認可済み Laravel download endpoint 経由で取得します。AWS S3 の設定とは別です。新しい添付には disk 名が保存され、既存行で disk が null の添付は `FILESYSTEM_LEGACY_UPLOADS_DISK`（既定 `public`）から引き続き読み書き・削除します。既存ファイルの移動や backfill は自動実行しません。R2 を有効にする前に、既存の null disk ファイルが置かれた disk 名を確認して legacy disk を設定してください。公開動作の詳細は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) に記録しています。
+現在の Render Service は private R2 bucket `guide-attachments` を新しい添付の保存先として使います（`FILESYSTEM_UPLOADS_DISK=r2`、`FILESYSTEM_LEGACY_UPLOADS_DISK=public`）。資格情報は Render runtime の環境変数として保持し、値をソースや Next.js build に含めません。ブラウザーは同一オリジンの認可済み Laravel download endpoint 経由で取得します。AWS S3 の設定とは別です。新しい添付には disk 名が保存され、既存行で disk が null の添付は `public` から引き続き読み書き・削除します。既存ファイルの移動や backfill は自動実行しません。公開動作の詳細は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) に記録しています。
 
 ## デプロイ計画
 
