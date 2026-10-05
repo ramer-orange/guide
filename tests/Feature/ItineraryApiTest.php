@@ -124,6 +124,53 @@ it('maps uploaded files to the stable plan client ID and removes attachments omi
     expect($file->fresh())->toBeNull();
 });
 
+it('stores each attachment disk and serves private R2 files through the authorized endpoint', function () {
+    Storage::fake('public');
+    Storage::fake('r2');
+    config(['filesystems.uploads' => 'r2', 'filesystems.legacy_uploads' => 'public']);
+    $owner = User::factory()->create();
+    $payload = itineraryPayload(['plans' => [[
+        'client_id' => 'r2-plan', 'title' => 'Receipt', 'order' => 0, 'existing_file_ids' => [],
+    ]]]);
+    $response = $this->actingAs($owner)->post('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+        'files' => ['r2-plan' => [UploadedFile::fake()->create('receipt.pdf', 20, 'application/pdf')]],
+    ], ['Accept' => 'application/json'])->assertCreated();
+
+    $trip = TravelOverview::findOrFail($response->json('id'));
+    $file = $trip->plans()->firstOrFail()->planFiles()->firstOrFail();
+    expect($file->disk)->toBe('r2')
+        ->and($response->json('plans.0.files.0.url'))->toContain("/api/v1/itineraries/{$trip->id}/files/{$file->id}");
+    Storage::disk('r2')->assertExists($file->path);
+    Storage::disk('public')->assertMissing($file->path);
+    $this->actingAs($owner)->get($response->json('plans.0.files.0.url'))->assertOk();
+
+    $payload['plans'][0]['id'] = $trip->plans()->firstOrFail()->id;
+    $payload['plans'][0]['existing_file_ids'] = [];
+    $this->actingAs($owner)->put("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ], ['Accept' => 'application/json'])->assertOk();
+    Storage::disk('r2')->assertMissing($file->path);
+});
+
+it('uses the configured legacy disk for existing attachments without disk metadata', function () {
+    Storage::fake('public');
+    Storage::fake('r2');
+    config(['filesystems.uploads' => 'r2', 'filesystems.legacy_uploads' => 'public']);
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $plan = $trip->plans()->create(['plans_title' => 'Legacy file', 'order' => 0]);
+    Storage::disk('public')->put('files/legacy.pdf', 'legacy');
+    $file = $plan->planFiles()->create(['file_name' => 'legacy.pdf', 'path' => 'files/legacy.pdf']);
+
+    expect($file->fresh()->disk)->toBeNull();
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$file->id}")->assertOk();
+
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}")->assertNoContent();
+    Storage::disk('public')->assertMissing('files/legacy.pdf');
+    Storage::disk('r2')->assertMissing('files/legacy.pdf');
+});
+
 it('returns validation errors for malformed payloads and database IDs on create', function () {
     $user = User::factory()->create();
     $this->actingAs($user)->postJson('/api/v1/itineraries', ['payload' => '{bad json'])->assertUnprocessable();

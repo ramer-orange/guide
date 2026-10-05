@@ -10,21 +10,20 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SaveItinerary
 {
     /** @param array<string, mixed> $data @param array<string, array<UploadedFile>> $uploads */
-    public function handle(User $user, array $data, array $uploads = [], ?TravelOverview $overview = null): TravelOverview
+    public function handle(User $user, array $data, array $uploads = [], ?TravelOverview $overview = null, ?PlanFileStorage $fileStorage = null): TravelOverview
     {
-        $newPaths = [];
-        $oldPaths = [];
-        $disk = Storage::disk(config('filesystems.uploads'));
+        $fileStorage ??= app(PlanFileStorage::class);
+        $newObjects = [];
+        $oldObjects = [];
 
         try {
-            $overview = DB::transaction(function () use ($user, $data, $uploads, $overview, &$newPaths, &$oldPaths) {
+            $overview = DB::transaction(function () use ($user, $data, $uploads, $overview, $fileStorage, &$newObjects, &$oldObjects) {
                 if ($overview) {
                     $overview->update(['title' => $data['title'], 'overviewText' => $data['overview_text'] ?? null]);
                 } else {
@@ -53,7 +52,7 @@ class SaveItinerary
                     $files = $plan->planFiles()->get();
                     foreach ($files as $file) {
                         if (! in_array($file->id, $keepIds)) {
-                            $oldPaths[] = $file->path;
+                            $oldObjects[] = ['disk' => $fileStorage->diskName($file), 'path' => $file->path];
                             $file->delete();
                         }
                     }
@@ -61,17 +60,18 @@ class SaveItinerary
                         if (! $upload instanceof UploadedFile) {
                             continue;
                         }
-                        $path = $upload->store('files', config('filesystems.uploads'));
-                        if (! $path) {
-                            throw new \RuntimeException('Unable to store uploaded attachment.');
-                        }
-                        $newPaths[] = $path;
-                        $plan->planFiles()->create(['path' => $path, 'file_name' => $upload->getClientOriginalName()]);
+                        $object = $fileStorage->store($upload);
+                        $newObjects[] = $object;
+                        $plan->planFiles()->create([
+                            'path' => $object['path'],
+                            'disk' => $object['disk'],
+                            'file_name' => $upload->getClientOriginalName(),
+                        ]);
                     }
                 }
-                $overview->plans()->whereNotIn('id', $planIds ?: [0])->with('planFiles')->get()->each(function (Plan $plan) use (&$oldPaths) {
+                $overview->plans()->whereNotIn('id', $planIds ?: [0])->with('planFiles')->get()->each(function (Plan $plan) use (&$oldObjects, $fileStorage) {
                     foreach ($plan->planFiles as $file) {
-                        $oldPaths[] = $file->path;
+                        $oldObjects[] = ['disk' => $fileStorage->diskName($file), 'path' => $file->path];
                     }
                     $plan->delete();
                 });
@@ -139,17 +139,26 @@ class SaveItinerary
                 return $overview;
             });
         } catch (Throwable $error) {
-            foreach ($newPaths as $path) {
-                $disk->delete($path);
-            }
+            $fileStorage->deleteBestEffort($newObjects);
             throw $error;
         }
 
-        foreach (array_unique($oldPaths) as $path) {
-            $disk->delete($path);
-        }
+        $fileStorage->deleteBestEffort($this->uniqueObjects($oldObjects));
 
         return $overview->refresh();
+    }
+
+    /** @param array<array{disk: string, path: string}> $objects
+     * @return array<array{disk: string, path: string}>
+     */
+    private function uniqueObjects(array $objects): array
+    {
+        $unique = [];
+        foreach ($objects as $object) {
+            $unique[$object['disk'].'/'.$object['path']] = $object;
+        }
+
+        return array_values($unique);
     }
 
     private function saveInitialShare(TravelOverview $overview, array $data): void

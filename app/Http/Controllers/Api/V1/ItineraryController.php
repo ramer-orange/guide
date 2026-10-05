@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Itineraries\PlanFileStorage;
 use App\Actions\Itineraries\SaveItinerary;
 use App\Http\Requests\Api\V1\SaveItineraryRequest;
 use App\Http\Resources\Api\V1\ItineraryResource;
@@ -9,7 +10,6 @@ use App\Models\PlanFile;
 use App\Models\TravelOverview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ItineraryController
@@ -58,25 +58,24 @@ class ItineraryController
             ->header('Cache-Control', 'private, no-store');
     }
 
-    public function destroy(TravelOverview $itinerary): \Illuminate\Http\Response
+    public function destroy(TravelOverview $itinerary, PlanFileStorage $fileStorage): \Illuminate\Http\Response
     {
         Gate::authorize('delete', $itinerary);
-        $paths = $itinerary->plans()->with('planFiles')->get()->flatMap(fn ($plan) => $plan->planFiles->pluck('path'));
+        $files = $itinerary->plans()->with('planFiles')->get()->flatMap(fn ($plan) => $plan->planFiles);
+        $objects = $files->map(fn (PlanFile $file) => ['disk' => $fileStorage->diskName($file), 'path' => $file->path]);
         $itinerary->delete();
-        foreach ($paths as $path) {
-            Storage::disk(config('filesystems.uploads'))->delete($path);
-        }
+        $fileStorage->deleteBestEffort($objects);
 
         return response()->noContent()->header('Cache-Control', 'private, no-store');
     }
 
-    public function file(TravelOverview $itinerary, int $fileId): StreamedResponse
+    public function file(TravelOverview $itinerary, int $fileId, PlanFileStorage $fileStorage): StreamedResponse
     {
         Gate::authorize('view', $itinerary);
         $file = PlanFile::query()->whereHas('plan', fn ($query) => $query->where('travel_id', $itinerary->id))
             ->whereKey($fileId)->firstOrFail();
-        abort_unless(Storage::disk(config('filesystems.uploads'))->exists($file->path), 404);
-        $response = Storage::disk(config('filesystems.uploads'))->download($file->path, $file->file_name);
+        abort_unless($fileStorage->exists($file), 404);
+        $response = $fileStorage->download($file);
         $response->headers->set('Cache-Control', 'private, no-store');
 
         return $response;

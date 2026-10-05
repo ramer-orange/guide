@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Itineraries\PlanFileStorage;
 use App\Models\TravelMember;
 use App\Models\TravelOverview;
 use App\Models\User;
@@ -60,11 +61,14 @@ class ItinerariesController extends Controller
         ]);
     }
 
-    public function destroy(TravelOverview $overview)
+    public function destroy(TravelOverview $overview, PlanFileStorage $fileStorage)
     {
         Gate::authorize('delete', $overview);
 
+        $files = $overview->plans()->with('planFiles')->get()->flatMap(fn ($plan) => $plan->planFiles);
+        $objects = $files->map(fn ($file) => ['disk' => $fileStorage->diskName($file), 'path' => $file->path]);
         $overview->delete();
+        $fileStorage->deleteBestEffort($objects);
 
         return redirect()->route('itineraries.index');
     }

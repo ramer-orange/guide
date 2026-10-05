@@ -39,13 +39,19 @@ docker compose -f docker-compose.yml up -d --force-recreate laravel.test
 - 実 API + ブラウザー: `npm run e2e:next` が隔離 SQLite を作成し、同一 origin で API HTTP suite と Playwright 3 tests を成功させた。確認した操作は CSRF 419/422、旅行作成/編集、空の日付、ポインターとキーボードでの日程並び替え、添付 upload/download/delete、保存後の再読込、本人別の持ち物と全削除、入力エラー、メンバー追加/削除、共有パスワード誤り/成功、読み取り専用、共有停止、モバイルヘッダーとログアウト。
 - 2026-10-05 の追加ブラウザー確認: `/api/v1/session` の初回 HTTP 500 では失敗表示と再試行を提示し、API復旧後の再試行で一覧へ回復した。未保存状態のブラウザー戻る/進むと「一覧へ戻る」は、確認をキャンセルすると画面と入力値を保持し、承認すると移動する。保存後の戻る操作は確認なしで移動した。共有期限だけを更新してパスワード欄を空のまま保存した後も、既存パスワードで共有画面を開けた。これらの手動ブラウザー確認では意図的なHTTP 500以外にconsole error/pageerrorはなかった。
 - 最終 `npm run e2e:next`: production build、API HTTP suite、Playwright 3 tests が成功した。ドラッグ並び替えは auto-scroll で固定 target が移動するため、E2E のみ pointer 移動中に対象行の bounding box を再取得するよう調整し、順序変更と保存後の再読込 assertion を維持した。owner の drag・save・reload ケースも追加で2回連続成功した。
-- Docker: Next standalone image と Laravel を含む combined image の build/smoke test が成功した。PostgreSQL 17 を使う isolated container で migration、Next/Laravel の HTTP、session、CSRF、共有アクセスを確認。Next standalone は UID 1000 で動作し、combined image でも Next process は非 root で実行する。主要ページ、mockup、11件の JS/CSS asset が HTTP 200。Pest 52 tests / 261 assertions は SQLite と PostgreSQL 17 の両方で成功した。アップロードは現在コンテナ内 local storage に保存され、container 再作成後の永続性はない。
+- Docker: Next standalone image と Laravel を含む combined image の build/smoke test が成功した。PostgreSQL 17 を使う isolated container で migration、Next/Laravel の HTTP、session、CSRF、共有アクセスを確認。Next standalone は UID 1000 で動作し、combined image でも Next process は非 root で実行する。主要ページ、mockup、11件の JS/CSS asset が HTTP 200。Pest 52 tests / 261 assertions は SQLite と PostgreSQL 17 の両方で成功した。R2 接続情報は未設定のため、実アカウントに対する接続確認はしていない。
 - Render 公開確認: [公開 URL](https://guide-2s9j.onrender.com/) のホーム、`/policy`、`/terms` は HTTP 200、ページ asset 67件はすべて HTTP 200。session endpoint は guest を返し、CSRF cookie を発行、guest の itinerary GET は 401。空DBでランダムな共有 URL は 404（記録不存在）となるため、本番で CSRF 419 が確認できたとは扱わない。419/422 は隔離 local E2E で検証済み。mobile menu、login の通常 document navigation、ページ遷移を確認し、login に Next RSC fetch/CORS はなく、対象 smoke で console error/pageerror は 0 件だった。
 - Render OAuth: `/auth/google` は Google へ redirect するが、Google client ID が未設定のため `Missing required parameter: client_id` / `Error 400: invalid_request` で停止した。秘密値や stack trace の露出はなかった。認証後の callback、ログイン済み画面、本番での作成・共有・添付は未確認で、本番DBに記録を作成・変更していない。
 - Render は commit `50c50c2096c6ee25859dfcf4ccb642df108f304b` で稼働中。新規の空 PostgreSQL 17 free database（Oregon、2026-11-04 expiration）を接続し、旧 database の内容は移行していない。画面キャプチャは [`desktop-home.png`](/tmp/guide-render-next/desktop-home.png)、[`mobile-home.png`](/tmp/guide-render-next/mobile-home.png)、[`guest-protected.png`](/tmp/guide-render-next/guest-protected.png)、[`login-oauth-error.png`](/tmp/guide-render-next/login-oauth-error.png)。
 
 ローカル画面キャプチャは [`desktop-edit.png`](/tmp/guide-next-e2e/desktop-edit.png) と [`mobile-home.png`](/tmp/guide-next-e2e/mobile-home.png) に保存した。E2E 用 session は CLI fixture が隔離 SQLite 上に作るもので、ログインを迂回する HTTP endpoint はない。テストは `.env` の DB を使わず、終了時に起動した PHP/Next/gateway を停止する。
 
+## 添付ストレージ
+
+添付は `FILESYSTEM_UPLOADS_DISK` で選んだ disk に保存し、各 `plan_files` 行へ disk 名を記録する。Cloudflare R2 は private `r2` disk として設定し、API/旧 Blade UI のダウンロードも同一オリジンの itinerary Policy 認可 endpoint を通る。R2 の接続情報はサーバー側の保存処理で使用し、Next.js クライアントコードやブラウザーには公開しない。`R2_*` を `NEXT_PUBLIC_*` 変数へ設定しない。AWS S3 disk は独立している。
+
+旧データで `plan_files.disk` が null の場合は `FILESYSTEM_LEGACY_UPLOADS_DISK`（既定 `public`）を使う。環境により既存ファイルの保存先が異なる場合は、R2 切替前にこの変数を従来の disk 名へ合わせる。既存ファイルのコピー・backfill は行わず、DB migration は nullable disk 列の追加のみ。
+
 ## 運用上の未確認事項
 
-移行の変更は `codex/next-typescript-migration` ブランチに保存した。Google 資格情報が未設定のため、実 Google OAuth callback とログイン済み公開 UI は未確認。新しい空DBに旧DBのデータはなく、旧DBは変更していない。添付の永続化は未構成である。AWS 設定は変更していない。
+移行の変更は `codex/next-typescript-migration` ブランチに保存した。R2 の実アカウント接続、資格情報の設定、添付の live upload/download は未確認で、R2 はまだ有効化していない。現在 `FILESYSTEM_UPLOADS_DISK` は既定の `public` を使うため、現行 Render コンテナ上で作成した添付は再作成後に残らない。Google 資格情報が未設定のため、実 Google OAuth callback とログイン済み公開 UI は未確認。新しい空DBに旧DBのデータはなく、旧DBは変更していない。AWS 設定は変更していない。
