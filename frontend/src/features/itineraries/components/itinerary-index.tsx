@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     CalendarDays,
@@ -21,7 +20,6 @@ import { normalizeApiError } from "@/lib/api/errors";
 
 export function ItineraryIndex() {
     const client = useQueryClient();
-    const router = useRouter();
     const session = useSession();
     const [notice, setNotice] = useState("");
     const principal = session.data?.user?.id ?? "guest";
@@ -37,8 +35,8 @@ export function ItineraryIndex() {
     });
     useEffect(() => {
         if (session.data && !session.data.authenticated)
-            router.replace("/login");
-    }, [session.data, router]);
+            window.location.replace("/login");
+    }, [session.data]);
     if (session.isError)
         return (
             <section className="mx-auto min-h-[60vh] max-w-6xl px-5 pt-36 text-center">

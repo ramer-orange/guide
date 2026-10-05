@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight, CheckSquare2, Map, Share2, Sparkles } from "lucide-react";
 const features = [
     {
@@ -50,13 +49,13 @@ export default function HomePage() {
                             <br />
                             思い出作りが、これまで以上に楽しくなる。
                         </p>
-                        <Link
+                        <a
                             href="/login"
                             className="mt-8 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#55acd0] to-[#21a796] px-7 py-4 font-bold text-white shadow-xl shadow-[#183f4a]/25 transition hover:-translate-y-0.5"
                         >
                             無料で始める
                             <ArrowRight size={18} />
-                        </Link>
+                        </a>
                     </div>
                 </div>
                 <div className="absolute bottom-0 left-0 h-16 w-full bg-gradient-to-t from-[#fffdfa] to-transparent" />
@@ -194,13 +193,13 @@ export default function HomePage() {
                     <p className="mt-2 text-sm text-white/85">
                         あなたらしい旅のしおりを作ってみませんか？
                     </p>
-                    <Link
+                    <a
                         href="/login"
                         className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[#278d87]"
                     >
                         無料で始める
                         <ArrowRight size={16} />
-                    </Link>
+                    </a>
                 </div>
             </section>
         </>

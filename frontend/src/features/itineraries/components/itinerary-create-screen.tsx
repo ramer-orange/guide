@@ -1,14 +1,12 @@
 "use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useSession } from "@/features/auth/hooks/use-session";
 import { ItineraryEditor } from "@/features/itineraries/components/editor/itinerary-editor";
 export function ItineraryCreateScreen() {
     const { data, isPending, isError, refetch } = useSession();
-    const router = useRouter();
     useEffect(() => {
-        if (data && !data.authenticated) router.replace("/login");
-    }, [data, router]);
+        if (data && !data.authenticated) window.location.replace("/login");
+    }, [data]);
     if (isError)
         return (
             <div className="mx-auto max-w-3xl px-6 pt-32 text-center">
