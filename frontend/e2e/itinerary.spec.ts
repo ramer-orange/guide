@@ -139,6 +139,11 @@ test("owner creates, sorts, uploads, edits, clears packing and persists after re
             .boundingBox();
         expect(sourceHandle).not.toBeNull();
         expect(targetRow).not.toBeNull();
+        const target = handles
+            .nth(1)
+            .locator(
+                "xpath=ancestor::div[contains(@class,'relative rounded-2xl')]",
+            );
         await page.mouse.move(
             sourceHandle!.x + sourceHandle!.width / 2,
             sourceHandle!.y + sourceHandle!.height / 2,
@@ -149,13 +154,18 @@ test("owner creates, sorts, uploads, edits, clears packing and persists after re
             sourceHandle!.y + sourceHandle!.height / 2 + 10,
             { steps: 4 },
         );
-        await page.mouse.move(
-            targetRow!.x + targetRow!.width - 34,
-            targetRow!.y + 36,
-            { steps: 12 },
-        );
+        // Dragging can auto-scroll the page. Re-measure the destination on
+        // every pointer move so the release stays over the second plan.
+        for (let step = 0; step < 12; step += 1) {
+            const currentTarget = await target.boundingBox();
+            expect(currentTarget).not.toBeNull();
+            await page.mouse.move(
+                currentTarget!.x + currentTarget!.width - 34,
+                currentTarget!.y + 36,
+            );
+            await page.waitForTimeout(40);
+        }
         await page.mouse.up();
-        await expect(planNames.nth(0)).toHaveValue("次の予定");
         await expect(planNames.nth(0)).toHaveValue("次の予定");
 
         await page.getByRole("button", { name: "しおりを保存" }).click();

@@ -70,11 +70,11 @@ API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されま�
 
 ## Render の既存 Web Service で移行 UI を動かす
 
-Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service の branch を `codex/next-typescript-migration` にし、Docker runtime と Dockerfile path を `Dockerfile.render-next` に設定して同じ公開 URL で切り替える想定です。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
+Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service は branch `codex/next-typescript-migration`、Dockerfile path `Dockerfile.render-next` で `https://guide-2s9j.onrender.com/` に稼働しています（commit `50c50c2096c6ee25859dfcf4ccb642df108f304b`）。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
 
-既存 Service の環境変数と秘密情報は引き継ぎ、少なくとも既存の `APP_KEY`、PostgreSQL 接続情報、`APP_URL=https://guide-2s9j.onrender.com`、セッション設定を保ってください。同じホストと APP_KEY を維持することで Laravel session cookie の暗号化設定を保ちます。Google OAuth を使う場合は `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI=https://guide-2s9j.onrender.com/auth/google/callback` と Google 側 callback 登録が必要です。Next の metadata origin は build arg `NEXT_PUBLIC_SITE_URL` で設定し、既定値は `https://guide-2s9j.onrender.com` です。
+既存 Service の環境変数と秘密情報を引き継ぎ、`APP_KEY`、`APP_URL=https://guide-2s9j.onrender.com`、セッション設定を維持してください。PostgreSQL 接続先は新しい空の PostgreSQL 17 free database（Oregon）に設定済みです。旧 database のデータはコピーしていません。free database は 2026-11-04 に期限切れになります。Google OAuth を使う場合は `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI=https://guide-2s9j.onrender.com/auth/google/callback` と Google 側 callback 登録が必要です。現在の OAuth redirect はGoogleへ到達しますが、`GOOGLE_CLIENT_ID` 未設定により Google が `Missing required parameter: client_id` を返します。Next の metadata origin は build arg `NEXT_PUBLIC_SITE_URL` で設定し、既定値は `https://guide-2s9j.onrender.com` です。
 
-コンテナ起動時に `php artisan migrate --force` を実行します。seeder やテスト用ログインルートはありません。新規 migration をデプロイする前に、DB backup と migration の内容を確認してください。既存サービスへのデプロイは公開データと利用者へ影響するため、別途デプロイ実行者が Render Dashboard から行います。この構成の本番動作確認はデプロイ後に記録します。現時点で Google OAuth の資格情報は未設定です。
+コンテナ起動時に `php artisan migrate --force` を実行します。現在の公開 URL はホーム・規約ページと asset 配信、session/CSRF、guest access を確認済みです。ログインは Google へ通常遷移しますが、Google credentials 未設定のため認証完了は未確認です。空DBのため公開画面からしおりを作成しておらず、ログイン後の保存・共有・添付は未検証です。seeder やテスト用ログインルートはありません。新規 migration をデプロイする前に、DB backup と migration の内容を確認してください。現行の `FILESYSTEM_DISK=local` は添付をコンテナ内へ保存するため、コンテナ再作成後も残る永続ストレージではありません。添付を継続利用する場合は永続ディスクまたは S3 等の共有ストレージを設定してください。公開動作の詳細は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) に記録しています。
 
 ## デプロイ計画
 
