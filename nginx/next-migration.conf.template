@@ -1,0 +1,39 @@
+server {
+    listen 80 default_server;
+    server_name _;
+    client_max_body_size 20m;
+
+    # The Laravel session, CSRF, OAuth, API, health and legacy endpoints stay
+    # on the same public origin as Next so browser cookies remain first-party.
+    location ^~ /api/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location ^~ /sanctum/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location ^~ /auth/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location = /login { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location = /register { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location = /logout { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location = /up { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location ^~ /livewire/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location ^~ /build/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    location ^~ /storage/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+
+    location ^~ /_next/ {
+        proxy_pass http://next:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location ^~ /images/ { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+
+    # Pages implemented in Next are deliberately listed here. All other
+    # existing URLs continue to resolve through Laravel during migration.
+    location = / { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+    location = /policy { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+    location = /terms { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+    location = /itineraries/index { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+    location = /itineraries/create { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+    location ~ ^/itineraries/[^/]+/(edit|shared-access)$ { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
+
+    location / { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+}

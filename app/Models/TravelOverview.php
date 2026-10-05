@@ -47,6 +47,11 @@ class TravelOverview extends Model
         return $this->hasMany(AdditionalComment::class, 'travel_id');
     }
 
+    public function templateType()
+    {
+        return $this->hasOne(TemplateType::class, 'travel_id');
+    }
+
     public function sharedPasswords()
     {
         return $this->hasOne(SharedPassword::class, 'travel_id')->ofMany([

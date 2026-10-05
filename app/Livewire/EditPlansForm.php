@@ -6,17 +6,9 @@ use App\Http\Requests\SubmitFormRequest;
 use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
-use App\Models\AdditionalComment;
-use App\Models\PackingItem;
-use App\Models\Plan;
-use App\Models\PlanFile;
 use App\Models\SharedPassword;
-use App\Models\Souvenir;
 use App\Models\TravelOverview;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -393,25 +385,11 @@ class EditPlansForm extends Component
         $this->showPasswordField = true;
     }
 
-    public function disableViewerShare()
+    public function disableViewerShare(\App\Actions\Itineraries\SaveViewerShare $saveViewerShare)
     {
         Gate::authorize('manageViewerShare', $this->overview);
 
-        DB::transaction(function () {
-            $overview = TravelOverview::whereKey($this->overview->id)->lockForUpdate()->firstOrFail();
-            $sharedPassword = $overview->sharedPasswords()->first();
-
-            if (! $sharedPassword) {
-                return;
-            }
-
-            $sharedPassword->update([
-                'shared_password' => null,
-                'expires_at' => null,
-                'disabled_at' => now(),
-                'access_version' => $sharedPassword->nextVersion(),
-            ]);
-        });
+        $saveViewerShare->revoke($this->overview);
 
         \App\Support\SharedAccess::forget(request(), $this->overview->id);
         $this->overview->unsetRelation('sharedPasswords');
@@ -422,161 +400,20 @@ class EditPlansForm extends Component
         $this->showPasswordField = false;
     }
 
-    public function submit()
+    public function submit(\App\Actions\Itineraries\SaveItinerary $saveItinerary)
     {
         Gate::authorize('update', $this->overview);
 
         if (Gate::allows('manageViewerShare', $this->overview)
             && $this->showPasswordField
             && ! $this->viewer_share_expires_at) {
-            $this->viewer_share_expires_at = SharedPassword::defaultExpiresAt()->format('Y-m-d\TH:i');
+            $this->viewer_share_expires_at = SharedPassword::defaultExpiresAt()->format('Y-m-d\\TH:i');
         }
 
         $this->validate();
-
-        $this->overview->update([
-            'title' => $this->title,
-            'overviewText' => $this->overviewText,
-        ]);
-
-        // 各プランの更新または作成
-        foreach ($this->plans as $index => $planData) {
-            // プランを検索または新規作成
-            $plan = $this->overview->plans()->firstOrNew(
-                ['id' => $planData['id'] ?? null] // 検索条件
-            );
-
-            // プランのデータをセット
-            $plan->date = $planData['date'] ?: null;
-            $plan->time = $planData['time'] ?: null;
-            $plan->plans_title = $planData['plans_title'];
-            $plan->content = $planData['content'];
-            $plan->order = $index;
-
-            // 保存 (更新または新規作成)
-            $plan->save();
-
-            // プランに関連するファイルの処理
-            if (! empty($planData['planFiles'])) {
-                foreach ($planData['planFiles'] as $planFile) {
-                    if ($planFile) {
-                        $filePath = $planFile->store('files', config('filesystems.uploads'));
-                        $plan->planFiles()->create([
-                            'path' => $filePath,
-                            'file_name' => $planFile->getClientOriginalName(),
-                        ]);
-                    }
-                }
-            }
-        }
-
-        // 削除するプランの処理
-        if (! empty($this->deletedPlans)) {
-            Plan::whereIn('id', $this->deletedPlans)->delete();
-        }
-
-        // 削除するプランファイルの処理
-        if (! empty($this->deletedPlanFiles)) {
-            // 削除対象のプランファイルを取得
-            $planFiles = PlanFile::whereIn('id', $this->deletedPlanFiles)->get();
-
-            // ストレージからファイルを削除
-            foreach ($planFiles as $planFile) {
-                Storage::disk(config('filesystems.uploads'))->delete($planFile->path);
-            }
-
-            // データベースからレコードを削除
-            PlanFile::whereIn('id', $this->deletedPlanFiles)->delete();
-        }
-
-        $this->overview->templateType = $this->template_type;
-
-        //全て削除ボタンを押された時データベースの値も削除
-        if ($this->allRemovePackingItemFlag == 1) {
-            PackingItem::where('travel_id', $this->overview->id)
-                ->where('user_id', auth()->id())
-                ->delete();
-        }
-
-        // 持ち物リスト更新
-        // 持ち物リストを更新または作成
-        foreach ($this->packingItems as $index => $packingItemData) {
-            $packingItemId = $packingItemData['id'] ?? null;
-            $packingItem = is_numeric($packingItemId)
-                ? PackingItem::where('id', $packingItemId)
-                    ->where('travel_id', $this->overview->id)
-                    ->where('user_id', auth()->id())
-                    ->first()
-                : null;
-
-            if (! $packingItem) {
-                $packingItem = new PackingItem([
-                    'travel_id' => $this->overview->id,
-                    'user_id' => auth()->id(),
-                ]);
-            }
-
-            $packingItem->packing_name = $packingItemData['packing_name'];
-            $packingItem->packing_is_checked = $packingItemData['packing_is_checked'];
-            $packingItem->order = $index;
-            $packingItem->travel_id = $this->overview->id;
-            $packingItem->user_id = auth()->id();
-
-            // 保存 (更新または新規作成)
-            $packingItem->save();
-        }
-
-        // 削除した持ち物をデータベースから削除
-        if (! empty($this->deletePackingItems)) {
-            PackingItem::whereIn('id', $this->deletePackingItems)
-                ->where('travel_id', $this->overview->id)
-                ->where('user_id', auth()->id())
-                ->delete();
-        }
-
-        // 全て削除ボタンが押された場合、関連するお土産を全削除
-        if ($this->allRemoveSouvenirsFlag == 1) {
-            Souvenir::where('travel_id', $this->overview->id)->delete();
-        }
-
-        // お土産リスト更新
-        foreach ($this->souvenirs as $index => $souvenirData) {
-            $souvenir = $this->overview->souvenirs()->firstOrNew(
-                // 検索条件 (見つからなければ new される)
-                ['id' => $souvenirData['id'] ?? null]
-            );
-
-            $souvenir->souvenir_name = $souvenirData['souvenir_name'];
-            $souvenir->souvenir_is_checked = $souvenirData['souvenir_is_checked'];
-            $souvenir->order = $index;
-
-            // id が見つかれば update、見つからなければ create
-            $souvenir->save();
-        }
-        // 削除したお土産をデータベースから削除
-        if (! empty($this->deleteSouvenirs)) {
-            Souvenir::whereIn('id', $this->deleteSouvenirs)->delete();
-        }
-
-        // メモを更新
-        // 自由記述欄を更新または作成
-        foreach ($this->additionalComments as $index => $additionalCommentData) {
-            $additionalComment = $this->overview->additionalComments()->firstOrNew(
-                ['id' => $additionalCommentData['id'] ?? null] // 検索条件
-            );
-
-            $additionalComment->additionalComment_title = $additionalCommentData['additionalComment_title'];
-            $additionalComment->additionalComment_text = $additionalCommentData['additionalComment_text'];
-            $additionalComment->order = $index;
-
-            // 保存 (更新または新規作成)
-            $additionalComment->save();
-        }
-
-        // 削除した自由記述欄をデータベースから削除
-        if (! empty($this->deleteAdditionalComments)) {
-            AdditionalComment::whereIn('id', $this->deleteAdditionalComments)->delete();
-        }
+        $payload = \App\Actions\Itineraries\LegacyItineraryPayload::fromLivewire($this);
+        unset($payload['data']['shared_password'], $payload['data']['viewer_share_expires_at']);
+        $saveItinerary->handle(auth()->user(), $payload['data'], $payload['uploads'], $this->overview);
 
         if (Gate::allows('manageViewerShare', $this->overview) && $this->showPasswordField) {
             $this->saveViewerShare();
@@ -592,31 +429,11 @@ class EditPlansForm extends Component
 
     private function saveViewerShare(): void
     {
-        DB::transaction(function () {
-            $overview = TravelOverview::whereKey($this->overview->id)->lockForUpdate()->firstOrFail();
-            $sharedPassword = $overview->sharedPasswords()->first();
-            $passwordChanged = filled($this->shared_password);
-
-            if (! $sharedPassword || $sharedPassword->lifecycleElapsed()) {
-                $overview->sharedPasswordHistory()->create([
-                    'shared_password' => Hash::make($this->shared_password),
-                    'expires_at' => $this->viewer_share_expires_at,
-                    'disabled_at' => null,
-                    'access_version' => 1,
-                ]);
-
-                return;
-            }
-
-            $sharedPassword->update([
-                'shared_password' => $passwordChanged
-                    ? Hash::make($this->shared_password)
-                    : $sharedPassword->shared_password,
-                'expires_at' => $this->viewer_share_expires_at,
-                'disabled_at' => null,
-                'access_version' => $sharedPassword->nextVersion(),
-            ]);
-        });
+        app(\App\Actions\Itineraries\SaveViewerShare::class)->handle(
+            $this->overview,
+            $this->shared_password,
+            $this->viewer_share_expires_at,
+        );
 
         $this->overview->unsetRelation('sharedPasswords');
     }

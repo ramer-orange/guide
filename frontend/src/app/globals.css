@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+    color-scheme: light;
+    --ink: #19333a;
+    --muted: #64777a;
+    --paper: #fffdfa;
+    --teal: #148c89;
+    --blue: #4ca7cb;
+    --coral: #e7927e;
+}
+* {
+    box-sizing: border-box;
+}
+html {
+    scroll-behavior: smooth;
+}
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+}
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+::selection {
+    background: #bce8df;
+    color: #17383b;
+}
+.paper-grid {
+    background-color: #fffdfa;
+    background-image: radial-gradient(#d8e4dd 0.65px, transparent 0.65px);
+    background-size: 18px 18px;
+}
+.editor-input {
+    width: 100%;
+    border: 1px solid #dbe4df;
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.85rem;
+    background: white;
+    color: var(--ink);
+    outline: none;
+    transition:
+        border-color 0.16s,
+        box-shadow 0.16s;
+}
+.editor-input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgb(20 140 137 / 13%);
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

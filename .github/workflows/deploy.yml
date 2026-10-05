@@ -46,14 +46,22 @@ jobs: # 実行するジョブの一覧
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: アプリ検証
         run: |
           composer install --no-interaction --prefer-dist
           npm ci
           npm run build
+          npm ci --prefix frontend
+          npm --prefix frontend run test
+          npm --prefix frontend run typecheck
+          npm --prefix frontend run lint
+          npm --prefix frontend run build
           APP_KEY=base64:54QOuuDvHgF5PcqsqkwmaUGE6vtM28BKGPFItCUxCsk= DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
 
       - name: CDK検証

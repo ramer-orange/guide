@@ -1,0 +1,11 @@
+"use client";
+import { useQuery } from "@tanstack/react-query";
+import { getSession } from "@/features/auth/api/session";
+export const sessionKey = ["session"] as const;
+export function useSession() {
+    return useQuery({
+        queryKey: sessionKey,
+        queryFn: getSession,
+        staleTime: 60_000,
+    });
+}

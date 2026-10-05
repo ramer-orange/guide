@@ -4,6 +4,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
+        "e2e:next": "node scripts/e2e/run.mjs",
     "cdk:synth": "npm --prefix infra run cdk -- synth --quiet",
         "cdk:diagram": "npm run cdk:synth && cdk-dia --tree infra/cdk.out/tree.json --target docs/aws_cdk_diagram.png"
     },

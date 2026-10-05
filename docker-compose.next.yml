@@ -1,0 +1,39 @@
+# Opt-in same-origin Next.js migration gateway for local development.
+# Start alongside docker-compose.yml; the legacy Sail stack remains the default.
+services:
+    laravel.test:
+        environment:
+            APP_ENV: next-local
+            APP_URL: '${NEXT_PUBLIC_ORIGIN:-http://localhost:8081}'
+            SESSION_SECURE_COOKIE: 'false'
+
+    next:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+            args:
+                NEXT_PUBLIC_SITE_URL: '${NEXT_PUBLIC_ORIGIN:-http://localhost:8081}'
+        environment:
+            NODE_ENV: production
+            NEXT_PUBLIC_SITE_URL: '${NEXT_PUBLIC_ORIGIN:-http://localhost:8081}'
+            PORT: 3000
+            HOSTNAME: 0.0.0.0
+            NEXT_PUBLIC_API_BASE_URL: ''
+        expose:
+            - '3000'
+        networks:
+            - sail
+        restart: unless-stopped
+
+    next-gateway:
+        image: nginx:1.27-alpine
+        ports:
+            - '${NEXT_GATEWAY_PORT:-8081}:80'
+        volumes:
+            - ./nginx/next-migration.conf.template:/etc/nginx/templates/default.conf.template:ro
+            - ./nginx/proxy_params:/etc/nginx/proxy_params:ro
+        depends_on:
+            - laravel.test
+            - next
+        networks:
+            - sail

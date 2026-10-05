@@ -7,9 +7,6 @@ use App\Livewire\Traits\AddItems;
 use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
 use App\Models\SharedPassword;
-use App\Models\TravelOverview;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -217,74 +214,15 @@ class PlansForm extends Component
         $this->additionalComments = $this->updateOrder($this->additionalComments, $orderedIds);
     }
 
-    public function submit()
+    public function submit(\App\Actions\Itineraries\SaveItinerary $saveItinerary)
     {
         if ($this->shared_password && ! $this->viewer_share_expires_at) {
-            $this->viewer_share_expires_at = SharedPassword::defaultExpiresAt()->format('Y-m-d\TH:i');
+            $this->viewer_share_expires_at = SharedPassword::defaultExpiresAt()->format('Y-m-d\\TH:i');
         }
 
         $this->validate();
-
-        $overview = TravelOverview::create([
-            'user_id' => auth()->id(),
-            'title' => $this->title,
-            'overviewText' => $this->overviewText,
-        ]);
-        $overview->travelMembers()->create([
-            'user_id' => auth()->id(),
-            'role' => 'owner',
-        ]);
-
-        foreach ($this->plans as $index => $plan) {
-            $newPlan = $overview->plans()->create([
-                'date' => $plan['date'] ?: null,
-                'time' => $plan['time'] ?: null,
-                'plans_title' => $plan['plans_title'],
-                'content' => $plan['content'],
-                'order' => $index,
-            ]);
-            foreach ($plan['planFiles'] as $planFile) {
-                if ($planFile) {
-                    $filePath = Storage::disk(config('filesystems.uploads'))->putFile('files', $planFile);
-                    $newPlan->planFiles()->create([
-                        'path' => $filePath,
-                        'file_name' => $planFile->getClientOriginalName(),
-                    ]);
-                }
-            }
-        }
-        $overview->templateType = $this->template_type;
-        foreach ($this->packingItems as $index => $packingItem) {
-            $overview->packingItems()->create([
-                'user_id' => auth()->id(),
-                'packing_name' => $packingItem['packing_name'],
-                'packing_is_checked' => $packingItem['packing_is_checked'],
-                'order' => $index,
-            ]);
-        }
-        foreach ($this->souvenirs as $index => $souvenir) {
-            $overview->souvenirs()->create([
-                'souvenir_name' => $souvenir['souvenir_name'],
-                'souvenir_is_checked' => $souvenir['souvenir_is_checked'],
-                'order' => $index,
-            ]);
-        }
-        foreach ($this->additionalComments as $index => $additionalComment) {
-            $overview->additionalComments()->create([
-                'additionalComment_title' => $additionalComment['additionalComment_title'],
-                'additionalComment_text' => $additionalComment['additionalComment_text'],
-                'order' => $index,
-            ]);
-        }
-
-        if ($this->shared_password) {
-            $overview->sharedPasswordHistory()->create([
-                'shared_password' => Hash::make($this->shared_password),
-                'expires_at' => $this->viewer_share_expires_at,
-                'disabled_at' => null,
-                'access_version' => 1,
-            ]);
-        }
+        $payload = \App\Actions\Itineraries\LegacyItineraryPayload::fromLivewire($this);
+        $overview = $saveItinerary->handle(auth()->user(), $payload['data'], $payload['uploads']);
 
         return redirect()->route('itineraries.edit', [$overview->id]);
     }
