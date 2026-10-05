@@ -1,0 +1,104 @@
+FROM node:22-alpine3.22 AS legacy-assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+RUN npm ci \
+    && npm run build
+
+FROM node:22-alpine3.22 AS next-assets
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend ./
+
+ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
+RUN npm run build
+
+FROM php:8.3-fpm-alpine3.22 AS runtime
+
+ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
+
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    LOG_CHANNEL=stderr \
+    PORT=10000 \
+    NODE_ENV=production \
+    NODE_OPTIONS=--enable-source-maps \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
+RUN apk add --no-cache \
+        freetype \
+        icu-libs \
+        libjpeg-turbo \
+        libpng \
+        libpq \
+        libxml2 \
+        libxslt \
+        libzip \
+        nginx \
+        nodejs \
+        oniguruma \
+        supervisor \
+    && apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        freetype-dev \
+        icu-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
+        libxml2-dev \
+        libxslt-dev \
+        postgresql-dev \
+        oniguruma-dev \
+        zlib-dev \
+        libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" gd intl mbstring pdo_pgsql pgsql xsl zip \
+    && apk del .build-deps \
+    && addgroup -S next \
+    && adduser -S -G next next \
+    && mkdir -p /run/nginx /run/php /var/log/supervisor /opt/next
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+WORKDIR /var/www/html
+
+COPY . .
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY --from=legacy-assets /app/public/build ./public/build
+COPY --from=next-assets --chown=next:next /app/.next/standalone /opt/next/
+COPY --from=next-assets --chown=next:next /app/.next/static /opt/next/.next/static
+COPY --from=next-assets --chown=next:next /app/public /opt/next/public
+COPY nginx/render-next.conf /etc/nginx/http.d/render-next.conf
+COPY nginx/render-next-proxy-params.conf /etc/nginx/render-next-proxy-params.conf
+COPY nginx/render-next-forwarded-proto.conf /etc/nginx/http.d/00-render-next-forwarded-proto.conf
+COPY docker/render-next/supervisord.conf /etc/supervisord.conf
+COPY scripts/render-next/00-start.sh /usr/local/bin/render-next-start
+COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+    && composer check-platform-reqs --no-dev \
+    && mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/testing \
+        storage/framework/views \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chown -R next:next /opt/next \
+    && chmod +x /usr/local/bin/render-next-start \
+    && rm -f /etc/nginx/http.d/default.conf
+
+EXPOSE 10000
+
+CMD ["/usr/local/bin/render-next-start"]

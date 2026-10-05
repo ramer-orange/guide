@@ -39,7 +39,20 @@ export function ItineraryIndex() {
         if (session.data && !session.data.authenticated)
             router.replace("/login");
     }, [session.data, router]);
-    if (session.isPending || !session.data?.authenticated)
+    if (session.isError)
+        return (
+            <section className="mx-auto min-h-[60vh] max-w-6xl px-5 pt-36 text-center">
+                <p role="alert">ログイン状態を確認できませんでした。</p>
+                <button
+                    type="button"
+                    onClick={() => session.refetch()}
+                    className="mt-3 rounded-full border px-4 py-2"
+                >
+                    再読み込み
+                </button>
+            </section>
+        );
+    if (session.isPending)
         return (
             <section
                 role="status"
@@ -48,16 +61,13 @@ export function ItineraryIndex() {
                 ログイン状態を確認しています…
             </section>
         );
-    if (session.isError)
+    if (!session.data?.authenticated)
         return (
-            <section className="mx-auto min-h-[60vh] max-w-6xl px-5 pt-36 text-center">
-                <p role="alert">ログイン状態を確認できませんでした。</p>
-                <button
-                    onClick={() => session.refetch()}
-                    className="mt-3 rounded-full border px-4 py-2"
-                >
-                    再読み込み
-                </button>
+            <section
+                role="status"
+                className="mx-auto min-h-[60vh] max-w-6xl px-5 pt-36 text-center text-sm text-[#73827e]"
+            >
+                ログイン画面へ移動しています…
             </section>
         );
     async function share(id: string, title: string) {

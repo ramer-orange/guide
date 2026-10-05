@@ -23,6 +23,7 @@ import { SouvenirsSection } from "./souvenirs-section";
 import { NotesSection } from "./notes-section";
 import { MemberManagement } from "@/features/itineraries/components/sharing/member-management";
 import { ViewerShareManagement } from "@/features/itineraries/components/sharing/viewer-share-management";
+import { useUnsavedChangesGuard } from "@/features/itineraries/hooks/use-unsaved-changes-guard";
 
 export function ItineraryEditor({
     itinerary,
@@ -46,63 +47,12 @@ export function ItineraryEditor({
     } = form;
     const mutation = useSaveItinerary(id, form);
     const { isSuccess, isPending, isError, error, reset: resetSave } = mutation;
-    useEffect(() => {
-        const prevent = (event: BeforeUnloadEvent) => {
-            if (isDirty) {
-                event.preventDefault();
-                event.returnValue = "";
-            }
-        };
-        window.addEventListener("beforeunload", prevent);
-        return () => window.removeEventListener("beforeunload", prevent);
-    }, [isDirty]);
+    useUnsavedChangesGuard(isDirty);
     useEffect(() => {
         if (isDirty && isSuccess) resetSave();
     }, [isDirty, isSuccess, resetSave]);
-    useEffect(() => {
-        const guard = (event: MouseEvent) => {
-            if (
-                !isDirty ||
-                event.defaultPrevented ||
-                event.button !== 0 ||
-                event.metaKey ||
-                event.ctrlKey ||
-                event.shiftKey ||
-                event.altKey
-            )
-                return;
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-            const link = target.closest<HTMLAnchorElement>("a[href]");
-            if (
-                !link ||
-                link.hasAttribute("download") ||
-                link.getAttribute("target") === "_blank"
-            )
-                return;
-            const destination = new URL(link.href, window.location.href);
-            if (
-                destination.origin === window.location.origin &&
-                destination.pathname !== window.location.pathname &&
-                !window.confirm(
-                    "保存していない変更があります。このページを離れますか？",
-                )
-            ) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        };
-        document.addEventListener("click", guard, true);
-        return () => document.removeEventListener("click", guard, true);
-    }, [isDirty]);
     const backToList = (event: ReactMouseEvent<HTMLButtonElement>) => {
-        if (
-            !isDirty ||
-            window.confirm(
-                "保存していない変更があります。このページを離れますか？",
-            )
-        )
-            router.push("/itineraries/index");
+        router.push("/itineraries/index");
         event.preventDefault();
     };
     const submit = handleSubmit(async (values) => {

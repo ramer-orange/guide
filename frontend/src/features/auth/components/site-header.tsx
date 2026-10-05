@@ -7,8 +7,39 @@ import { useSession } from "@/features/auth/hooks/use-session";
 import { useLogout } from "@/features/auth/hooks/use-logout";
 export function SiteHeader() {
     const [open, setOpen] = useState(false);
-    const { data } = useSession();
+    const { data, isPending, isError, refetch } = useSession();
     const logout = useLogout();
+    const accountControl = isError ? (
+        <div className="flex items-center gap-2 text-xs text-rose-800">
+            <span role="alert">ログイン状態を確認できません</span>
+            <button
+                type="button"
+                onClick={() => void refetch()}
+                className="underline underline-offset-2"
+            >
+                再試行
+            </button>
+        </div>
+    ) : data?.authenticated ? (
+        <button
+            disabled={logout.isPending}
+            onClick={() => logout.mutate()}
+            className="rounded-full border border-[#dc9987] px-5 py-2 text-[#c87562] hover:bg-[#fff0eb] disabled:opacity-50"
+        >
+            ログアウト
+        </button>
+    ) : isPending || !data ? (
+        <span role="status" className="text-xs text-[#73827e]">
+            ログイン状態を確認中…
+        </span>
+    ) : (
+        <a
+            href="/login"
+            className="rounded-full bg-gradient-to-r from-[#53a9ce] to-[#19a598] px-5 py-2.5 text-white shadow-sm hover:brightness-105"
+        >
+            ログイン
+        </a>
+    );
     const links = (
         <>
             <Link href="/itineraries/create" onClick={() => setOpen(false)}>
@@ -39,22 +70,7 @@ export function SiteHeader() {
                 </Link>
                 <nav className="hidden items-center gap-8 text-sm font-semibold text-[#40585b] md:flex">
                     {links}
-                    {data?.authenticated ? (
-                        <button
-                            disabled={logout.isPending}
-                            onClick={() => logout.mutate()}
-                            className="rounded-full border border-[#dc9987] px-5 py-2 text-[#c87562] hover:bg-[#fff0eb] disabled:opacity-50"
-                        >
-                            ログアウト
-                        </button>
-                    ) : (
-                        <a
-                            href="/login"
-                            className="rounded-full bg-gradient-to-r from-[#53a9ce] to-[#19a598] px-5 py-2.5 text-white shadow-sm hover:brightness-105"
-                        >
-                            ログイン
-                        </a>
-                    )}
+                    {accountControl}
                 </nav>
                 <button
                     className="rounded-xl p-2 text-[#28545b] hover:bg-[#e8f4ef] md:hidden"
@@ -68,17 +84,7 @@ export function SiteHeader() {
             {open && (
                 <nav className="flex flex-col gap-5 border-t border-[#d9e5df] bg-[#fffdfa] px-6 py-5 text-sm font-semibold md:hidden">
                     {links}
-                    {data?.authenticated ? (
-                        <button
-                            className="text-left text-rose-700"
-                            disabled={logout.isPending}
-                            onClick={() => logout.mutate()}
-                        >
-                            ログアウト
-                        </button>
-                    ) : (
-                        <a href="/login">ログイン</a>
-                    )}
+                    {accountControl}
                 </nav>
             )}
             {logout.isError && (

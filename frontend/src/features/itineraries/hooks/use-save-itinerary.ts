@@ -1,5 +1,6 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { flushSync } from "react-dom";
 import type { UseFormReturn, Path } from "react-hook-form";
 import { saveItinerary } from "@/features/itineraries/api/itineraries";
 import { itineraryKeys } from "@/features/itineraries/api/query-keys";
@@ -23,7 +24,7 @@ export function useSaveItinerary(
                 { queryKey: itineraryKeys.byId(saved.id) },
                 saved,
             );
-            form.reset(toItineraryFormValues(saved));
+            flushSync(() => form.reset(toItineraryFormValues(saved)));
         },
         onError: (error) => {
             const normalized = normalizeApiError(error);

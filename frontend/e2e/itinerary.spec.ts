@@ -129,6 +129,7 @@ test("owner creates, sorts, uploads, edits, clears packing and persists after re
         const handles = page.getByRole("button", {
             name: "ドラッグして順序を変更",
         });
+        await handles.nth(1).scrollIntoViewIfNeeded();
         const sourceHandle = await handles.nth(0).boundingBox();
         const targetRow = await handles
             .nth(1)

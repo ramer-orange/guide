@@ -37,10 +37,12 @@ docker compose -f docker-compose.yml up -d --force-recreate laravel.test
 - Laravel: Pest 52 tests / 261 assertions が成功。
 - Frontend: Vitest 1 file / 2 tests、TypeScript typecheck、ESLint、Prettier format check、Next production build が成功。サポートするフロントエンド runtime は `frontend/package.json` の engine 要件に従い Node 22.12 以上。runtime dependency audit は 0 findings。development dependency audit は `eslint-config-next` の古い transitive dependency に限り 5 high findings が残る。
 - 実 API + ブラウザー: `npm run e2e:next` が隔離 SQLite を作成し、同一 origin で API HTTP suite と Playwright 3 tests を成功させた。確認した操作は CSRF 419/422、旅行作成/編集、空の日付、ポインターとキーボードでの日程並び替え、添付 upload/download/delete、保存後の再読込、本人別の持ち物と全削除、入力エラー、メンバー追加/削除、共有パスワード誤り/成功、読み取り専用、共有停止、モバイルヘッダーとログアウト。
+- 2026-10-05 の追加ブラウザー確認: `/api/v1/session` の初回 HTTP 500 では失敗表示と再試行を提示し、API復旧後の再試行で一覧へ回復した。未保存状態のブラウザー戻る/進むと「一覧へ戻る」は、確認をキャンセルすると画面と入力値を保持し、承認すると移動する。保存後の戻る操作は確認なしで移動した。共有期限だけを更新してパスワード欄を空のまま保存した後も、既存パスワードで共有画面を開けた。これらの手動ブラウザー確認では意図的なHTTP 500以外にconsole error/pageerrorはなかった。
+- 最終 `npm run e2e:next`: API HTTP suite 成功、Playwright 3 tests 成功。ドラッグ並び替えは Playwright trace で対象位置が viewport 下端外と確認できたため、既存の順序検証を保ったまま、drag 前に2件目の handle を viewport 内へスクロールして bounding box を取り直すよう E2E を安定化した。
 - Docker compose: 通常の `npm ci`、`docker compose -f docker-compose.yml -f docker-compose.next.yml config --quiet`、Next standalone image build、コンテナ HTTP smoke test が成功した。smoke test はコンテナ内 UID 1000 で実行し、ホーム・作成画面・mockup asset が HTTP 200、bundle の JavaScript/CSS 11 件も HTTP 200 を返した。OG image URL は `http://localhost:8081/images/ogp.webp`。Laravel container の起動と OAuth callback は未検証。
 
 画面キャプチャは [`desktop-edit.png`](/tmp/guide-next-e2e/desktop-edit.png) と [`mobile-home.png`](/tmp/guide-next-e2e/mobile-home.png) に保存した。E2E 用 session は CLI fixture が隔離 SQLite 上に作るもので、ログインを迂回する HTTP endpoint はない。テストは `.env` の DB を使わず、終了時に起動した PHP/Next/gateway を停止する。
 
 ## 未実施の作業
 
-移行の変更は `codex/next-typescript-migration` ブランチに保存した。push と production deploy はしていない。実 Google OAuth callback は未検証で、Laravel の自動テストでは Socialite をモックする。Next を含む production routing/service 構成と Render の現行提供状況は未確認。AWS deploy は停止状態のままで、既存本番設定を変更していない。
+移行の変更は `codex/next-typescript-migration` ブランチに保存した。Render 用の単一コンテナ設定は追加済みだが、デプロイと公開 URL の動作確認は結果待ち。Google OAuth callback は未検証で、Google 資格情報も未設定。Laravel の自動テストでは Socialite をモックする。AWS deploy は停止状態のままで、既存本番設定を変更していない。

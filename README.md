@@ -68,7 +68,13 @@ npm run e2e:next
 
 API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されます。スクリーンショットは `/tmp/guide-next-e2e/` に保存されます。
 
-本番では既存の `docker-compose.prod.yml` のままです。Next を稼働させる場合は、TLS を終端する共通入口から同じセッション Cookie を保ったまま Laravel と Next に振り分け、Next を standalone Node サービスとして実行する構成を別途用意します。実際の Render サービス構成は未確認のため、このリポジトリからデプロイを開始しません。
+## Render の既存 Web Service で移行 UI を動かす
+
+Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service の branch を `codex/next-typescript-migration` にし、Docker runtime と Dockerfile path を `Dockerfile.render-next` に設定して同じ公開 URL で切り替える想定です。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
+
+既存 Service の環境変数と秘密情報は引き継ぎ、少なくとも既存の `APP_KEY`、PostgreSQL 接続情報、`APP_URL=https://guide-2s9j.onrender.com`、セッション設定を保ってください。同じホストと APP_KEY を維持することで Laravel session cookie の暗号化設定を保ちます。Google OAuth を使う場合は `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI=https://guide-2s9j.onrender.com/auth/google/callback` と Google 側 callback 登録が必要です。Next の metadata origin は build arg `NEXT_PUBLIC_SITE_URL` で設定し、既定値は `https://guide-2s9j.onrender.com` です。
+
+コンテナ起動時に `php artisan migrate --force` を実行します。seeder やテスト用ログインルートはありません。新規 migration をデプロイする前に、DB backup と migration の内容を確認してください。既存サービスへのデプロイは公開データと利用者へ影響するため、別途デプロイ実行者が Render Dashboard から行います。この構成の本番動作確認はデプロイ後に記録します。現時点で Google OAuth の資格情報は未設定です。
 
 ## デプロイ計画
 
