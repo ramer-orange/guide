@@ -129,7 +129,7 @@ flowchart LR
 
 ## 今後の実装方針：Lightsailへ移行
 
-現行の同一オリジン構成を保ったまま、Next.jsとLaravelを含むアプリケーションをコンテナ化してLightsail Container Serviceで配信する案です。旅程などの永続データはLightsailのマネージドPostgreSQLへ、添付ファイルはコンテナ外の非公開S3バケットへ保存します。コンテナとデータベースは同じAWSリージョンに配置します。
+現行の同一オリジン構成を保ったまま、Next.jsとLaravelを含むアプリケーションをコンテナ化してLightsail Container Serviceで配信する案です。旅程などの永続データはLightsailのmanaged PostgreSQLへ、添付ファイルはコンテナ外の非公開S3バケットへ保存します。
 
 ### Lightsail移行後のアーキテクチャ案
 
@@ -151,5 +151,3 @@ flowchart LR
     CI[GitHub Actions<br/>ビルド・デプロイ] --> Web
     DB -. バックアップ .-> Snapshot[Lightsail DBスナップショット]
 ```
-
-Lightsail Container Serviceは公開エンドポイントでHTTPSを提供し、カスタムドメインと証明書を設定できます。LightsailのコンテナサービスからLightsailデータベースへ接続する構成もサポートされています。[コンテナサービスの公開エンドポイント](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-container-services-deployments.html) · [コンテナサービスとデータベースの接続](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-connecting-container-service-to-database.html) · [カスタムドメインの証明書](https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-creating-container-services-certificates.html)
