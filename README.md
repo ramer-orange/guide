@@ -48,51 +48,53 @@
 
 旅行の日程ごとに予定を追加し、時間・場所・内容・写真をまとめて管理できます。予定はドラッグ操作で並べ替え、メンバーと共有できます。
 
-> **スクリーンショット欄:** `docs/screenshots/itinerary.png`（画像追加予定）
+<img width="1399" height="803" alt="image" src="https://github.com/user-attachments/assets/40d099e0-108f-4398-bf8c-b30432bde6c1" />
 
 ### 🎒 持ち物リスト
 
 自分専用の持ち物チェックリストを作成できます。国内・海外旅行向けのテンプレートから項目を追加し、準備状況をチェックしたり、順番を並べ替えたりできます。
 
-<p align="center">
-  <img src="https://guide-2s9j.onrender.com/images/mockup/mockup.webp" alt="持ち物リスト画面" width="280">
-</p>
+<img width="901" height="491" alt="image" src="https://github.com/user-attachments/assets/d371d612-b4cb-4485-8745-87c57ed5be6a" />
+
 
 ### 🎁 お土産リスト
 
 買いたいものや購入状況を記録し、旅のメンバーと共有できます。
 
-> **スクリーンショット欄:** `docs/screenshots/souvenirs.png`（画像追加予定）
+<img width="933" height="263" alt="image" src="https://github.com/user-attachments/assets/398e65ee-fc3a-4613-a990-0903b98103ad" />
+
 
 ### 📝 メモ
 
 旅先で確認したい情報や、メンバーに伝えたい内容をしおり内に残せます。
 
-> **スクリーンショット欄:** `docs/screenshots/notes.png`（画像追加予定）
+<img width="917" height="352" alt="image" src="https://github.com/user-attachments/assets/4903a9ab-4040-4a13-8b08-8e587f098b4c" />
+
 
 ### 👥 メンバーとの共同編集
 
 メンバーを編集者として招待し、旅程・お土産・メモを一緒に更新できます。持ち物リストは利用者ごとに分かれているため、自分の準備状況を管理できます。
 
-> **スクリーンショット欄:** `docs/screenshots/members.png`（画像追加予定）
+<img width="890" height="229" alt="image" src="https://github.com/user-attachments/assets/5bbc2406-43c4-4333-afef-61753469401e" />
+
 
 ### 🔗 閲覧リンクでの共有
 
 閲覧用リンクを発行して、編集権限を持たない相手にも旅のしおりを共有できます。リンクにはパスワードと有効期限を設定でき、必要に応じて停止できます。
 
-> **スクリーンショット欄:** `docs/screenshots/shared-access.png`（画像追加予定）
+<img width="919" height="359" alt="image" src="https://github.com/user-attachments/assets/0632558b-c090-4428-8623-e48aa43dd807" />
+
+
 
 ### 📎 ファイル添付
 
 予約確認書などの資料をJPEG、PNG、PDF、Word形式で添付できます。1ファイルあたりの上限は10 MBです。
 
-> **スクリーンショット欄:** `docs/screenshots/attachments.png`（画像追加予定）
 
 ### 🔐 Googleログイン
 
 Googleアカウントでログインして、自分のしおりを作成・編集できます。
 
-> **スクリーンショット欄:** `docs/screenshots/login.png`（画像追加予定）
 
 ## 現行アーキテクチャ
 
