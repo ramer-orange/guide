@@ -80,4 +80,16 @@ class ItineraryController
 
         return $response;
     }
+
+    public function previewFile(TravelOverview $itinerary, int $fileId, PlanFileStorage $fileStorage): StreamedResponse
+    {
+        Gate::authorize('view', $itinerary);
+        $file = PlanFile::query()->whereHas('plan', fn ($query) => $query->where('travel_id', $itinerary->id))
+            ->whereKey($fileId)->firstOrFail();
+        abort_unless($fileStorage->exists($file), 404);
+        $mimeType = $fileStorage->previewMimeType($file);
+        abort_unless($mimeType !== null, 415, 'このファイル形式はプレビューできません。');
+
+        return $fileStorage->preview($file, $mimeType);
+    }
 }

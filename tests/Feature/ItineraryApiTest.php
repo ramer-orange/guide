@@ -70,8 +70,9 @@ it('creates and returns a trip with its canonical DTO and permits empty full-rep
         ->assertHeader('Cache-Control', 'no-store, private');
     $id = $response->json('id');
 
+    $updatePayload = itineraryPayload(['title' => 'Cleared', 'revision' => $response->json('revision')]);
     $this->actingAs($user)->putJson("/api/v1/itineraries/{$id}", [
-        'payload' => json_encode(itineraryPayload(['title' => 'Cleared'])),
+        'payload' => json_encode($updatePayload),
     ])->assertOk()->assertJsonPath('plans', [])->assertJsonPath('packing_items', [])
         ->assertJsonPath('souvenirs', [])->assertJsonPath('notes', []);
 
@@ -117,6 +118,7 @@ it('maps uploaded files to the stable plan client ID and removes attachments omi
 
     $payload['plans'][0]['id'] = $response->json('plans.0.id');
     $payload['plans'][0]['existing_file_ids'] = [];
+    $payload['revision'] = $response->json('revision');
     $this->actingAs($user)->post("/api/v1/itineraries/{$tripId}", [
         '_method' => 'PUT', 'payload' => json_encode($payload),
     ], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('plans.0.files', []);
@@ -147,6 +149,7 @@ it('stores each attachment disk and serves private R2 files through the authoriz
 
     $payload['plans'][0]['id'] = $trip->plans()->firstOrFail()->id;
     $payload['plans'][0]['existing_file_ids'] = [];
+    $payload['revision'] = $trip->revision;
     $this->actingAs($owner)->put("/api/v1/itineraries/{$trip->id}", [
         'payload' => json_encode($payload),
     ], ['Accept' => 'application/json'])->assertOk();
@@ -197,6 +200,7 @@ it('rejects retaining an attachment from a different plan in the same itinerary'
     $secondPlan = $trip->plans()->create(['plans_title' => 'Second', 'order' => 1]);
     $file = $secondPlan->planFiles()->create(['file_name' => 'second.pdf', 'path' => 'files/second.pdf']);
     $payload = itineraryPayload([
+        'revision' => $trip->revision,
         'plans' => [[
             'id' => $firstPlan->id, 'client_id' => 'first-plan', 'order' => 0,
             'existing_file_ids' => [$file->id],
@@ -248,6 +252,7 @@ it('rejects foreign nested IDs and preserves another member personal packing lis
         ->assertOk()->assertJsonPath('packing_items', []);
 
     $payload = itineraryPayload([
+        'revision' => $trip->revision,
         'title' => 'Member edit',
         'plans' => [[
             'id' => $foreignPlan->id, 'client_id' => 'plan-one', 'order' => 0,
@@ -274,12 +279,42 @@ it('keeps a member packing list untouched when another member saves an empty lis
     $personal = $trip->packingItems()->create([
         'user_id' => $owner->id, 'packing_name' => 'Owner bag', 'packing_is_checked' => false, 'order' => 0,
     ]);
-    $payload = itineraryPayload(['title' => 'Edited by member']);
+    $payload = itineraryPayload(['revision' => $trip->revision, 'title' => 'Edited by member']);
 
     $this->actingAs($member)->putJson("/api/v1/itineraries/{$trip->id}", [
         'payload' => json_encode($payload),
     ])->assertOk();
     expect($personal->fresh()->packing_name)->toBe('Owner bag');
+});
+
+it('rejects stale full-snapshot saves without deleting another member additions', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $staleRevision = $trip->revision;
+
+    $this->actingAs($owner)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(itineraryPayload([
+            'revision' => $staleRevision,
+            'plans' => [[
+                'client_id' => 'member-added', 'title' => 'New shared plan', 'order' => 0,
+                'existing_file_ids' => [],
+            ]],
+        ])),
+    ])->assertOk()->assertJsonPath('revision', $staleRevision + 1);
+    $addedPlanId = $trip->plans()->firstOrFail()->id;
+
+    $this->actingAs($owner)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(itineraryPayload([
+            'revision' => $staleRevision,
+            'title' => 'Stale editor save',
+        ])),
+    ])->assertStatus(409)->assertJsonPath(
+        'message',
+        '他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。',
+    );
+
+    expect($trip->fresh()->title)->toBe('Tokyo')
+        ->and($trip->plans()->whereKey($addedPlanId)->exists())->toBeTrue();
 });
 
 it('streams attachments only through an authorized itinerary-scoped endpoint', function () {
@@ -297,6 +332,40 @@ it('streams attachments only through an authorized itinerary-scoped endpoint', f
     $this->actingAs($other)->getJson("/api/v1/itineraries/{$trip->id}/files/{$record->id}")->assertForbidden();
     $this->actingAs($owner)->getJson('/api/v1/itineraries/'.createOwnedItinerary($other, 'Different')->id.'/files/'.$record->id)
         ->assertForbidden();
+});
+
+it('previews safe image and PDF attachments inline through the authorized endpoint', function () {
+    Storage::fake('public');
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $plan = $trip->plans()->create(['plans_title' => 'Files', 'order' => 0]);
+
+    Storage::disk('public')->put('files/preview.pdf', "%PDF-1.4\nPreview fixture\n%%EOF");
+    Storage::disk('public')->put('files/preview.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p6kAAAAASUVORK5CYII='));
+    Storage::disk('public')->put('files/spoofed.pdf', '<html><script>alert(1)</script></html>');
+    $pdf = $plan->planFiles()->create(['file_name' => 'preview.pdf', 'path' => 'files/preview.pdf']);
+    $png = $plan->planFiles()->create(['file_name' => 'preview.png', 'path' => 'files/preview.png']);
+    $docx = $plan->planFiles()->create(['file_name' => 'preview.docx', 'path' => 'files/preview.pdf']);
+    $spoofed = $plan->planFiles()->create(['file_name' => 'spoofed.pdf', 'path' => 'files/spoofed.pdf']);
+
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}/preview")
+        ->assertOk()->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', 'inline; filename=preview.pdf')
+        ->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertStreamedContent("%PDF-1.4\nPreview fixture\n%%EOF");
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$png->id}/preview")
+        ->assertOk()->assertHeader('Content-Type', 'image/png')
+        ->assertHeader('Content-Disposition', 'inline; filename=preview.png');
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$docx->id}/preview")
+        ->assertStatus(415);
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$spoofed->id}/preview")
+        ->assertStatus(415);
+    $this->actingAs($other)->getJson("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}/preview")
+        ->assertForbidden();
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}")
+        ->assertOk()->assertHeader('Content-Disposition', 'attachment; filename=preview.pdf');
 });
 
 it('verifies guest shared access in its session and invalidates it when revoked', function () {

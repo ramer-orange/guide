@@ -55,11 +55,19 @@
                                 @if ($plan->planFiles->isNotEmpty())
                                     <div class="mt-4 space-y-2">
                                         @foreach ($plan->planFiles as $planFile)
-                                            <a href="{{ $planFile->url() }}"
-                                               target="_blank"
-                                               class="block text-sm text-blue-600 hover:underline">
-                                                {{ $planFile->file_name }}
-                                            </a>
+                                            <div class="flex items-center gap-3 text-sm">
+                                                @if ($previewUrl = $planFile->previewUrl())
+                                                    <a href="{{ $previewUrl }}" target="_blank" rel="noopener noreferrer"
+                                                       class="text-blue-600 hover:underline">
+                                                        {{ $planFile->file_name }}を開く
+                                                    </a>
+                                                @else
+                                                    <span class="text-gray-500">{{ $planFile->file_name }}（プレビューできません）</span>
+                                                @endif
+                                                <a href="{{ $planFile->url() }}" class="text-blue-600 hover:underline">
+                                                    ダウンロード
+                                                </a>
+                                            </div>
                                         @endforeach
                                     </div>
                                 @endif

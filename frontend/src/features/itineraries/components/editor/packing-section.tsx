@@ -10,7 +10,7 @@ import {
     SortableFieldRow,
 } from "@/features/itineraries/shared/sortable-field-list";
 import { EmptyState } from "@/components/ui/empty-state";
-export function PackingSection() {
+export function PackingSection({ disabled = false }: { disabled?: boolean }) {
     const { control, register, setValue } =
         useFormContext<ItineraryFormValues>();
     const { fields, append, remove, move } = useFieldArray({
@@ -87,13 +87,14 @@ export function PackingSection() {
                 </p>
             )}
             {fields.length > 0 ? (
-                <SortableFieldList onMove={move}>
+                <SortableFieldList onMove={move} disabled={disabled}>
                     <div className="grid gap-2">
                         {fields.map((field, index) => (
                             <SortableFieldRow
                                 key={field.fieldKey}
                                 id={`packing-${field.fieldKey}`}
                                 index={index}
+                                disabled={disabled}
                                 onRemove={() => remove(index)}
                             >
                                 <div className="flex items-center gap-3 pr-20">

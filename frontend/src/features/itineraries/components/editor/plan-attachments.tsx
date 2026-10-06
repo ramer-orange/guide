@@ -13,6 +13,11 @@ export function PlanAttachments({ index }: { index: number }) {
     });
     const inputRef = useRef<HTMLInputElement>(null);
     const error = getFieldState(`plans.${index}.files`).error;
+    const fileErrors = files
+        .map((_, fileIndex) =>
+            getFieldState(`plans.${index}.files.${fileIndex}`).error?.message,
+        )
+        .filter((message): message is string => Boolean(message));
     return (
         <div className="mt-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -44,9 +49,12 @@ export function PlanAttachments({ index }: { index: number }) {
                     JPEG・PNG・PDF・Word／1件10MBまで
                 </span>
             </div>
-            {error && (
+            {(error?.message || fileErrors.length > 0) && (
                 <p role="alert" className="mt-2 text-xs text-rose-700">
-                    {error.message}
+                    {[error?.message, ...fileErrors]
+                        .filter((message): message is string => Boolean(message))
+                        .filter((message, messageIndex, messages) => messages.indexOf(message) === messageIndex)
+                        .join(" ")}
                 </p>
             )}
             {(existing.length > 0 || files.length > 0) && (
@@ -56,13 +64,26 @@ export function PlanAttachments({ index }: { index: number }) {
                             key={file.id}
                             className="flex items-center gap-2 rounded-full bg-[#edf5f1] px-3 py-1.5 text-xs text-[#46625e]"
                         >
+                            <span className="max-w-48 truncate">{file.file_name}</span>
+                            {file.preview_url ? (
+                                <a
+                                    href={file.preview_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`${file.file_name}を開く`}
+                                    className="shrink-0 underline"
+                                >
+                                    開く
+                                </a>
+                            ) : (
+                                <span className="shrink-0 text-[#899693]">プレビューできません</span>
+                            )}
                             <a
                                 href={file.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="max-w-48 truncate underline"
+                                aria-label={`${file.file_name}をダウンロード`}
+                                className="shrink-0 underline"
                             >
-                                {file.file_name}
+                                ダウンロード
                             </a>
                             <button
                                 type="button"

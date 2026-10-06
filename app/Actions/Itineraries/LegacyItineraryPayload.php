@@ -60,6 +60,9 @@ class LegacyItineraryPayload
             'souvenirs' => $souvenirs,
             'notes' => $notes,
         ];
+        if (isset($form->revision) && (int) $form->revision > 0) {
+            $data['revision'] = (int) $form->revision;
+        }
         if (filled($form->shared_password ?? null)) {
             $data['shared_password'] = $form->shared_password;
             $data['viewer_share_expires_at'] = $form->viewer_share_expires_at;

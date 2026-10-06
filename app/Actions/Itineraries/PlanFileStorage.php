@@ -38,6 +38,57 @@ class PlanFileStorage
         return Storage::disk($this->diskName($file))->download($file->path, $file->file_name);
     }
 
+    public function previewMimeType(PlanFile $file): ?string
+    {
+        $expectedMimeType = $this->candidatePreviewMimeType($file);
+
+        if ($expectedMimeType === null) {
+            return null;
+        }
+
+        $stream = Storage::disk($this->diskName($file))->readStream($file->path);
+        if (! is_resource($stream)) {
+            return null;
+        }
+
+        try {
+            $contents = stream_get_contents($stream, 8192);
+        } finally {
+            fclose($stream);
+        }
+
+        $detectedMimeType = is_string($contents) && $contents !== ''
+            ? (new \finfo(FILEINFO_MIME_TYPE))->buffer($contents)
+            : false;
+
+        return $detectedMimeType === $expectedMimeType ? $expectedMimeType : null;
+    }
+
+    public function candidatePreviewMimeType(PlanFile $file): ?string
+    {
+        return match (strtolower(pathinfo($file->file_name, PATHINFO_EXTENSION))) {
+            'pdf' => 'application/pdf',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            default => null,
+        };
+    }
+
+    public function preview(PlanFile $file, string $mimeType): StreamedResponse
+    {
+        return Storage::disk($this->diskName($file))->response(
+            $file->path,
+            $file->file_name,
+            [
+                'Content-Type' => $mimeType,
+                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, no-store',
+                'Cross-Origin-Resource-Policy' => 'same-origin',
+            ],
+            'inline',
+        );
+    }
+
     /** @param array{disk: string, path: string} $object */
     public function delete(array $object): void
     {

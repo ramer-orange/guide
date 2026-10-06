@@ -47,6 +47,7 @@ export function ItineraryEditor({
     } = form;
     const mutation = useSaveItinerary(id, form);
     const { isSuccess, isPending, isError, error, reset: resetSave } = mutation;
+    const isSaving = isSubmitting || isPending;
     useUnsavedChangesGuard(isDirty);
     useEffect(() => {
         if (isDirty && isSuccess) resetSave();
@@ -108,15 +109,17 @@ export function ItineraryEditor({
                             {normalizeApiError(error).message}
                         </p>
                     )}
-                    <OverviewFields />
-                    <PlansSection />
-                    <PackingSection />
-                    <SouvenirsSection />
-                    <NotesSection />
-                    <div className="sticky bottom-3 z-20 flex justify-end rounded-2xl border border-[#dce7df] bg-[#fffdfa]/95 p-3 shadow-lg backdrop-blur">
+                    <fieldset disabled={isSaving} className="grid gap-5 disabled:cursor-wait">
+                        <OverviewFields />
+                        <PlansSection disabled={isSaving} />
+                        <PackingSection disabled={isSaving} />
+                        <SouvenirsSection disabled={isSaving} />
+                        <NotesSection disabled={isSaving} />
+                    </fieldset>
+                    <div className="mt-2 flex justify-end border-t border-[#dce7df] pt-5">
                         <button
                             type="submit"
-                            disabled={isSubmitting || isPending}
+                            disabled={isSaving}
                             className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#208d83] px-6 text-sm font-bold text-white shadow-md shadow-[#208d83]/20 transition hover:bg-[#16786f] disabled:cursor-wait disabled:opacity-60"
                         >
                             {isPending ? (

@@ -12,6 +12,7 @@ const fileSchema = z
     );
 const rowName = z.string().max(255, "255文字以内で入力してください。");
 export const itineraryFormSchema = z.object({
+    revision: z.number().int().nonnegative(),
     title: z
         .string()
         .trim()
@@ -34,6 +35,7 @@ export const itineraryFormSchema = z.object({
                     id: z.number(),
                     file_name: z.string(),
                     url: z.string(),
+                    preview_url: z.string().nullable().optional(),
                 }),
             ),
         }),
@@ -62,6 +64,18 @@ export const itineraryFormSchema = z.object({
             order: z.number(),
         }),
     ),
+}).superRefine((values, context) => {
+    const uploadBytes = values.plans.reduce(
+        (total, plan) => total + plan.files.reduce((size, file) => size + file.size, 0),
+        0,
+    );
+    if (uploadBytes > 18 * 1024 * 1024) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["plans", "root"],
+            message: "添付ファイル全体は18MB以下にしてください。",
+        });
+    }
 });
 
 export type ItineraryFormValues = z.infer<typeof itineraryFormSchema>;

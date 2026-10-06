@@ -25,6 +25,22 @@ class SaveItinerary
         try {
             $overview = DB::transaction(function () use ($user, $data, $uploads, $overview, $fileStorage, &$newObjects, &$oldObjects) {
                 if ($overview) {
+                    $expectedRevision = (int) ($data['revision'] ?? 0);
+                    $locked = TravelOverview::query()->whereKey($overview->getKey())->lockForUpdate()->firstOrFail();
+                    if ((int) $locked->revision !== $expectedRevision) {
+                        abort(409, '他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。');
+                    }
+
+                    // The conditional update also protects databases where lockForUpdate is advisory or unsupported.
+                    $claimed = TravelOverview::query()->whereKey($locked->getKey())
+                        ->where('revision', $expectedRevision)
+                        ->update(['revision' => $expectedRevision + 1]);
+                    if ($claimed !== 1) {
+                        abort(409, '他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。');
+                    }
+
+                    $overview = $locked;
+                    $overview->revision = $expectedRevision + 1;
                     $overview->update(['title' => $data['title'], 'overviewText' => $data['overview_text'] ?? null]);
                 } else {
                     $overview = TravelOverview::create([

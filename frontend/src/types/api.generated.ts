@@ -75,6 +75,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/itineraries/{itineraryId}/files/{fileId}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itineraryId: components["parameters"]["ItineraryId"];
+                fileId: number;
+            };
+            cookie?: never;
+        };
+        get: operations["previewItineraryFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/packing-templates": {
         parameters: {
             query?: never;
@@ -193,6 +212,8 @@ export interface components {
             };
         };
         ItinerarySave: {
+            /** @description Required when updating an existing itinerary; prevents stale full-snapshot saves. */
+            revision?: number;
             title: string;
             overview_text: string | null;
             template_type: string | null;
@@ -239,6 +260,7 @@ export interface components {
         Itinerary: {
             /** Format: uuid */
             id: string;
+            revision: number;
             title: string;
             overview_text: string | null;
             template_type: string | null;
@@ -255,6 +277,8 @@ export interface components {
                     file_name: string;
                     /** Format: uri-reference */
                     url: string;
+                    /** Format: uri-reference; null when this file type is not previewable. */
+                    preview_url: string | null;
                 }[];
             }[];
             /** @description Only the authenticated caller's personal list; empty for shared viewers. */
@@ -557,6 +581,35 @@ export interface operations {
             };
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    previewItineraryFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itineraryId: components["parameters"]["ItineraryId"];
+                fileId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verified PDF, JPEG, or PNG bytes served inline */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     listPackingTemplates: {

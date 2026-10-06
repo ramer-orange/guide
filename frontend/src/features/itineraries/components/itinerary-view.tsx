@@ -6,7 +6,6 @@ import {
     MapPin,
     NotebookText,
 } from "lucide-react";
-import { fileUrl } from "@/features/itineraries/api/itineraries";
 import { MemberManagement } from "@/features/itineraries/components/sharing/member-management";
 import { ViewerShareManagement } from "@/features/itineraries/components/sharing/viewer-share-management";
 import { ItinerarySection } from "@/features/itineraries/shared/itinerary-section";
@@ -87,18 +86,28 @@ export function ItineraryView({ itinerary }: { itinerary: Itinerary }) {
                                         {plan.files.length > 0 && (
                                             <ul className="mt-3 flex flex-wrap gap-2">
                                                 {plan.files.map((file) => (
-                                                    <li key={file.id}>
+                                                    <li key={file.id} className="flex items-center gap-3 rounded-full border border-[#d8e5de] bg-white px-3 py-1.5 text-xs font-medium text-[#46766e]">
+                                                        <span className="max-w-48 truncate">{file.file_name}</span>
+                                                        {file.preview_url ? (
+                                                            <a
+                                                                href={file.preview_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                aria-label={`${file.file_name}を開く`}
+                                                                className="underline"
+                                                            >
+                                                                開く
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-[#899693]">プレビューできません</span>
+                                                        )}
                                                         <a
-                                                            href={fileUrl(
-                                                                itinerary.id,
-                                                                file.id,
-                                                            )}
-                                                            className="inline-flex items-center gap-1 rounded-full border border-[#d8e5de] bg-white px-3 py-1.5 text-xs font-medium text-[#46766e]"
+                                                            href={file.url}
+                                                            aria-label={`${file.file_name}をダウンロード`}
+                                                            className="inline-flex items-center gap-1 underline"
                                                         >
-                                                            <Download
-                                                                size={13}
-                                                            />
-                                                            {file.file_name}
+                                                            <Download size={13} />
+                                                            ダウンロード
                                                         </a>
                                                     </li>
                                                 ))}

@@ -114,6 +114,14 @@ $uploadDisk = (string) config('filesystems.uploads', 'public');
 $attachmentPath = "e2e/{$overview->id}/fixture.txt";
 Storage::disk($uploadDisk)->put($attachmentPath, 'E2E attachment content');
 PlanFile::create(['plan_id' => $firstPlan->id, 'file_name' => 'fixture.txt', 'path' => $attachmentPath]);
+$previewPdfPath = "e2e/{$overview->id}/fixture.pdf";
+$previewPdf = "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n";
+Storage::disk($uploadDisk)->put($previewPdfPath, $previewPdf);
+PlanFile::create(['plan_id' => $firstPlan->id, 'file_name' => 'fixture.pdf', 'path' => $previewPdfPath]);
+$previewPngPath = "e2e/{$overview->id}/fixture.png";
+$previewPng = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pXcAAAAASUVORK5CYII=', true);
+Storage::disk($uploadDisk)->put($previewPngPath, $previewPng);
+PlanFile::create(['plan_id' => $firstPlan->id, 'file_name' => 'fixture.png', 'path' => $previewPngPath]);
 
 SharedPassword::create([
     'travel_id' => $overview->id,

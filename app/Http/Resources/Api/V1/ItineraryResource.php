@@ -22,6 +22,7 @@ class ItineraryResource extends JsonResource
 
         return [
             'id' => (string) $this->id,
+            'revision' => (int) $this->revision,
             'title' => $this->title,
             'overview_text' => $this->overviewText,
             'template_type' => $this->templateType?->template_name,
@@ -36,6 +37,7 @@ class ItineraryResource extends JsonResource
                     'id' => (int) $file->id,
                     'file_name' => $file->file_name,
                     'url' => route('api.v1.itineraries.files.show', [$this->id, $file->id]),
+                    'preview_url' => $file->previewUrl(),
                 ])->values(),
             ])->values(),
             'packing_items' => $canEdit ? $this->packingItems()

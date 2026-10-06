@@ -57,7 +57,7 @@ export function MemberManagement({ itinerary }: { itinerary: Itinerary }) {
                         autoComplete="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        className="editor-input pl-10"
+                        className="editor-input editor-input-with-leading-icon"
                         placeholder="member@example.com"
                     />
                 </div>

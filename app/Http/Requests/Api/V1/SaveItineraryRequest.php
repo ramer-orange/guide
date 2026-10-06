@@ -53,6 +53,7 @@ class SaveItineraryRequest extends FormRequest
     {
         return [
             'payload' => ['required', 'string'],
+            'revision' => $this->route('itinerary') ? ['required', 'integer', 'min:1'] : ['prohibited'],
             'title' => ['required', 'string', 'max:255'],
             'overview_text' => ['present', 'nullable', 'string'],
             'template_type' => ['present', 'nullable', 'string', 'max:255'],
@@ -131,6 +132,12 @@ class SaveItineraryRequest extends FormRequest
                     $validator->errors()->add('files', 'An uploaded file references an unknown plan.');
                 }
             }
+            $uploadBytes = collect($this->allFiles()['files'] ?? [])->flatten(1)->sum(
+                fn (UploadedFile $file) => $file->getSize() ?: 0,
+            );
+            if ($uploadBytes > 18 * 1024 * 1024) {
+                $validator->errors()->add('files', '添付ファイル全体は18MB以下にしてください。');
+            }
 
             $overview = $this->route('itinerary');
             if (! $overview instanceof TravelOverview) {
@@ -183,7 +190,7 @@ class SaveItineraryRequest extends FormRequest
     public function payloadData(): array
     {
         $validated = $this->validated();
-        $keys = ['title', 'overview_text', 'template_type', 'plans', 'packing_items', 'souvenirs', 'notes', 'shared_password', 'shared_password_confirmation', 'viewer_share_expires_at'];
+        $keys = ['revision', 'title', 'overview_text', 'template_type', 'plans', 'packing_items', 'souvenirs', 'notes', 'shared_password', 'shared_password_confirmation', 'viewer_share_expires_at'];
 
         return array_intersect_key($validated, array_flip($keys));
     }

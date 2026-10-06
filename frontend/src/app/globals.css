@@ -56,6 +56,9 @@ a {
     border-color: var(--teal);
     box-shadow: 0 0 0 3px rgb(20 140 137 / 13%);
 }
+.editor-input-with-leading-icon {
+    padding-left: 2.5rem;
+}
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

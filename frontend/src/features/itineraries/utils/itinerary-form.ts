@@ -27,6 +27,7 @@ export function toIsoDateTime(localDate: string) {
 }
 export function defaultItineraryValues(): ItineraryFormValues {
     return {
+        revision: 0,
         title: "",
         overview_text: "",
         template_type: null,
@@ -40,6 +41,7 @@ export function toItineraryFormValues(trip: Itinerary): ItineraryFormValues {
     const values = defaultItineraryValues();
     return {
         ...values,
+        revision: trip.revision,
         title: trip.title,
         overview_text: trip.overview_text ?? "",
         template_type: trip.template_type,
@@ -76,6 +78,7 @@ export function toItineraryFormValues(trip: Itinerary): ItineraryFormValues {
 }
 export function toItineraryPayload(values: ItineraryFormValues): ItinerarySave {
     return {
+        ...(values.revision > 0 ? { revision: values.revision } : {}),
         title: values.title.trim(),
         overview_text: values.overview_text,
         template_type: values.template_type,

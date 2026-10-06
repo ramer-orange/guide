@@ -9,10 +9,12 @@ export function PlanRow({
     index,
     clientId,
     onRemove,
+    disabled = false,
 }: {
     index: number;
     clientId: string;
     onRemove: () => void;
+    disabled?: boolean;
 }) {
     const { control, register } = useFormContext<ItineraryFormValues>();
     const { errors } = useFormState<ItineraryFormValues>({
@@ -22,7 +24,7 @@ export function PlanRow({
     });
     const error = errors.plans?.[index];
     return (
-        <SortableFieldRow id={clientId} index={index} onRemove={onRemove}>
+        <SortableFieldRow id={clientId} index={index} onRemove={onRemove} disabled={disabled}>
             <input type="hidden" {...register(`plans.${index}.client_id`)} />
             <div className="mb-4 grid gap-3 pr-16 sm:grid-cols-[1fr_170px_130px]">
                 <label className="grid gap-1.5 text-xs font-semibold text-[#657774]">

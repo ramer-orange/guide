@@ -7,7 +7,7 @@ import {
     SortableFieldList,
     SortableFieldRow,
 } from "@/features/itineraries/shared/sortable-field-list";
-export function NotesSection() {
+export function NotesSection({ disabled = false }: { disabled?: boolean }) {
     const { control, register } = useFormContext<ItineraryFormValues>();
     const { fields, append, remove, move } = useFieldArray({
         control,
@@ -33,13 +33,14 @@ export function NotesSection() {
             }
         >
             {fields.length > 0 ? (
-                <SortableFieldList onMove={move}>
+                <SortableFieldList onMove={move} disabled={disabled}>
                     <div className="grid gap-2">
                         {fields.map((field, index) => (
                             <SortableFieldRow
                                 key={field.fieldKey}
                                 id={`note-${field.fieldKey}`}
                                 index={index}
+                                disabled={disabled}
                                 onRemove={() => remove(index)}
                             >
                                 <div className="grid gap-3 pr-20">

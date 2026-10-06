@@ -105,6 +105,21 @@ paths:
         '200': { description: Authorized attachment bytes, with Content-Disposition filename }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /itineraries/{itineraryId}/files/{fileId}/preview:
+    parameters:
+      - $ref: '#/components/parameters/ItineraryId'
+      - name: fileId
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      operationId: previewItineraryFile
+      description: Opens verified PDF, JPEG, or PNG bytes inline. Other file formats return 415.
+      responses:
+        '200': { description: Authorized inline preview with a verified media Content-Type }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { description: This attachment is not a supported preview format }
   /packing-templates:
     get:
       operationId: listPackingTemplates
@@ -380,11 +395,12 @@ components:
                 type: array
                 items:
                   type: object
-                  required: [id, file_name, url]
+                  required: [id, file_name, url, preview_url]
                   properties:
                     id: { type: integer }
                     file_name: { type: string }
                     url: { type: string, format: uri-reference }
+                    preview_url: { type: [string, 'null'], format: uri-reference, description: Available for PDF, JPEG, and PNG files. }
         packing_items:
           type: array
           description: Only the authenticated caller's personal list; empty for shared viewers.

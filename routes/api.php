@@ -17,6 +17,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['web', PrivateApiResponse::cla
     Route::post('/itineraries/{itinerary}', [ItineraryController::class, 'update'])->middleware('auth:sanctum')->name('itineraries.update.multipart');
     Route::delete('/itineraries/{itinerary}', [ItineraryController::class, 'destroy'])->middleware('auth:sanctum')->name('itineraries.destroy');
     Route::get('/itineraries/{itinerary}/files/{fileId}', [ItineraryController::class, 'file'])->name('itineraries.files.show');
+    Route::get('/itineraries/{itinerary}/files/{fileId}/preview', [ItineraryController::class, 'previewFile'])->name('itineraries.files.preview');
     Route::get('/packing-templates', [PackingTemplateController::class, 'index'])->name('packing-templates.index');
     Route::post('/itineraries/{itinerary}/members', [MemberController::class, 'store'])->middleware('auth:sanctum')->name('itineraries.members.store');
     Route::delete('/itineraries/{itinerary}/members/{member}', [MemberController::class, 'destroy'])->middleware('auth:sanctum')->name('itineraries.members.destroy');

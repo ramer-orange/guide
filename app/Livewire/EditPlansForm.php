@@ -8,6 +8,7 @@ use App\Livewire\Traits\InitializeLists;
 use App\Livewire\Traits\UpdateOrder;
 use App\Models\SharedPassword;
 use App\Models\TravelOverview;
+use Livewire\Attributes\Locked;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -25,6 +26,9 @@ class EditPlansForm extends Component
     public $overviewText;
 
     public $overview;
+
+    #[Locked]
+    public int $revision = 1;
 
     public $plans = [];
 
@@ -103,6 +107,7 @@ class EditPlansForm extends Component
         abort_unless(Gate::allows('view', $overview), 403);
 
         $this->overview = $overview;
+        $this->revision = (int) $overview->revision;
         $this->isOwner = Gate::allows('manageViewerShare', $overview);
         $this->canEdit = Gate::allows('update', $overview);
         $this->title = $overview->title;

@@ -17,4 +17,13 @@ class PlanFile extends Model
     {
         return route('api.v1.itineraries.files.show', [$this->plan->travel_id, $this->id]);
     }
+
+    public function previewUrl(): ?string
+    {
+        $mimeType = app(\App\Actions\Itineraries\PlanFileStorage::class)->candidatePreviewMimeType($this);
+
+        return $mimeType === null
+            ? null
+            : route('api.v1.itineraries.files.preview', [$this->plan->travel_id, $this->id]);
+    }
 }

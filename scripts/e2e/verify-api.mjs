@@ -74,6 +74,19 @@ const existingAttachment = ownerDetail.plans.flatMap((plan) => plan.files)[0];
 const existingFileResponse = await request(existingAttachment.url, { cookies: ownerCookies });
 assert(existingFileResponse.status === 200, "Existing attachment could not be downloaded through the API.");
 assert((await existingFileResponse.text()).includes("E2E attachment content"), "Existing attachment content did not match the isolated fixture.");
+const sharedPdf = ownerDetail.plans.flatMap((plan) => plan.files).find((file) => file.file_name === "fixture.pdf");
+assert(sharedPdf?.preview_url, "The supported fixture PDF did not expose a preview URL.");
+const unauthenticatedPreview = await request(sharedPdf.preview_url);
+assert(unauthenticatedPreview.status === 403, `Unauthenticated preview should be denied (received ${unauthenticatedPreview.status}).`);
+const ownerPreview = await request(sharedPdf.preview_url, { cookies: ownerCookies });
+assert(ownerPreview.status === 200, `Owner preview failed (received ${ownerPreview.status}).`);
+assert(ownerPreview.headers.get("content-type")?.startsWith("application/pdf"), "Owner preview did not return PDF content type.");
+assert(ownerPreview.headers.get("content-disposition")?.startsWith("inline;"), "Owner preview was not served inline.");
+assert(ownerPreview.headers.get("x-content-type-options") === "nosniff", "Owner preview did not disable MIME sniffing.");
+assert((await ownerPreview.text()).startsWith("%PDF-1.4"), "Owner preview bytes did not match the PDF fixture.");
+const memberPreview = await request(sharedPdf.preview_url, { cookies: memberCookies });
+assert(memberPreview.status === 200, `Member preview failed (received ${memberPreview.status}).`);
+assert(memberPreview.headers.get("content-disposition")?.startsWith("inline;"), "Member preview was not served inline.");
 
 const ownerCsrfResponse = await request("/sanctum/csrf-cookie", { cookies: ownerCookies });
 assert(ownerCsrfResponse.ok, "Laravel did not issue a CSRF cookie to the owner.");
@@ -116,6 +129,8 @@ assert(validationFailure.status === 422, `Invalid itinerary should return 422 (r
 const uploadPayload = new FormData();
 uploadPayload.append("payload", JSON.stringify(itineraryPayload("E2E uploaded trip", "uploaded-plan")));
 uploadPayload.append("files[uploaded-plan][]", new Blob(["%PDF-1.4\nE2E upload"], { type: "application/pdf" }), "proof.pdf");
+const pngBytes = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/pXcAAAAASUVORK5CYII=", "base64");
+uploadPayload.append("files[uploaded-plan][]", new Blob([pngBytes], { type: "image/png" }), "proof.png");
 const uploadResponse = await request("/api/v1/itineraries", {
   cookies: ownerCookies,
   method: "POST",
@@ -125,9 +140,23 @@ const uploadResponse = await request("/api/v1/itineraries", {
 assert(uploadResponse.status === 201, `Create with multipart upload failed (received ${uploadResponse.status}).`);
 const uploadedItinerary = await json(uploadResponse);
 assert(uploadedItinerary.plans[0]?.files[0]?.file_name === "proof.pdf", "Uploaded PDF was not attached to its plan.");
-const uploadedFileResponse = await request(uploadedItinerary.plans[0].files[0].url, { cookies: ownerCookies });
-assert(uploadedFileResponse.status === 200, "Newly uploaded attachment could not be downloaded.");
-assert((await uploadedFileResponse.text()).includes("E2E upload"), "New uploaded attachment content did not match.");
+for (const [name, contentType, expectedBytes] of [
+  ["proof.pdf", "application/pdf", Buffer.from("%PDF-1.4\nE2E upload")],
+  ["proof.png", "image/png", pngBytes],
+]) {
+  const uploadedFile = uploadedItinerary.plans[0].files.find((file) => file.file_name === name);
+  assert(uploadedFile?.preview_url, `Uploaded ${name} did not expose a preview URL.`);
+  const previewResponse = await request(uploadedFile.preview_url, { cookies: ownerCookies });
+  assert(previewResponse.status === 200, `Uploaded ${name} preview failed (received ${previewResponse.status}).`);
+  assert(previewResponse.headers.get("content-type")?.startsWith(contentType), `Uploaded ${name} preview returned the wrong MIME type.`);
+  assert(previewResponse.headers.get("content-disposition")?.startsWith("inline;"), `Uploaded ${name} was not served inline.`);
+  assert(Buffer.from(await previewResponse.arrayBuffer()).equals(expectedBytes), `Uploaded ${name} preview bytes did not match.`);
+
+  const downloadResponse = await request(uploadedFile.url, { cookies: ownerCookies });
+  assert(downloadResponse.status === 200, `Uploaded ${name} could not be downloaded.`);
+  assert(downloadResponse.headers.get("content-disposition")?.startsWith("attachment;"), `Uploaded ${name} download did not preserve attachment disposition.`);
+  assert(Buffer.from(await downloadResponse.arrayBuffer()).equals(expectedBytes), `Uploaded ${name} download bytes did not match.`);
+}
 
 const guestCookies = [];
 const guestCsrfResponse = await request("/sanctum/csrf-cookie", { cookies: guestCookies });
@@ -137,6 +166,8 @@ assert(guestXsrfCookie, "Guest session did not receive an XSRF-TOKEN cookie.");
 const guestXsrfToken = decodeURIComponent(guestXsrfCookie.value);
 const lockedDetail = await request(`/api/v1/itineraries/${fixture.travelId}`, { cookies: guestCookies });
 assert(lockedDetail.status === 403, `Guest should be denied before the share password (received ${lockedDetail.status}).`);
+const lockedPreview = await request(sharedPdf.preview_url, { cookies: guestCookies });
+assert(lockedPreview.status === 403, `Locked guest preview should be denied (received ${lockedPreview.status}).`);
 const unlockResponse = await request(`/api/v1/itineraries/${fixture.travelId}/shared-access`, {
   cookies: guestCookies,
   method: "POST",
@@ -147,6 +178,10 @@ assert(unlockResponse.status === 200, `Guest shared-access verification failed (
 const unlocked = await json(unlockResponse);
 assert(unlocked.permissions.can_edit === false, "Shared viewer received edit permission.");
 assert(unlocked.packing_items.length === 0, "Shared viewer received personal packing items.");
+const sharedPreview = await request(sharedPdf.preview_url, { cookies: guestCookies });
+assert(sharedPreview.status === 200, `Unlocked shared viewer preview failed (received ${sharedPreview.status}).`);
+assert(sharedPreview.headers.get("content-disposition")?.startsWith("inline;"), "Shared viewer PDF was not served inline.");
+assert((await sharedPreview.text()).startsWith("%PDF-1.4"), "Shared viewer PDF bytes did not match.");
 
 const revokeResponse = await request(`/api/v1/itineraries/${fixture.travelId}/viewer-share`, {
   cookies: ownerCookies,
@@ -156,5 +191,7 @@ const revokeResponse = await request(`/api/v1/itineraries/${fixture.travelId}/vi
 assert(revokeResponse.ok, `Owner could not revoke viewer sharing (received ${revokeResponse.status}).`);
 const revokedAccessResponse = await request(`/api/v1/itineraries/${fixture.travelId}`, { cookies: guestCookies });
 assert(revokedAccessResponse.status === 403, `Revoked guest session still has access (received ${revokedAccessResponse.status}).`);
+const revokedPreview = await request(sharedPdf.preview_url, { cookies: guestCookies });
+assert(revokedPreview.status === 403, `Revoked guest can still preview attachment (received ${revokedPreview.status}).`);
 
 console.log("API E2E passed: owner/member sessions, private packing, CSRF 419/422, create/upload/download, shared read-only access, and revocation.");
