@@ -22,44 +22,42 @@
 - **ファイル添付**  
   予約確認書やパンフレットなどのファイルを添付できます。
 
-- **共有機能**  
-  パスワード保護付きで旅行計画を友人や家族と共有できます。
+- **共有機能**：パスワード保護付きで旅行計画を友人や家族と共有できます。
 
-- **ドラックアンドドロップ**  
-  ドラックアンドドロップでプランや持ち物等の並び順を簡単に変更できます。
+- **ドラッグアンドドロップ**：プランや持ち物等の並び順を変更できます。
 
 ## 技術スタック
 
 - **フレームワーク:** Laravel 11.x
-- **フロントエンド:** Livewire（既存 UI）, Next.js App Router + TypeScript（移行 UI）, Tailwind CSS
+- **フロントエンド:** Next.js App Router + TypeScript, Tailwind CSS
 - **データベース:** PostgreSQL
 - **開発環境:** Docker
 
-## Next.js 移行 UI をローカルで起動する
+## ローカルでNext.jsアプリを起動する
 
-Next.js は移行中のオプトイン構成です。既存の Laravel/Vite 開発環境は引き続き `docker-compose.yml` を使います。`.env` と Laravel の開発依存関係を準備し、Laravel のマイグレーションと従来の Vite assets を先に用意してから、同じオリジンのゲートウェイを追加で起動します。
+画面はNext.js、API・認証・セッションはLaravelが担当します。`docker-compose.yml` にLaravel、Next.js、Nginx gatewayの各サービスがあります。gatewayを入口にすると、ブラウザーからは同一originのまま、画面をNext.jsへ、APIなどをLaravelへ振り分けます。
 
-フロントエンドの作業には Node.js 22.12.0 以上が必要です。Node.js 22.12 以降または 24 を使ってください。Laravel の依存関係を `composer install`、root と Next の npm 依存関係を `npm ci` と `npm ci --prefix frontend` で準備します。
+事前に `.env` を用意し、`composer install` でLaravelの依存関係を準備してください。E2Eを実行する場合はNode.js 22.12.0以上とフロントエンドの依存関係も必要です。Next.jsのDocker image build時にフロントエンドの依存関係とproduction buildを作成します。
 
 ```sh
 docker compose up -d laravel.test
 ./vendor/bin/sail artisan migrate
-npm run build
-docker compose -f docker-compose.yml -f docker-compose.next.yml up --build -d next next-gateway
+docker compose up --build -d next next-gateway
 ```
 
-移行 UI は `http://localhost:8081`（`NEXT_GATEWAY_PORT` は port 番号）で開きます。別の port/domain を使う場合、`NEXT_GATEWAY_PORT` には数値、`NEXT_PUBLIC_ORIGIN` には公開 origin URL を設定し、両者を一致させます。たとえば `.env` に `NEXT_GATEWAY_PORT=8082`、`NEXT_PUBLIC_ORIGIN=http://localhost:8082` を設定します。`NEXT_PUBLIC_ORIGIN` は Next の Open Graph metadata origin と standalone image の build argument にも使われるため、値を変更した後は `docker compose -f docker-compose.yml -f docker-compose.next.yml build next` を再実行してください。overlay は Laravel 側の `APP_ENV` を `next-local`、`APP_URL` を gateway origin、`SESSION_SECURE_COOKIE` を `false` に上書きし、既定の Laravel compose 環境には影響しません。`/api/v1/*`、`/sanctum/*`、`/auth/*`、ログイン/ログアウト、`/up`、Livewire、Vite assets、`/storage/*` は Laravel へ届き、設定済みの Next ページと `/_next/*` は Next.js へ届きます。その他の画面は Laravel に残ります。この同一オリジン経路によりブラウザは Laravel のセッション Cookie と CSRF Cookie を同じホストへ送れます。Google OAuth の callback URL もゲートウェイの公開 URL に合わせて設定してください。
+アプリは `http://localhost:8081`（`NEXT_GATEWAY_PORT` で変更可能）で開きます。別のportを使う場合は `.env` の `NEXT_GATEWAY_PORT`（数値）と `NEXT_PUBLIC_ORIGIN`（origin URL）を一致させます。たとえば `NEXT_GATEWAY_PORT=8082`、`NEXT_PUBLIC_ORIGIN=http://localhost:8082` とします。`NEXT_PUBLIC_ORIGIN` はNext.jsのmetadata用URLとしてbuild時に使われるため、変更後は `docker compose up --build -d next next-gateway` でNext.js imageを再buildしてください。Google OAuthを使う場合はcallback URLもgatewayの公開URLに合わせます。
 
-Next の画面を一時的に切り戻すには、Next と gateway を止め、base compose だけで Laravel を再作成して overlay の環境変数を戻します。
+gatewayは `/api/`、`/sanctum/`、`/auth/`、`/login`、`/logout`、`/register`、`/up`、`/storage/` をLaravelへ送り、`/_next/`、`/images/` とそれ以外の画面URLをNext.jsへ送ります。Livewire/Blade画面やVite画面へフォールバックする構成ではありません。この同一origin経路では、ブラウザーがLaravelのセッションCookieとCSRF Cookieを同じoriginへ送れます。
+
+Next.jsアプリを停止する場合はNext.jsとgatewayを停止します。停止後、gateway経由の画面は利用できません（Laravel画面へ自動で切り替わる構成ではありません）。
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.next.yml stop next-gateway next
-docker compose -f docker-compose.yml up -d --force-recreate laravel.test
+docker compose stop next-gateway next
 ```
 
-その後、既存の Laravel URL（通常 `http://localhost`）を使います。gateway は DB や Laravel の保存データを変更しません。
+LaravelのAPIやDBは別サービスとして動作します。gatewayの停止自体はDBやLaravelの保存データを変更しません。
 
-実ブラウザーによる移行フローの検証には、Composer/npm 依存関係を用意した後に一度 Chromium を入れ、`npm run e2e:next` を実行します。このコマンドは専用の `database/e2e.sqlite` を作り、owner/member/guest のテスト記録と暗号化セッションを CLI で準備します。通常の `.env` に書かれた DB 接続先は使わず、PHP・Next.js・同一オリジン gateway をローカルで起動して検証後に停止します。OAuth callback を偽装する HTTP ルートは追加しません。
+実ブラウザーでのE2Eには、Composer依存関係とフロントエンドのnpm依存関係を用意し、Chromiumをインストールした後に `npm run e2e:next` を実行します。このコマンドは専用の `database/e2e.sqlite` を作り、owner/member/guestのテスト記録とセッションfixtureをCLIで準備します。通常の `.env` に書かれたDB接続先は使わず、PHP・Next.js・同一origin gatewayをローカルで起動して、検証後に停止します。OAuth callbackを偽装するHTTPルートは追加しません。
 
 ```sh
 npm --prefix frontend run e2e:install
@@ -68,21 +66,17 @@ npm run e2e:next
 
 API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されます。スクリーンショットは `/tmp/guide-next-e2e/` に保存されます。
 
-## Render の既存 Web Service で移行 UI を動かす
+## Renderの構成
 
-Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service は branch `codex/next-typescript-migration`、Dockerfile path `Dockerfile.render-next` で `https://guide-2s9j.onrender.com/` に稼働しています（commit `948d4e6bc7d37b64ab2c679d843679f22db76486`）。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
+Renderでは `Dockerfile.render-next` がLaravelとNext.js standaloneを1つのコンテナにまとめ、Nginxが単一originでリクエストを振り分けます。`/api/`、`/sanctum/`、`/auth/`、`/login`、`/logout`、`/register`、`/up` はLaravelへ、`/_next/`、`/images/` とそれ以外の画面URLはNext.jsへ届きます。つまり、Renderでもユーザー向けの画面はNext.jsが担当し、Laravel画面へフォールバックしません。
 
-GitHub Actions は全ブランチへの push と Pull Request で検証を実行します。Render の本番 Web Service は Dashboard の Settings → Auto-Deploy を **After CI Checks Pass** に設定し、GitHub Actions のチェックが成功した後にだけデプロイしてください。既存 Service の Auto-Deploy 設定は Dashboard 側で管理されています。
+起動時に `php artisan migrate --force` を実行します。デプロイ前に新しいmigrationとDB backupを確認してください。Renderのbranch・環境変数・DBの期限・OAuth設定などの運用状況や、確認済み/未確認の本番操作は変わるため、[実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md)を参照してください。秘密情報はRenderのruntime環境変数で管理し、ソースやNext.js buildへ含めないでください。
 
-既存 Service の環境変数と秘密情報を引き継ぎ、`APP_KEY`、`APP_URL=https://guide-2s9j.onrender.com`、セッション設定を維持してください。PostgreSQL 接続先は新しい空の PostgreSQL 17 free database（Oregon）に設定済みです。旧 database のデータはコピーしていません。free database は 2026-11-04 に期限切れになります。Google OAuth は Google Cloud project `food-recipe-493211` の OAuth client `PLAGINE Render` を使い、consent screen `food-recipe` は External testing のまま運用しています（branding と publication status は変更していません）。Render の `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`、`GOOGLE_REDIRECT_URI=https://guide-2s9j.onrender.com/auth/google/callback` は登録済みです。公開ブラウザー確認で Google への通常遷移、client ID の存在、callback URL の一致、`openid profile email` scope を確認しました。Next の metadata origin は build arg `NEXT_PUBLIC_SITE_URL` で設定し、既定値は `https://guide-2s9j.onrender.com` です。
+添付の保存先は `FILESYSTEM_UPLOADS_DISK` で選びます。Renderではprivate R2 bucketを使い、ブラウザーからは認可済みのLaravel endpointを通して取得します。R2資格情報はサーバー側のruntime環境変数で管理し、Next.jsクライアントコードやブラウザーへ公開しません。AWS S3の設定とは別です。添付レコードには保存先disk名を記録し、disk名がない既存レコードは `FILESYSTEM_LEGACY_UPLOADS_DISK` で指定した従来diskから読み書き・削除します。既存ファイルの移動やbackfillは自動実行しません。
 
-コンテナ起動時に `php artisan migrate --force` を実行します。公開 URL はホーム・規約ページと asset 配信、session/CSRF、guest access を確認済みです。OAuth redirect は Google sign-in 画面まで確認しましたが、Google account での sign-in、consent、callback は行っていません。空DBのため公開画面からしおりを作成しておらず、ログイン後の保存・共有・添付は未検証です。seeder やテスト用ログインルートはありません。新規 migration をデプロイする前に、DB backup と migration の内容を確認してください。
+## AWSへのデプロイ計画
 
-現在の Render Service は private R2 bucket `guide-attachments` を新しい添付の保存先として使います（`FILESYSTEM_UPLOADS_DISK=r2`、`FILESYSTEM_LEGACY_UPLOADS_DISK=public`）。資格情報は Render runtime の環境変数として保持し、値をソースや Next.js build に含めません。ブラウザーは同一オリジンの認可済み Laravel download endpoint 経由で取得します。AWS S3 の設定とは別です。新しい添付には disk 名が保存され、既存行で disk が null の添付は `public` から引き続き読み書き・削除します。既存ファイルの移動や backfill は自動実行しません。公開動作の詳細は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) に記録しています。
-
-## デプロイ計画
-
-- [AWS構築計画](docs/AWS_DEPLOYMENT_PLAN.md)
+現在のRender構成とは別の、将来のAWS構築計画です。詳細は[AWS構築計画](docs/AWS_DEPLOYMENT_PLAN.md)を参照してください。
 
 ## ER図
 ![Editor _ Mermaid Chart-2025-04-13-023724](https://github.com/user-attachments/assets/c763dea6-b6b7-4a25-8620-c0f4d08aaa12)
