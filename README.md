@@ -114,7 +114,7 @@ flowchart LR
     Laravel --> R2[(Cloudflare R2<br/>非公開の添付ファイル)]
 ```
 
-公開URLはRender配下のCloudflare CDNを経由してRenderへ到達します。Renderのデプロイ設定と稼働中のソース構成をもとにしています。NginxはページをNext.jsへ、API・認証・添付の処理やその他の画面をLaravelへ振り分けます。両者を同じ公開オリジンに置くことで、LaravelのセッションとCSRF Cookieを共有します。Cloudflare R2は添付ファイルの保存先で、CDNとは別の役割です。
+公開URLはRender配下のCloudflare CDNを経由してRenderへ到達します。Renderのデプロイ設定と稼働中のソース構成をもとにしています。NginxはページをNext.jsへ、API・認証・添付の処理やその他の画面をLaravelへ振り分けます。Cloudflare R2は添付ファイルの保存先で、CDNとは別の役割です。
 
 ## 公開アプリの技術構成
 
@@ -129,7 +129,7 @@ flowchart LR
 
 ## 今後の実装方針：Lightsailへ移行
 
-現行の同一オリジン構成を保ったまま、Next.jsとLaravelを含むアプリケーションをコンテナ化してLightsail Container Serviceで配信する案です。旅程などの永続データはLightsailのmanaged PostgreSQLへ、添付ファイルはコンテナ外の非公開S3バケットへ保存します。
+Next.jsとLaravelを含むアプリケーションをコンテナ化してLightsail Container Serviceで配信する案です。旅程などの永続データはLightsailのmanaged PostgreSQLへ、添付ファイルはコンテナ外の非公開S3バケットへ保存します。
 
 ### Lightsail移行後のアーキテクチャ案
 
