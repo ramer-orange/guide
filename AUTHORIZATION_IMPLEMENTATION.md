@@ -1,7 +1,5 @@
 # Authentication and Authorization Implementation
 
-> **履歴資料:** 画面実装に関する記述には削除済みの Blade / Livewire が含まれます。現在の画面は Next.js、認可の実行点は Laravel API です。最新の構成は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) を参照してください。
-
 ## 概要
 
 しおり共有機能では、認証と認可を分けて設計している。

@@ -30,29 +30,36 @@
 
 ## 技術スタック
 
-- **バックエンド:** Laravel 11.x（JSON API、認証、認可、データ永続化）
-- **フロントエンド:** Next.js App Router + TypeScript（唯一の UI）, Tailwind CSS
+- **フレームワーク:** Laravel 11.x
+- **フロントエンド:** Livewire（既存 UI）, Next.js App Router + TypeScript（移行 UI）, Tailwind CSS
 - **データベース:** PostgreSQL
 - **開発環境:** Docker
 
-## ローカル開発環境を起動する
+## Next.js 移行 UI をローカルで起動する
 
-画面は Next.js、API・認証・認可・DB・添付保存は Laravel が担当します。ブラウザー向けの入口には同一オリジン gateway を使い、Laravel の session/CSRF cookie を API 呼び出しに利用します。
+Next.js は移行中のオプトイン構成です。既存の Laravel/Vite 開発環境は引き続き `docker-compose.yml` を使います。`.env` と Laravel の開発依存関係を準備し、Laravel のマイグレーションと従来の Vite assets を先に用意してから、同じオリジンのゲートウェイを追加で起動します。
 
-Node.js 22.12.0 以上を使います。Laravel と Next.js の依存関係をインストールします。
+フロントエンドの作業には Node.js 22.12.0 以上が必要です。Node.js 22.12 以降または 24 を使ってください。Laravel の依存関係を `composer install`、root と Next の npm 依存関係を `npm ci` と `npm ci --prefix frontend` で準備します。
 
 ```sh
-composer install
-npm ci
-npm ci --prefix frontend
 docker compose up -d laravel.test
 ./vendor/bin/sail artisan migrate
-docker compose up --build -d next next-gateway
+npm run build
+docker compose -f docker-compose.yml -f docker-compose.next.yml up --build -d next next-gateway
 ```
 
-画面は `http://localhost:8081` で開きます。port を変える場合は `.env` の `NEXT_GATEWAY_PORT` と `NEXT_PUBLIC_ORIGIN` を同じ origin に設定します。Google OAuth callback URL もこの origin に合わせます。標準の `docker-compose.yml` に Next.js と gateway が含まれています。gateway は `/api/v1/*`、`/sanctum/*`、`/auth/*`、`/login`、`/logout`、`/register`、`/up`、`/storage/*` を Laravel へ送り、画面と `/_next/*` を Next.js へ送ります。
+移行 UI は `http://localhost:8081`（`NEXT_GATEWAY_PORT` は port 番号）で開きます。別の port/domain を使う場合、`NEXT_GATEWAY_PORT` には数値、`NEXT_PUBLIC_ORIGIN` には公開 origin URL を設定し、両者を一致させます。たとえば `.env` に `NEXT_GATEWAY_PORT=8082`、`NEXT_PUBLIC_ORIGIN=http://localhost:8082` を設定します。`NEXT_PUBLIC_ORIGIN` は Next の Open Graph metadata origin と standalone image の build argument にも使われるため、値を変更した後は `docker compose -f docker-compose.yml -f docker-compose.next.yml build next` を再実行してください。overlay は Laravel 側の `APP_ENV` を `next-local`、`APP_URL` を gateway origin、`SESSION_SECURE_COOKIE` を `false` に上書きし、既定の Laravel compose 環境には影響しません。`/api/v1/*`、`/sanctum/*`、`/auth/*`、ログイン/ログアウト、`/up`、Livewire、Vite assets、`/storage/*` は Laravel へ届き、設定済みの Next ページと `/_next/*` は Next.js へ届きます。その他の画面は Laravel に残ります。この同一オリジン経路によりブラウザは Laravel のセッション Cookie と CSRF Cookie を同じホストへ送れます。Google OAuth の callback URL もゲートウェイの公開 URL に合わせて設定してください。
 
-実ブラウザーによる E2E には、依存関係を用意した後に一度 Chromium を入れ、`npm run e2e:next` を実行します。このコマンドは専用の `database/e2e.sqlite` を作り、owner/member/guest のテスト記録と暗号化セッションを CLI で準備します。通常の `.env` に書かれた DB 接続先は使わず、PHP・Next.js・同一オリジン gateway をローカルで起動して検証後に停止します。OAuth callback を偽装する HTTP ルートは追加しません。
+Next の画面を一時的に切り戻すには、Next と gateway を止め、base compose だけで Laravel を再作成して overlay の環境変数を戻します。
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.next.yml stop next-gateway next
+docker compose -f docker-compose.yml up -d --force-recreate laravel.test
+```
+
+その後、既存の Laravel URL（通常 `http://localhost`）を使います。gateway は DB や Laravel の保存データを変更しません。
+
+実ブラウザーによる移行フローの検証には、Composer/npm 依存関係を用意した後に一度 Chromium を入れ、`npm run e2e:next` を実行します。このコマンドは専用の `database/e2e.sqlite` を作り、owner/member/guest のテスト記録と暗号化セッションを CLI で準備します。通常の `.env` に書かれた DB 接続先は使わず、PHP・Next.js・同一オリジン gateway をローカルで起動して検証後に停止します。OAuth callback を偽装する HTTP ルートは追加しません。
 
 ```sh
 npm --prefix frontend run e2e:install
@@ -61,9 +68,9 @@ npm run e2e:next
 
 API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されます。スクリーンショットは `/tmp/guide-next-e2e/` に保存されます。
 
-## Render の Web Service
+## Render の既存 Web Service で移行 UI を動かす
 
-Render 用の `Dockerfile.render-next` は Laravel API と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin で振り分けます。Render が渡す数値の `PORT` を Nginx が listen し、画面と `/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付は Laravel へ送ります。
+Render 用の `Dockerfile.render-next` は Laravel と Next.js standalone を1つのコンテナに含め、Nginx が同じ origin のまま両者へ振り分けます。既存 Render Web Service は branch `codex/next-typescript-migration`、Dockerfile path `Dockerfile.render-next` で `https://guide-2s9j.onrender.com/` に稼働しています（commit `948d4e6bc7d37b64ab2c679d843679f22db76486`）。Render が渡す数値の `PORT` を Nginx が listen し、`/`、移行済み itinerary ページ、`/_next/*`、`/images/*` は Next へ、API・Sanctum・認証・添付・既存 Laravel 画面は Laravel へ送ります。
 
 GitHub Actions は全ブランチへの push と Pull Request で検証を実行します。Render の本番 Web Service は Dashboard の Settings → Auto-Deploy を **After CI Checks Pass** に設定し、GitHub Actions のチェックが成功した後にだけデプロイしてください。既存 Service の Auto-Deploy 設定は Dashboard 側で管理されています。
 
