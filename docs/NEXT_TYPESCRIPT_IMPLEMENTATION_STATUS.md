@@ -6,7 +6,7 @@
 
 Laravel の既存認証・セッション・Policy・DB を使う JSON API と OpenAPI 契約を追加し、Next.js App Router にホーム、規約、ポリシー、しおり一覧/作成/編集、閲覧共有画面を実装した。所有者と編集メンバーは権限に応じて共同編集し、持ち物リストは利用者ごとに分かれる。閲覧共有のパスワード・期限・停止、メンバー管理、添付の取得/削除も接続済み。
 
-Laravel/Vite の既定配信は残し、`docker-compose.next.yml` を明示した場合だけ Next standalone と同一オリジン Nginx gateway を追加する。API、Sanctum、OAuth、ログイン/ログアウト、Livewire、旧 Vite、添付は Laravel へ送り、移行済みページと `/_next/*` を Next へ送る。gateway は `Host`/`X-Forwarded-Host` の port を保持する。overlay は Laravel の環境を HTTP 開発用に上書きし、既定 compose の値は変更しない。
+Laravel/Vite の既定配信は残し、`docker-compose.next.yml` を明示した場合だけ Next standalone と同一オリジン Nginx gateway を追加する。API、Sanctum、OAuth、ログイン/ログアウト、旧 Vite、添付は Laravel へ送り、移行済みページと `/_next/*` を Next へ送る。gateway は `Host`/`X-Forwarded-Host` の port を保持する。overlay は Laravel の環境を HTTP 開発用に上書きし、既定 compose の値は変更しない。
 
 ## ローカル起動と切り戻し
 

@@ -9,7 +9,10 @@ import type {
     ViewerShareInput,
 } from "@/types/api";
 import type { ItineraryFormValues } from "@/features/itineraries/schemas/itinerary-form.schema";
-import { toItineraryPayload } from "@/features/itineraries/utils/itinerary-form";
+import {
+    toItineraryChanges,
+    toItineraryPayload,
+} from "@/features/itineraries/utils/itinerary-form";
 
 export async function listItineraries() {
     return (await api.get<ItineraryListResponse>("/itineraries")).data
@@ -27,10 +30,18 @@ export async function getPackingTemplates() {
 export async function saveItinerary(
     values: ItineraryFormValues,
     updateId?: string,
+    baseline?: ItineraryFormValues,
 ) {
     await ensureCsrfCookie();
     const body = new FormData();
-    const payload = toItineraryPayload(values);
+    if (updateId && !baseline)
+        throw new Error(
+            "保存前の内容を取得できませんでした。再読み込みしてください。",
+        );
+    const payload =
+        updateId && baseline
+            ? toItineraryChanges(values, baseline)
+            : toItineraryPayload(values);
     body.set("payload", JSON.stringify(payload));
     values.plans.forEach((plan) =>
         plan.files.forEach((file) =>
@@ -40,7 +51,7 @@ export async function saveItinerary(
     const route = updateId
         ? `/itineraries/${encodeURIComponent(updateId)}`
         : "/itineraries";
-    if (updateId) body.set("_method", "PUT");
+    if (updateId) body.set("_method", "PATCH");
     return (await api.post<Itinerary>(route, body)).data;
 }
 export async function deleteItinerary(id: string) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Models\PlanFile;
 use App\Models\SharedPassword;
 use App\Models\TravelOverview;
 use Illuminate\Foundation\Http\FormRequest;
@@ -29,18 +30,20 @@ class SaveItineraryRequest extends FormRequest
     {
         $decoded = json_decode((string) $this->input('payload'), true);
         $this->payload = is_array($decoded) ? $decoded : [];
-        $this->payloadIsValidJson = json_last_error() === JSON_ERROR_NONE && is_array($decoded);
-        foreach ($this->payload['plans'] ?? [] as &$plan) {
-            if (! is_array($plan)) {
-                continue;
-            }
-            foreach (['date', 'time'] as $field) {
-                if (($plan[$field] ?? null) === '') {
-                    $plan[$field] = null;
+        $this->payloadIsValidJson = json_last_error() === JSON_ERROR_NONE && is_object(json_decode((string) $this->input('payload')));
+        if (isset($this->payload['plans']) && is_array($this->payload['plans'])) {
+            foreach ($this->payload['plans'] as &$plan) {
+                if (! is_array($plan)) {
+                    continue;
+                }
+                foreach (['date', 'time'] as $field) {
+                    if (($plan[$field] ?? null) === '') {
+                        $plan[$field] = null;
+                    }
                 }
             }
+            unset($plan);
         }
-        unset($plan);
         foreach (['shared_password', 'shared_password_confirmation'] as $field) {
             if (($this->payload[$field] ?? null) === '') {
                 $this->payload[$field] = null;
@@ -51,37 +54,52 @@ class SaveItineraryRequest extends FormRequest
 
     public function rules(): array
     {
+        $updating = $this->route('itinerary') instanceof TravelOverview;
+
         return [
             'payload' => ['required', 'string'],
-            'revision' => $this->route('itinerary') ? ['required', 'integer', 'min:1'] : ['prohibited'],
-            'title' => ['required', 'string', 'max:255'],
-            'overview_text' => ['present', 'nullable', 'string'],
-            'template_type' => ['present', 'nullable', 'string', 'max:255'],
-            'plans' => ['present', 'array'],
+            'title' => [$updating ? 'sometimes' : 'required', 'required', 'string', 'max:255'],
+            'overview_text' => [$updating ? 'sometimes' : 'present', 'nullable', 'string'],
+            'template_type' => [$updating ? 'sometimes' : 'present', 'nullable', 'string', 'max:255'],
+            'plans' => [$updating ? 'sometimes' : 'present', 'array'],
+            'plans.*' => ['array'],
             'plans.*.id' => ['nullable', 'integer', 'min:1'],
             'plans.*.client_id' => ['required', 'string', 'regex:/^[A-Za-z0-9_-]{1,100}$/'],
             'plans.*.date' => ['nullable', 'date'],
             'plans.*.time' => ['nullable', 'date_format:H:i'],
             'plans.*.title' => ['nullable', 'string', 'max:255'],
             'plans.*.content' => ['nullable', 'string'],
-            'plans.*.order' => ['required', 'integer', 'min:0'],
-            'plans.*.existing_file_ids' => ['present', 'array'],
+            'plans.*.order' => [$updating ? 'required_without:plans.*.id' : 'required', 'integer', 'min:0'],
+            'plans.*.existing_file_ids' => [$updating ? 'prohibited' : 'present', 'array'],
+            'plans.*.removed_file_ids' => [$updating ? 'sometimes' : 'prohibited', 'array'],
+            'plans.*.removed_file_ids.*' => ['integer', 'min:1', 'distinct'],
             'plans.*.existing_file_ids.*' => ['integer', 'min:1'],
-            'packing_items' => ['present', 'array'],
+            'packing_items' => [$updating ? 'sometimes' : 'present', 'array'],
+            'packing_items.*' => ['array'],
             'packing_items.*.id' => ['nullable', 'integer', 'min:1'],
             'packing_items.*.name' => ['nullable', 'string', 'max:255'],
-            'packing_items.*.is_checked' => ['present', 'boolean'],
-            'packing_items.*.order' => ['required', 'integer', 'min:0'],
-            'souvenirs' => ['present', 'array'],
+            'packing_items.*.is_checked' => [$updating ? 'required_without:packing_items.*.id' : 'present', 'boolean'],
+            'packing_items.*.order' => [$updating ? 'required_without:packing_items.*.id' : 'required', 'integer', 'min:0'],
+            'souvenirs' => [$updating ? 'sometimes' : 'present', 'array'],
+            'souvenirs.*' => ['array'],
             'souvenirs.*.id' => ['nullable', 'integer', 'min:1'],
             'souvenirs.*.name' => ['nullable', 'string', 'max:255'],
-            'souvenirs.*.is_checked' => ['present', 'boolean'],
-            'souvenirs.*.order' => ['required', 'integer', 'min:0'],
-            'notes' => ['present', 'array'],
+            'souvenirs.*.is_checked' => [$updating ? 'required_without:souvenirs.*.id' : 'present', 'boolean'],
+            'souvenirs.*.order' => [$updating ? 'required_without:souvenirs.*.id' : 'required', 'integer', 'min:0'],
+            'notes' => [$updating ? 'sometimes' : 'present', 'array'],
+            'notes.*' => ['array'],
             'notes.*.id' => ['nullable', 'integer', 'min:1'],
             'notes.*.title' => ['nullable', 'string', 'max:255'],
             'notes.*.text' => ['nullable', 'string'],
-            'notes.*.order' => ['required', 'integer', 'min:0'],
+            'notes.*.order' => [$updating ? 'required_without:notes.*.id' : 'required', 'integer', 'min:0'],
+            'deleted_plan_ids' => [$updating ? 'sometimes' : 'prohibited', 'array'],
+            'deleted_plan_ids.*' => ['integer', 'min:1', 'distinct'],
+            'deleted_packing_item_ids' => [$updating ? 'sometimes' : 'prohibited', 'array'],
+            'deleted_packing_item_ids.*' => ['integer', 'min:1', 'distinct'],
+            'deleted_souvenir_ids' => [$updating ? 'sometimes' : 'prohibited', 'array'],
+            'deleted_souvenir_ids.*' => ['integer', 'min:1', 'distinct'],
+            'deleted_note_ids' => [$updating ? 'sometimes' : 'prohibited', 'array'],
+            'deleted_note_ids.*' => ['integer', 'min:1', 'distinct'],
             'files' => ['sometimes', 'array'],
             'files.*' => ['array'],
             'files.*.*' => ['file', 'mimes:jpg,jpeg,png,pdf,doc,docx', 'max:10240'],
@@ -97,7 +115,7 @@ class SaveItineraryRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            if (! $this->payloadIsValidJson || array_is_list($this->payload)) {
+            if (! $this->payloadIsValidJson) {
                 $validator->errors()->add('payload', 'The payload field must contain a JSON object.');
 
                 return;
@@ -166,16 +184,28 @@ class SaveItineraryRequest extends FormRequest
                 if (! empty($row['id'])) {
                     if (in_array((int) $row['id'], $planIds, true)
                         || ! $overview->plans()->whereKey($row['id'])->exists()) {
-                        $validator->errors()->add("plans.{$index}.id", 'The selected plan is invalid.');
+                        $validator->errors()->add("plans.{$index}.id", 'この予定は削除されたか、編集できません。入力内容を控えて再読み込みしてください。');
                     }
                     $planIds[] = (int) $row['id'];
                 }
                 $validFileIds = ! empty($row['id'])
                     ? $overview->plans()->whereKey($row['id'])->first()?->planFiles()->pluck('id')->all() ?? []
                     : [];
-                foreach ($row['existing_file_ids'] ?? [] as $fileId) {
-                    if (! in_array((int) $fileId, $validFileIds)) {
-                        $validator->errors()->add("plans.{$index}.existing_file_ids", 'An attachment does not belong to this plan.');
+                foreach (is_array($row['removed_file_ids'] ?? null) ? $row['removed_file_ids'] : [] as $fileId) {
+                    // Already removed attachments are an idempotent deletion.
+                    if (! in_array((int) $fileId, $validFileIds) && PlanFile::whereKey($fileId)->exists()) {
+                        $validator->errors()->add("plans.{$index}.removed_file_ids", 'An attachment does not belong to this plan.');
+                    }
+                }
+            }
+            foreach (['plans' => 'deleted_plan_ids', 'packing_items' => 'deleted_packing_item_ids', 'souvenirs' => 'deleted_souvenir_ids', 'notes' => 'deleted_note_ids'] as $collection => $deletedKey) {
+                $deleted = $this->payload[$deletedKey] ?? [];
+                if (! is_array($deleted)) {
+                    continue;
+                }
+                foreach ($this->payload[$collection] ?? [] as $index => $row) {
+                    if (! empty($row['id']) && in_array((int) $row['id'], $deleted)) {
+                        $validator->errors()->add("{$collection}.{$index}.id", 'An item cannot be updated and deleted in the same request.');
                     }
                 }
             }
@@ -190,7 +220,7 @@ class SaveItineraryRequest extends FormRequest
     public function payloadData(): array
     {
         $validated = $this->validated();
-        $keys = ['revision', 'title', 'overview_text', 'template_type', 'plans', 'packing_items', 'souvenirs', 'notes', 'shared_password', 'shared_password_confirmation', 'viewer_share_expires_at'];
+        $keys = ['deleted_plan_ids', 'deleted_packing_item_ids', 'deleted_souvenir_ids', 'deleted_note_ids', 'title', 'overview_text', 'template_type', 'plans', 'packing_items', 'souvenirs', 'notes', 'shared_password', 'shared_password_confirmation', 'viewer_share_expires_at'];
 
         return array_intersect_key($validated, array_flip($keys));
     }
@@ -215,7 +245,7 @@ class SaveItineraryRequest extends FormRequest
             }
             $id = (int) $row['id'];
             if (in_array($id, $seen, true) || ! $exists($id)) {
-                $validator->errors()->add("{$collection}.{$index}.id", 'The selected item is invalid.');
+                $validator->errors()->add("{$collection}.{$index}.id", 'この項目は削除されたか、編集できません。入力内容を控えて再読み込みしてください。');
             }
             $seen[] = $id;
         }

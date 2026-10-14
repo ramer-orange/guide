@@ -18,7 +18,7 @@ async function ownerPage(browser: Browser) {
     return { context, page: await context.newPage() };
 }
 
-test("delayed save locks all editor operations and a 409 preserves input for retry", async ({ browser }) => {
+test("delayed save locks all editor operations and a failed save preserves input for retry", async ({ browser }) => {
     const { context, page } = await ownerPage(browser);
     let release!: () => void;
     let intercepted!: () => void;
@@ -29,9 +29,9 @@ test("delayed save locks all editor operations and a 409 preserves input for ret
         intercepted();
         await gate;
         await route.fulfill({
-            status: 409,
+            status: 503,
             contentType: "application/json",
-            body: JSON.stringify({ message: "他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。" }),
+            body: JSON.stringify({ message: "保存に失敗しました。時間をおいて再度保存してください。" }),
         });
     });
     try {
@@ -47,7 +47,7 @@ test("delayed save locks all editor operations and a 409 preserves input for ret
         await expect(page.getByLabel("予定にファイルを添付").first()).toBeDisabled();
         await expect(page.getByRole("button", { name: /保存中/ })).toBeDisabled();
         release();
-        await expect(page.getByRole("alert").filter({ hasText: "他のメンバーが先に" })).toBeVisible();
+        await expect(page.getByRole("alert").filter({ hasText: "保存に失敗しました" })).toBeVisible();
         await expect(title).toHaveValue("遅延中も保持する入力");
         await expect(title).toBeEnabled();
         await title.fill("失敗後も再編集できる");

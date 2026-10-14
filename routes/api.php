@@ -13,7 +13,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['web', PrivateApiResponse::cla
     Route::get('/itineraries', [ItineraryController::class, 'index'])->middleware('auth:sanctum')->name('itineraries.index');
     Route::post('/itineraries', [ItineraryController::class, 'store'])->middleware('auth:sanctum')->name('itineraries.store');
     Route::get('/itineraries/{itinerary}', [ItineraryController::class, 'show'])->name('itineraries.show');
-    Route::put('/itineraries/{itinerary}', [ItineraryController::class, 'update'])->middleware('auth:sanctum')->name('itineraries.update');
+    Route::match(['PUT', 'PATCH'], '/itineraries/{itinerary}', [ItineraryController::class, 'update'])->middleware('auth:sanctum')->name('itineraries.update');
     Route::post('/itineraries/{itinerary}', [ItineraryController::class, 'update'])->middleware('auth:sanctum')->name('itineraries.update.multipart');
     Route::delete('/itineraries/{itinerary}', [ItineraryController::class, 'destroy'])->middleware('auth:sanctum')->name('itineraries.destroy');
     Route::get('/itineraries/{itinerary}/files/{fileId}', [ItineraryController::class, 'file'])->name('itineraries.files.show');

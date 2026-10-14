@@ -6,7 +6,7 @@
 
 Laravel をバックエンドとして維持し、同じリポジトリの `frontend/` に独立した Next.js アプリを追加する。Next.js App Router と TypeScript の strict モードを採用する。
 
-現在は Laravel 11、Blade、Livewire 3、Tailwind CSS、Vite の構成。`routes/api.php` はなく、作成・編集の保存処理は `app/Livewire/PlansForm.php` と `EditPlansForm.php` にある。フロントの移行には JSON API の追加と Livewire からの保存処理の切り出しが必要。
+当初は Laravel 11、Blade、Tailwind CSS、Vite を中心に構成していた。フロント移行にあたり JSON API と Next.js App Router を追加し、作成・編集の保存処理を Laravel の API と Action に集約する。
 
 Laravel は DB、Eloquent、Google 認証、セッション、Policy、入力検証、ファイル保存を担当する。Next.js はページ、フォーム、並び替え、表示状態、API 呼び出しを担当する。既存 DB を利用し、フロント移行のためのテーブル再作成は行わない。
 
@@ -26,7 +26,6 @@ guide/
 │   │   └── Resources/                 # 新設: JSON 出力と公開する項目
 │   ├── Models/
 │   ├── Policies/
-│   └── Livewire/                      # 移行中は維持
 ├── routes/
 │   ├── web.php                        # OAuth・ログアウト・移行前の画面
 │   └── api.php                        # 新設: /api/v1/*
@@ -162,7 +161,7 @@ features/itineraries/
 | API 全体 | Axios 設定、CSRF 初期化、401/403/419/422 のエラー正規化 | `lib/api/` |
 | 旅行機能内 | セクション枠、並び替え、添付の表示、作成・編集フォーム | `features/itineraries/` |
 | データ契約 | API DTO は OpenAPI 生成型、フォーム型は Zod から推論 | `types/` と機能内 `schemas/` |
-| バックエンド | Livewire/API の保存 Action、Policy、入力検証の共通ルール | Laravel の該当責務ごとのクラス |
+| バックエンド | API の保存 Action、Policy、入力検証の共通ルール | Laravel の該当責務ごとのクラス |
 
 実際に同じ振る舞いを持つ箇所を共通化する。業務上の意味・検証・権限が異なる部分は専用部品で表現し、変更のたびに分岐が増える抽象化を作らない。まだ用途がない共通フォルダや汎用 hook は作らない。
 
@@ -230,7 +229,7 @@ Redux/Zustand は初期導入しない。サーバーのデータは TanStack Qu
              └── 移行済み画面        → Next.js
 ```
 
-移行中は、移行していない画面と `/livewire/*`、旧 Vite の `/build/*` を Laravel へ送る。画面を移すたびに URL 単位で配信先を切り替え、問題時は同じ URL を旧画面へ戻せるようにする。画像等の共通アセットは同じ入口で参照できる配置にする。
+移行中は、移行していない画面と旧 Vite の `/build/*` を Laravel へ送る。画面を移すたびに URL 単位で配信先を切り替え、問題時は同じ URL を旧画面へ戻せるようにする。画像等の共通アセットは同じ入口で参照できる配置にする。
 
 Google OAuth の callback と HttpOnly セッション Cookie は Laravel が管理する。API 利用の前に `/sanctum/csrf-cookie` を取得し、更新 API に XSRF ヘッダーを付ける。Sanctum の stateful API 設定、許可する origin、Cookie の Domain/Path/Secure、入口での Host・Origin・Set-Cookie の扱いを開発・本番の両方で検証する。
 
@@ -261,9 +260,9 @@ Google OAuth の callback と HttpOnly セッション Cookie は Laravel が管
 
 保存は既存の「保存ボタンでまとめて更新する」操作を維持する。最初から日程の各入力を個別 API へ分割しない。共有設定・メンバー操作は権限が異なるため別 API にする。
 
-添付を含む作成は multipart POST、更新は multipart POST に `_method=PUT` を付ける。既存添付 ID、新規 File、削除対象 ID を区別する。初期段階では Livewire の一時アップロードを置き換え、Laravel へ保存時に送信する。現在の許可形式・1 ファイル 10 MB 制限を維持し、全体の送信サイズも入口と PHP の設定に合わせて扱う。
+添付を含む作成は multipart POST、更新は multipart POST に `_method=PUT` を付ける。既存添付 ID、新規 File、削除対象 ID を区別し、Laravel への保存時にファイルを送信する。現在の許可形式・1 ファイル 10 MB 制限を維持し、全体の送信サイズも入口と PHP の設定に合わせて扱う。
 
-Livewire の保存処理を Action へ抽出し、旧画面と新 API から共通利用する。新 API は入力 ID が対象旅行に属することを検証し、本人の持ち物だけを取得・更新・削除する。DB 更新にはトランザクションを用い、ファイル保存失敗時の新規ファイル清掃と DB 確定後の旧ファイル削除を設計する。
+保存処理を Action に集約する。API は入力 ID が対象旅行に属することを検証し、本人の持ち物だけを取得・更新・削除する。DB 更新にはトランザクションを用い、ファイル保存失敗時の新規ファイル清掃と DB 確定後の旧ファイル削除を設計する。
 
 レスポンスには `can_edit`、`can_delete`、`can_manage_members`、`can_manage_viewer_share` 等を含め、共有パスワードのハッシュや内部ストレージパスを公開しない。ユーザーごとの持ち物と共有される日程・お土産・メモを明示的に区別する。共有閲覧者へ本人以外の持ち物を返さない。
 
@@ -273,7 +272,7 @@ FormRequest と API Resource を契約に合わせて作り、Zod は操作時�
 
 ### Phase 1: API 契約と共通保存処理
 
-権限と既存仕様を一覧化し、OpenAPI、Action、FormRequest、API Resource を整備する。旧 Livewire から Action を呼び、まず既存画面の挙動が保たれることを確認する。
+権限と既存仕様を一覧化し、OpenAPI、Action、FormRequest、API Resource を整備する。既存画面の挙動を新 API で再現できることを確認する。
 
 完了条件: 作成者・メンバー・ゲストの API 契約が定まり、既存 Laravel/Pest の認証・共有・持ち物テストが通る。
 
@@ -303,7 +302,7 @@ React Hook Form に概要・日程・持ち物・お土産・メモを移し、�
 
 ### Phase 6: 配信切り替えと旧フロント撤去
 
-Docker/入口設定と CI に Next.js を追加する。全画面を確認して URL ごとの配信先を切り替える。切り戻し期間を設けた後、実際に未使用になった Blade、Livewire、旧 JavaScript、Vite と依存を撤去する。
+Docker/入口設定と CI に Next.js を追加する。全画面を確認して URL ごとの配信先を切り替える。切り戻し期間を設けた後、実際に未使用になった Blade、旧 JavaScript、Vite と依存を撤去する。
 
 設定上は Render 向け `render.yaml` と PHP コンテナがあり、AWS のデプロイは停止中。Next.js は独立した Node サービスとして実行し、既存入口から振り分ける案とする。Render 等の実際の稼働先・サービス構成は実装開始時に確認し、フロント移行のために AWS を再開しない。
 
@@ -320,7 +319,7 @@ Docker/入口設定と CI に Next.js を追加する。全画面を確認して
 - Cookie/CSRF、ログアウト後のキャッシュ破棄とブラウザの戻る操作。
 - スマートフォンでのフォーム、タッチ並び替え、キーボード操作。
 
-OAuth は自動テストでは Socialite をモックし、実環境で callback URL の疎通を確認する。現行の Livewire テストは Action/API テストへ段階的に移す。
+OAuth は自動テストでは Socialite をモックし、実環境で callback URL の疎通を確認する。保存処理は Action/API テストで確認する。
 
 ## 9. 参考資料
 

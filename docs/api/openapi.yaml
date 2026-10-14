@@ -6,9 +6,8 @@ info:
     Laravel session-authenticated JSON API. All routes use the Laravel web session and CSRF middleware.
     Send credentials and the X-XSRF-TOKEN header for state-changing requests. Create/update bodies are
     multipart/form-data with a JSON `payload` part. Uploads use `files[<plans[].client_id>][]` parts.
-    `payload` must include every collection; collections are full replacements and [] clears them.
-    Existing row IDs retain records; omitted existing IDs delete rows in the caller's scope. For a plan,
-    `existing_file_ids` is the exact list to retain; omitted existing attachments are deleted.
+    Creation payloads include every collection. Updates send only changed fields and rows; omitted fields and rows are preserved. Empty arrays do not delete rows.
+    Updates delete only IDs in `deleted_plan_ids`, `deleted_packing_item_ids`, `deleted_souvenir_ids`, `deleted_note_ids`, or each plan's `removed_file_ids`. Creation uses empty `existing_file_ids`. Same-field updates use the last saved value; no revision is required.
   x-csrf-cookie-url: /sanctum/csrf-cookie
 servers:
   - url: /api/v1
@@ -61,10 +60,11 @@ paths:
           content: { application/json: { schema: { $ref: '#/components/schemas/Itinerary' } } }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
-    put:
+    patch:
       operationId: updateItinerary
+      description: Apply only supplied fields and explicit deletions. Concurrent updates to the same field use the last saved value. Omitted rows and attachments are preserved.
       security: [{ cookieAuth: [] }]
-      requestBody: { $ref: '#/components/requestBodies/ItineraryMultipart' }
+      requestBody: { $ref: '#/components/requestBodies/ItineraryChangesMultipart' }
       responses:
         '200':
           description: Updated itinerary
@@ -75,15 +75,28 @@ paths:
         '422': { $ref: '#/components/responses/ValidationError' }
     post:
       operationId: updateItineraryMultipart
-      description: Multipart-compatible method-override endpoint. `_method=PUT` is accepted; POST also updates.
+      description: Multipart-compatible method-override endpoint. `_method=PATCH` or `_method=PUT` is accepted; POST also applies changes.
       security: [{ cookieAuth: [] }]
-      requestBody: { $ref: '#/components/requestBodies/ItineraryMultipart' }
+      requestBody: { $ref: '#/components/requestBodies/ItineraryChangesMultipart' }
       responses:
         '200':
           description: Updated itinerary
           content: { application/json: { schema: { $ref: '#/components/schemas/Itinerary' } } }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    put:
+      operationId: updateItineraryPut
+      description: Apply only supplied fields and explicit deletions. Concurrent updates to the same field use the last saved value. Omitted rows and attachments are preserved.
+      security: [{ cookieAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/ItineraryChangesMultipart' }
+      responses:
+        '200':
+          description: Updated itinerary
+          content: { application/json: { schema: { $ref: '#/components/schemas/Itinerary' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
         '422': { $ref: '#/components/responses/ValidationError' }
     delete:
       operationId: deleteItinerary
@@ -275,7 +288,7 @@ components:
                 type: string
                 contentMediaType: application/json
                 contentSchema: { $ref: '#/components/schemas/ItinerarySave' }
-                description: JSON-encoded ItinerarySave object (all collections required, including empty arrays).
+                description: JSON-encoded creation payload (all collections required, including empty arrays).
               _method:
                 type: string
                 enum: [PUT]
@@ -286,6 +299,24 @@ components:
               summary: JSON payload part; plan upload parts use `files[client-plan-1][]`
               value:
                 payload: '{"title":"Tokyo","overview_text":"Trip notes","template_type":"domestic","plans":[{"client_id":"client-plan-1","date":"2026-10-05","time":"09:30","title":"Visit","content":"","order":0,"existing_file_ids":[]}],"packing_items":[{"name":"Passport","is_checked":false,"order":0}],"souvenirs":[],"notes":[]}'
+    ItineraryChangesMultipart:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [payload]
+            properties:
+              payload:
+                type: string
+                contentMediaType: application/json
+                contentSchema: { $ref: '#/components/schemas/ItineraryChanges' }
+                description: JSON-encoded changes only. Upload parts use files[client_id][]. Empty collections do not delete rows.
+              _method:
+                type: string
+                enum: [PATCH, PUT]
+          encoding:
+            payload: { contentType: application/json }
   schemas:
     Session:
       type: object
@@ -337,7 +368,7 @@ components:
               title: { type: [string, 'null'], maxLength: 255 }
               content: { type: [string, 'null'] }
               order: { type: integer, minimum: 0 }
-              existing_file_ids: { type: array, items: { type: integer }, description: Exact attachment IDs to keep. }
+              existing_file_ids: { type: array, items: { type: integer }, description: Empty on creation; attachments are uploaded through file parts. }
         packing_items:
           type: array
           items:
@@ -371,6 +402,56 @@ components:
         shared_password: { type: string, minLength: 8, maxLength: 32, description: Optional on create only; confirmed by the matching confirmation field. }
         shared_password_confirmation: { type: string, minLength: 8, maxLength: 32 }
         viewer_share_expires_at: { type: [string, 'null'], format: date-time }
+    ItineraryChanges:
+      type: object
+      description: Omitted fields retain their current values. Existing row IDs update only supplied fields; omit id to create a row. New rows require order and checklist rows also require is_checked. Deletion IDs are scoped to this itinerary and packing deletions to the caller; already deleted IDs are ignored. Editing a deleted row returns 422 or 404 and never recreates it. Equal order values sort by row ID.
+      properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
+        overview_text: { type: [string, 'null'] }
+        template_type: { type: [string, 'null'], maxLength: 255 }
+        plans:
+          type: array
+          items:
+            type: object
+            required: [client_id]
+            properties:
+              id: { type: integer, minimum: 1 }
+              client_id: { type: string, pattern: '^[A-Za-z0-9_-]{1,100}$' }
+              date: { type: [string, 'null'], format: date }
+              time: { type: [string, 'null'] }
+              title: { type: [string, 'null'], maxLength: 255 }
+              content: { type: [string, 'null'] }
+              order: { type: integer, minimum: 0 }
+              removed_file_ids:
+                type: array
+                items: { type: integer, minimum: 1 }
+                description: Explicit attachment deletions for this plan only; omitted attachments remain.
+        packing_items:
+          type: array
+          items: { $ref: '#/components/schemas/ChecklistChanges' }
+        souvenirs:
+          type: array
+          items: { $ref: '#/components/schemas/ChecklistChanges' }
+        notes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer, minimum: 1 }
+              title: { type: [string, 'null'], maxLength: 255 }
+              text: { type: [string, 'null'] }
+              order: { type: integer, minimum: 0 }
+        deleted_plan_ids: { type: array, items: { type: integer, minimum: 1 } }
+        deleted_packing_item_ids: { type: array, items: { type: integer, minimum: 1 } }
+        deleted_souvenir_ids: { type: array, items: { type: integer, minimum: 1 } }
+        deleted_note_ids: { type: array, items: { type: integer, minimum: 1 } }
+    ChecklistChanges:
+      type: object
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: [string, 'null'], maxLength: 255 }
+        is_checked: { type: boolean }
+        order: { type: integer, minimum: 0 }
     Itinerary:
       type: object
       required: [id, title, overview_text, template_type, plans, packing_items, souvenirs, notes, members, permissions, viewer_share]

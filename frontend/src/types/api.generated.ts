@@ -47,13 +47,15 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getItinerary"];
-        put: operations["updateItinerary"];
-        /** @description Multipart-compatible method-override endpoint. `_method=PUT` is accepted; POST also updates. */
+        /** @description Apply only supplied fields and explicit deletions. Concurrent updates to the same field use the last saved value. Omitted rows and attachments are preserved. */
+        put: operations["updateItineraryPut"];
+        /** @description Multipart-compatible method-override endpoint. `_method=PATCH` or `_method=PUT` is accepted; POST also applies changes. */
         post: operations["updateItineraryMultipart"];
         delete: operations["deleteItinerary"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** @description Apply only supplied fields and explicit deletions. Concurrent updates to the same field use the last saved value. Omitted rows and attachments are preserved. */
+        patch: operations["updateItinerary"];
         trace?: never;
     };
     "/itineraries/{itineraryId}/files/{fileId}": {
@@ -85,6 +87,7 @@ export interface paths {
             };
             cookie?: never;
         };
+        /** @description Opens verified PDF, JPEG, or PNG bytes inline. Other file formats return 415. */
         get: operations["previewItineraryFile"];
         put?: never;
         post?: never;
@@ -212,8 +215,6 @@ export interface components {
             };
         };
         ItinerarySave: {
-            /** @description Required when updating an existing itinerary; prevents stale full-snapshot saves. */
-            revision?: number;
             title: string;
             overview_text: string | null;
             template_type: string | null;
@@ -227,7 +228,7 @@ export interface components {
                 title?: string | null;
                 content?: string | null;
                 order: number;
-                /** @description Exact attachment IDs to keep. */
+                /** @description Empty on creation; attachments are uploaded through file parts. */
                 existing_file_ids: number[];
             }[];
             packing_items: {
@@ -257,10 +258,45 @@ export interface components {
             /** Format: date-time */
             viewer_share_expires_at?: string | null;
         };
+        /** @description Omitted fields retain their current values. Existing row IDs update only supplied fields; omit id to create a row. New rows require order and checklist rows also require is_checked. Deletion IDs are scoped to this itinerary and packing deletions to the caller; already deleted IDs are ignored. Editing a deleted row returns 422 or 404 and never recreates it. Equal order values sort by row ID. */
+        ItineraryChanges: {
+            title?: string;
+            overview_text?: string | null;
+            template_type?: string | null;
+            plans?: {
+                id?: number;
+                client_id: string;
+                /** Format: date */
+                date?: string | null;
+                time?: string | null;
+                title?: string | null;
+                content?: string | null;
+                order?: number;
+                /** @description Explicit attachment deletions for this plan only; omitted attachments remain. */
+                removed_file_ids?: number[];
+            }[];
+            packing_items?: components["schemas"]["ChecklistChanges"][];
+            souvenirs?: components["schemas"]["ChecklistChanges"][];
+            notes?: {
+                id?: number;
+                title?: string | null;
+                text?: string | null;
+                order?: number;
+            }[];
+            deleted_plan_ids?: number[];
+            deleted_packing_item_ids?: number[];
+            deleted_souvenir_ids?: number[];
+            deleted_note_ids?: number[];
+        };
+        ChecklistChanges: {
+            id?: number;
+            name?: string | null;
+            is_checked?: boolean;
+            order?: number;
+        };
         Itinerary: {
             /** Format: uuid */
             id: string;
-            revision: number;
             title: string;
             overview_text: string | null;
             template_type: string | null;
@@ -277,7 +313,10 @@ export interface components {
                     file_name: string;
                     /** Format: uri-reference */
                     url: string;
-                    /** Format: uri-reference; null when this file type is not previewable. */
+                    /**
+                     * Format: uri-reference
+                     * @description Available for PDF
+                     */
                     preview_url: string | null;
                 }[];
             }[];
@@ -385,10 +424,20 @@ export interface components {
         ItineraryMultipart: {
             content: {
                 "multipart/form-data": {
-                    /** @description JSON-encoded ItinerarySave object (all collections required, including empty arrays). */
+                    /** @description JSON-encoded creation payload (all collections required, including empty arrays). */
                     payload: string;
                     /** @enum {string} */
                     _method?: "PUT";
+                };
+            };
+        };
+        ItineraryChangesMultipart: {
+            content: {
+                "multipart/form-data": {
+                    /** @description JSON-encoded changes only. Upload parts use files[client_id][]. Empty collections do not delete rows. */
+                    payload: string;
+                    /** @enum {string} */
+                    _method?: "PATCH" | "PUT";
                 };
             };
         };
@@ -487,7 +536,7 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    updateItinerary: {
+    updateItineraryPut: {
         parameters: {
             query?: never;
             header?: never;
@@ -496,7 +545,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: components["requestBodies"]["ItineraryMultipart"];
+        requestBody: components["requestBodies"]["ItineraryChangesMultipart"];
         responses: {
             /** @description Updated itinerary */
             200: {
@@ -522,7 +571,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: components["requestBodies"]["ItineraryMultipart"];
+        requestBody: components["requestBodies"]["ItineraryChangesMultipart"];
         responses: {
             /** @description Updated itinerary */
             200: {
@@ -560,6 +609,32 @@ export interface operations {
             403: components["responses"]["Forbidden"];
         };
     };
+    updateItinerary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itineraryId: components["parameters"]["ItineraryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: components["requestBodies"]["ItineraryChangesMultipart"];
+        responses: {
+            /** @description Updated itinerary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Itinerary"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationError"];
+        };
+    };
     getItineraryFile: {
         parameters: {
             query?: never;
@@ -595,7 +670,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Verified PDF, JPEG, or PNG bytes served inline */
+            /** @description Authorized inline preview with a verified media Content-Type */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -604,6 +679,7 @@ export interface operations {
             };
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            /** @description This attachment is not a supported preview format */
             415: {
                 headers: {
                     [name: string]: unknown;

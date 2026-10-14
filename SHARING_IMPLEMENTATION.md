@@ -40,7 +40,7 @@
 2. 権限がなく、有効な閲覧用パスワードが設定されている場合は `/shared-access` にリダイレクトされる。
 3. 閲覧用パスワードが一致すると、`access_granted_{travel_id}` セッションを保存する。
 4. 編集フォームではなく閲覧専用画面に遷移する。
-5. Livewire の `submit()` 側でも編集権限を再チェックし、閲覧者の保存は `403` にする。
+5. 更新 API 側でも編集権限を再チェックし、閲覧者の保存は `403` にする。
 
 閲覧用共有には、任意の有効期限と無効化操作を用意している。
 
@@ -51,7 +51,7 @@
 - `view`, `update`, `manageMembers`, `manageViewerShare`, `delete` を定義。
 - 作成者と共同編集者は編集可能。
 - `access_granted_{travel_id}` セッションを持つユーザーは閲覧のみ可能。
-- 認可ロジックをコントローラや Livewire から切り離す。
+- 認可ロジックを Policy に集約し、API コントローラから利用する。
 
 ### `app/Http/Controllers/ItinerariesController.php`
 
@@ -60,15 +60,6 @@
 - 権限がなく、有効な閲覧用パスワードが設定されている場合は `shared-access.show` へリダイレクト。
 - 閲覧のみの場合は `itineraries.show` を返す。
 - 作成者のみ、メンバー追加・削除・しおり削除を許可。
-
-### `app/Livewire/EditPlansForm.php`
-
-- `isOwner` と `canEdit` を持たせた。
-- `mount()` で `TravelOverviewPolicy` による閲覧可否を確認。
-- `submit()` では `update` 権限を再確認し、閲覧者の保存を拒否。
-- 閲覧用パスワード変更は、作成者かつパスワード入力欄を開いた場合だけ更新。
-- 閲覧用共有の有効期限設定と無効化に対応。
-- 持ち物リストはログインユーザーごとに分離。
 
 ### `app/Models/SharedPassword.php`
 
@@ -90,15 +81,10 @@
 - 閲覧用共有向けの専用画面。
 - 編集フォームを表示せず、タイトル・概要・プラン・添付ファイル・お土産・メモを閲覧専用で表示。
 
-### `resources/views/livewire/edit-plans-form.blade.php`
-
-- 閲覧用共有 UI は作成者だけに表示。
-- 閲覧用パスワードの変更、有効期限設定、無効化ボタンを提供。
-
 ### `routes/web.php`
 
 - `itineraries.edit` から `auth` middleware を外した。
-- 認可は `ItinerariesController::edit()` と `EditPlansForm::mount()` で行う。
+- 認可はコントローラと API の各操作で行う。
 - これにより、未ログインでも閲覧用パスワード認証済みなら閲覧画面に入れる。
 
 ### `database/migrations/2026_05_16_000001_create_travel_members_table.php`
@@ -146,7 +132,21 @@ docker compose exec -T laravel.test php artisan test tests/Feature/TravelMemberA
 
 ## 今後の注意点
 
-- `itineraries.edit` は `auth` middleware では守られていないため、コントローラと Livewire 側の認可チェックを消さない。
+- `itineraries.edit` は `auth` middleware では守られていないため、コントローラと API 側の認可チェックを消さない。
 - UI を非表示・disabled にするだけでは不十分なので、保存処理側の `canEdit` チェックを必ず維持する。
 - 閲覧用共有の閲覧者にチェックリスト操作など一部編集を許可したい場合は、`viewer` 用の権限を別途定義する。
 - ゲスト閲覧をさらに強める場合は、共有リンク用トークン、アクセスログ、閲覧者別の取り消しを追加する。
+
+## 同時編集の保存方式
+
+しおりの更新は、読み込み時または直前の保存成功時のフォームと比較した変更分を送信する。更新 API は PATCH に対応し、multipart の POST + `_method=PATCH` を使う。既存の PUT と POST 更新も同じ差分保存として扱う。
+
+- 送信されたフィールドだけを更新し、未送信のフィールド・行・添付は保持する。同じフィールドへの変更は後から保存した値を採用し、しおり全体の `revision` 検査は行わない。
+- 行の追加は ID なしで送信する。行の削除は `deleted_plan_ids`、`deleted_packing_item_ids`、`deleted_souvenir_ids`、`deleted_note_ids`、添付の削除は予定ごとの `removed_file_ids` で明示する。空の配列で既存行を削除しない。
+- 持ち物の更新・削除はログイン利用者の行に限定する。他の利用者の持ち物や、別のしおりの行は削除対象にならない。
+- すでに削除された行への更新は 422（保存処理中に削除が判明した場合は 404）で失敗し、行を復活させない。再度の削除は何もしない。
+- 保存は DB トランザクションとしおり行のロックで実行する。添付の保存失敗時は DB をロールバックし、旧添付のストレージ削除はコミット後に行う。
+- 保存成功後は返却された最新状態をフォームと比較元に設定する。背景の再取得で比較元や未保存の入力を置き換えない。保存失敗時は入力を保持する。
+- 並び順は変更された行だけを更新し、同じ順序の行は ID 順に表示する。
+
+`ItineraryApiTest` とフォーム差分のテストに加え、`frontend/e2e/concurrent-edit.spec.ts` で所有者とメンバーの古い編集画面からの保存、予定・添付の保持、同じタイトルの後勝ち、保存後の比較元更新、削除済み予定の編集拒否を確認する。

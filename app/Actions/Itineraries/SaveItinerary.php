@@ -25,23 +25,10 @@ class SaveItinerary
         try {
             $overview = DB::transaction(function () use ($user, $data, $uploads, $overview, $fileStorage, &$newObjects, &$oldObjects) {
                 if ($overview) {
-                    $expectedRevision = (int) ($data['revision'] ?? 0);
-                    $locked = TravelOverview::query()->whereKey($overview->getKey())->lockForUpdate()->firstOrFail();
-                    if ((int) $locked->revision !== $expectedRevision) {
-                        abort(409, '他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。');
-                    }
-
-                    // The conditional update also protects databases where lockForUpdate is advisory or unsupported.
-                    $claimed = TravelOverview::query()->whereKey($locked->getKey())
-                        ->where('revision', $expectedRevision)
-                        ->update(['revision' => $expectedRevision + 1]);
-                    if ($claimed !== 1) {
-                        abort(409, '他のメンバーが先にしおりを更新しました。入力内容をコピーしてから再読み込みしてください。');
-                    }
-
-                    $overview = $locked;
-                    $overview->revision = $expectedRevision + 1;
-                    $overview->update(['title' => $data['title'], 'overviewText' => $data['overview_text'] ?? null]);
+                    // Serialize persistence, while accepting changes from any loaded version.
+                    $overview = TravelOverview::query()->whereKey($overview->getKey())->lockForUpdate()->firstOrFail();
+                    $overview->fill($this->attributes($data, ['title' => 'title', 'overview_text' => 'overviewText']));
+                    $overview->touch();
                 } else {
                     $overview = TravelOverview::create([
                         'user_id' => $user->id,
@@ -51,26 +38,17 @@ class SaveItinerary
                     $overview->travelMembers()->create(['user_id' => $user->id, 'role' => 'owner']);
                 }
 
-                $planIds = [];
-                foreach ($data['plans'] as $index => $row) {
+                foreach ($data['plans'] ?? [] as $index => $row) {
                     $plan = ! empty($row['id'])
                         ? $overview->plans()->whereKey($row['id'])->firstOrFail()
                         : $overview->plans()->make();
-                    $plan->fill([
-                        'date' => filled($row['date'] ?? null) ? $row['date'] : null,
-                        'time' => filled($row['time'] ?? null) ? $row['time'] : null,
-                        'plans_title' => $row['title'] ?? null,
-                        'content' => $row['content'] ?? null,
-                        'order' => $row['order'] ?? $index,
-                    ])->save();
-                    $planIds[] = $plan->id;
-                    $keepIds = $row['existing_file_ids'] ?? [];
-                    $files = $plan->planFiles()->get();
-                    foreach ($files as $file) {
-                        if (! in_array($file->id, $keepIds)) {
-                            $oldObjects[] = ['disk' => $fileStorage->diskName($file), 'path' => $file->path];
-                            $file->delete();
-                        }
+                    $plan->fill($this->attributes($row, [
+                        'date' => 'date', 'time' => 'time', 'title' => 'plans_title',
+                        'content' => 'content', 'order' => 'order',
+                    ]))->save();
+                    foreach ($plan->planFiles()->whereIn('id', $row['removed_file_ids'] ?? [])->get() as $file) {
+                        $oldObjects[] = ['disk' => $fileStorage->diskName($file), 'path' => $file->path];
+                        $file->delete();
                     }
                     foreach ($uploads[$row['client_id'] ?? "plan-{$index}"] ?? [] as $upload) {
                         if (! $upload instanceof UploadedFile) {
@@ -85,67 +63,54 @@ class SaveItinerary
                         ]);
                     }
                 }
-                $overview->plans()->whereNotIn('id', $planIds ?: [0])->with('planFiles')->get()->each(function (Plan $plan) use (&$oldObjects, $fileStorage) {
+                $overview->plans()->whereIn('id', $data['deleted_plan_ids'] ?? [])->with('planFiles')->get()->each(function (Plan $plan) use (&$oldObjects, $fileStorage) {
                     foreach ($plan->planFiles as $file) {
                         $oldObjects[] = ['disk' => $fileStorage->diskName($file), 'path' => $file->path];
                     }
                     $plan->delete();
                 });
 
-                $packingIds = [];
-                foreach ($data['packing_items'] as $index => $row) {
+                foreach ($data['packing_items'] ?? [] as $row) {
                     $item = ! empty($row['id'])
                         ? $overview->packingItems()->where('user_id', $user->id)->whereKey($row['id'])->firstOrFail()
                         : new PackingItem(['travel_id' => $overview->id, 'user_id' => $user->id]);
-                    $item->fill([
-                        'packing_name' => $row['name'] ?? null,
-                        'packing_is_checked' => $row['is_checked'] ?? false,
-                        'order' => $row['order'] ?? $index,
-                    ]);
-                    $item->save();
-                    $packingIds[] = $item->id;
+                    $item->fill($this->attributes($row, [
+                        'name' => 'packing_name', 'is_checked' => 'packing_is_checked', 'order' => 'order',
+                    ]))->save();
                 }
-                $overview->packingItems()->where('user_id', $user->id)->whereNotIn('id', $packingIds ?: [0])->delete();
+                $overview->packingItems()->where('user_id', $user->id)->whereIn('id', $data['deleted_packing_item_ids'] ?? [])->delete();
 
-                $souvenirIds = [];
-                foreach ($data['souvenirs'] as $index => $row) {
+                foreach ($data['souvenirs'] ?? [] as $row) {
                     $item = ! empty($row['id'])
                         ? $overview->souvenirs()->whereKey($row['id'])->firstOrFail()
                         : $overview->souvenirs()->make();
-                    $item->fill([
-                        'souvenir_name' => $row['name'] ?? null,
-                        'souvenir_is_checked' => $row['is_checked'] ?? false,
-                        'order' => $row['order'] ?? $index,
-                    ]);
-                    $item->save();
-                    $souvenirIds[] = $item->id;
+                    $item->fill($this->attributes($row, [
+                        'name' => 'souvenir_name', 'is_checked' => 'souvenir_is_checked', 'order' => 'order',
+                    ]))->save();
                 }
-                $overview->souvenirs()->whereNotIn('id', $souvenirIds ?: [0])->delete();
+                $overview->souvenirs()->whereIn('id', $data['deleted_souvenir_ids'] ?? [])->delete();
 
-                $noteIds = [];
-                foreach ($data['notes'] as $index => $row) {
+                foreach ($data['notes'] ?? [] as $row) {
                     $item = ! empty($row['id'])
                         ? $overview->additionalComments()->whereKey($row['id'])->firstOrFail()
                         : $overview->additionalComments()->make();
-                    $item->fill([
-                        'additionalComment_title' => $row['title'] ?? null,
-                        'additionalComment_text' => $row['text'] ?? null,
-                        'order' => $row['order'] ?? $index,
-                    ]);
-                    $item->save();
-                    $noteIds[] = $item->id;
+                    $item->fill($this->attributes($row, [
+                        'title' => 'additionalComment_title', 'text' => 'additionalComment_text', 'order' => 'order',
+                    ]))->save();
                 }
-                $overview->additionalComments()->whereNotIn('id', $noteIds ?: [0])->delete();
+                $overview->additionalComments()->whereIn('id', $data['deleted_note_ids'] ?? [])->delete();
 
-                $template = $overview->templateType()->first();
-                if (filled($data['template_type'] ?? null)) {
-                    if ($template) {
-                        $template->update(['template_name' => $data['template_type']]);
+                if (array_key_exists('template_type', $data)) {
+                    $template = $overview->templateType()->first();
+                    if (filled($data['template_type'])) {
+                        if ($template) {
+                            $template->update(['template_name' => $data['template_type']]);
+                        } else {
+                            $overview->templateType()->create(['template_name' => $data['template_type']]);
+                        }
                     } else {
-                        $overview->templateType()->create(['template_name' => $data['template_type']]);
+                        $template?->delete();
                     }
-                } else {
-                    $template?->delete();
                 }
 
                 if (filled($data['shared_password'] ?? null)) {
@@ -162,6 +127,19 @@ class SaveItinerary
         $fileStorage->deleteBestEffort($this->uniqueObjects($oldObjects));
 
         return $overview->refresh();
+    }
+
+    /** Map only supplied fields; omitted fields preserve the current database value. */
+    private function attributes(array $data, array $mapping): array
+    {
+        $attributes = [];
+        foreach ($mapping as $input => $column) {
+            if (array_key_exists($input, $data)) {
+                $attributes[$column] = $data[$input];
+            }
+        }
+
+        return $attributes;
     }
 
     /** @param array<array{disk: string, path: string}> $objects

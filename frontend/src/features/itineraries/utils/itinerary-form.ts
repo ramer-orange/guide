@@ -1,4 +1,4 @@
-import type { Itinerary, ItinerarySave } from "@/types/api";
+import type { Itinerary, ItineraryChanges, ItinerarySave } from "@/types/api";
 import type { ItineraryFormValues } from "@/features/itineraries/schemas/itinerary-form.schema";
 
 export function emptyPlan(): ItineraryFormValues["plans"][number] {
@@ -27,7 +27,6 @@ export function toIsoDateTime(localDate: string) {
 }
 export function defaultItineraryValues(): ItineraryFormValues {
     return {
-        revision: 0,
         title: "",
         overview_text: "",
         template_type: null,
@@ -41,7 +40,6 @@ export function toItineraryFormValues(trip: Itinerary): ItineraryFormValues {
     const values = defaultItineraryValues();
     return {
         ...values,
-        revision: trip.revision,
         title: trip.title,
         overview_text: trip.overview_text ?? "",
         template_type: trip.template_type,
@@ -78,7 +76,6 @@ export function toItineraryFormValues(trip: Itinerary): ItineraryFormValues {
 }
 export function toItineraryPayload(values: ItineraryFormValues): ItinerarySave {
     return {
-        ...(values.revision > 0 ? { revision: values.revision } : {}),
         title: values.title.trim(),
         overview_text: values.overview_text,
         template_type: values.template_type,
@@ -109,6 +106,73 @@ export function toItineraryPayload(values: ItineraryFormValues): ItinerarySave {
         })),
     };
 }
+/** Diff against the last successful load/save, never against background refetches. */
+export function toItineraryChanges(
+    values: ItineraryFormValues,
+    baseline: ItineraryFormValues,
+): ItineraryChanges {
+    const current = toItineraryPayload(values);
+    const previous = toItineraryPayload(baseline);
+    const changes: ItineraryChanges = {};
+    for (const field of ["title", "overview_text", "template_type"] as const) {
+        if (current[field] !== previous[field]) {
+            Object.assign(changes, { [field]: current[field] });
+        }
+    }
+
+    for (const [collection, deletedKey] of [
+        ["plans", "deleted_plan_ids"],
+        ["packing_items", "deleted_packing_item_ids"],
+        ["souvenirs", "deleted_souvenir_ids"],
+        ["notes", "deleted_note_ids"],
+    ] as const) {
+        const oldRows = new Map(
+            previous[collection].map((row) => [row.id, row]),
+        );
+        const currentIds = new Set(current[collection].map((row) => row.id));
+        const deleted = previous[collection].flatMap((row) =>
+            row.id !== undefined && !currentIds.has(row.id) ? [row.id] : [],
+        );
+        if (deleted.length) Object.assign(changes, { [deletedKey]: deleted });
+
+        const rows: Record<string, unknown>[] = [];
+        current[collection].forEach((row, index) => {
+            const oldRow =
+                row.id === undefined ? undefined : oldRows.get(row.id);
+            const update: Record<string, unknown> = {};
+            if (row.id !== undefined) update.id = row.id;
+            for (const [key, value] of Object.entries(row)) {
+                if (["id", "client_id", "existing_file_ids"].includes(key))
+                    continue;
+                if (!oldRow || value !== oldRow[key as keyof typeof oldRow]) {
+                    update[key] = value;
+                }
+            }
+            if (collection === "plans") {
+                const plan = current.plans[index];
+                const before = previous.plans.find(
+                    (item) => item.id === plan.id,
+                );
+                const kept = new Set(plan.existing_file_ids);
+                const removed =
+                    before?.existing_file_ids.filter(
+                        (fileId) => !kept.has(fileId),
+                    ) ?? [];
+                if (removed.length) update.removed_file_ids = removed;
+                const hasUploads = values.plans[index].files.length > 0;
+                if (oldRow && Object.keys(update).length === 1 && !hasUploads)
+                    return;
+                update.client_id = plan.client_id;
+            } else if (oldRow && Object.keys(update).length === 1) {
+                return;
+            }
+            rows.push(update);
+        });
+        if (rows.length) Object.assign(changes, { [collection]: rows });
+    }
+    return changes;
+}
+
 export function apiErrorsToFormFields(errorMap: Record<string, string[]>) {
     return Object.fromEntries(
         Object.entries(errorMap).map(([path, messages]) => [

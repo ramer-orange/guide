@@ -9,10 +9,6 @@ class TravelOverview extends Model
 {
     use HasUuids;
 
-    protected $attributes = [
-        'revision' => 1,
-    ];
-
     protected $fillable = [
         'user_id',
         'title',

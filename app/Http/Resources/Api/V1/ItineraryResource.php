@@ -22,11 +22,10 @@ class ItineraryResource extends JsonResource
 
         return [
             'id' => (string) $this->id,
-            'revision' => (int) $this->revision,
             'title' => $this->title,
             'overview_text' => $this->overviewText,
             'template_type' => $this->templateType?->template_name,
-            'plans' => $this->plans->sortBy('order')->values()->map(fn ($plan) => [
+            'plans' => $this->plans->sortBy([['order', 'asc'], ['id', 'asc']])->values()->map(fn ($plan) => [
                 'id' => (int) $plan->id,
                 'date' => $plan->date ? substr((string) $plan->date, 0, 10) : null,
                 'time' => $plan->time ? substr((string) $plan->time, 0, 5) : null,
@@ -42,19 +41,19 @@ class ItineraryResource extends JsonResource
             ])->values(),
             'packing_items' => $canEdit ? $this->packingItems()
                 ->where('user_id', $request->user()?->id)
-                ->orderBy('order')->get()->map(fn ($item) => [
+                ->orderBy('order')->orderBy('id')->get()->map(fn ($item) => [
                     'id' => (int) $item->id,
                     'name' => $item->packing_name,
                     'is_checked' => (bool) $item->packing_is_checked,
                     'order' => (int) $item->order,
                 ])->values() : [],
-            'souvenirs' => $this->souvenirs->sortBy('order')->values()->map(fn ($item) => [
+            'souvenirs' => $this->souvenirs->sortBy([['order', 'asc'], ['id', 'asc']])->values()->map(fn ($item) => [
                 'id' => (int) $item->id,
                 'name' => $item->souvenir_name,
                 'is_checked' => (bool) $item->souvenir_is_checked,
                 'order' => (int) $item->order,
             ])->values(),
-            'notes' => $this->additionalComments->sortBy('order')->values()->map(fn ($item) => [
+            'notes' => $this->additionalComments->sortBy([['order', 'asc'], ['id', 'asc']])->values()->map(fn ($item) => [
                 'id' => (int) $item->id,
                 'title' => $item->additionalComment_title,
                 'text' => $item->additionalComment_text,

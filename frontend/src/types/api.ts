@@ -3,6 +3,7 @@ import type { components, operations } from "./api.generated";
 export type Session = components["schemas"]["Session"];
 export type User = NonNullable<Session["user"]>;
 export type Itinerary = components["schemas"]["Itinerary"];
+export type ItineraryChanges = components["schemas"]["ItineraryChanges"];
 export type ItinerarySave = components["schemas"]["ItinerarySave"];
 export type ItinerarySummary = components["schemas"]["ItinerarySummary"];
 export type ChecklistItem = components["schemas"]["ChecklistItem"];

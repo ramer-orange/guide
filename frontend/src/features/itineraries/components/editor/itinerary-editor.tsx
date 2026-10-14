@@ -45,7 +45,7 @@ export function ItineraryEditor({
         formState: { isDirty, isSubmitting },
         handleSubmit,
     } = form;
-    const mutation = useSaveItinerary(id, form);
+    const mutation = useSaveItinerary(id, form, initialValues);
     const { isSuccess, isPending, isError, error, reset: resetSave } = mutation;
     const isSaving = isSubmitting || isPending;
     useUnsavedChangesGuard(isDirty);
@@ -109,7 +109,10 @@ export function ItineraryEditor({
                             {normalizeApiError(error).message}
                         </p>
                     )}
-                    <fieldset disabled={isSaving} className="grid gap-5 disabled:cursor-wait">
+                    <fieldset
+                        disabled={isSaving}
+                        className="grid gap-5 disabled:cursor-wait"
+                    >
                         <OverviewFields />
                         <PlansSection disabled={isSaving} />
                         <PackingSection disabled={isSaving} />
