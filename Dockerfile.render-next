@@ -71,11 +71,13 @@ COPY nginx/render-next.conf /etc/nginx/http.d/render-next.conf
 COPY nginx/render-next-proxy-params.conf /etc/nginx/render-next-proxy-params.conf
 COPY nginx/render-next-forwarded-proto.conf /etc/nginx/http.d/00-render-next-forwarded-proto.conf
 COPY docker/render-next/supervisord.conf /etc/supervisord.conf
+COPY docker/render-next/zzz-render-next.conf /usr/local/etc/php-fpm.d/zzz-render-next.conf
 COPY scripts/render-next/00-start.sh /usr/local/bin/render-next-start
 COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && composer check-platform-reqs --no-dev \
+    && php-fpm -tt \
     && mkdir -p \
         storage/framework/cache/data \
         storage/framework/sessions \
