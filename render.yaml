@@ -2,6 +2,7 @@ services:
   - type: web
     name: guide
     runtime: docker
+    dockerfilePath: ./Dockerfile.render-next
     plan: free
     envVars:
       - key: APP_NAME

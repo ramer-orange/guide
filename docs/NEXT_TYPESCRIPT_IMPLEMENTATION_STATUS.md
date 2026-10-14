@@ -1,38 +1,41 @@
-# Next.js / TypeScript 移行の実装状況
+# Next.js / TypeScript の実装状況
 
-更新日: 2026-10-05。設計方針は [移行プラン](NEXT_TYPESCRIPT_MIGRATION_PLAN.md) を参照。
+更新日: 2026-10-14。Laravel を API、Next.js を唯一の画面として運用する最終構成を記録する。旧移行計画は [履歴](NEXT_TYPESCRIPT_MIGRATION_PLAN.md) として保管。
 
 ## 実装済み
 
-Laravel の既存認証・セッション・Policy・DB を使う JSON API と OpenAPI 契約を追加し、Next.js App Router にホーム、規約、ポリシー、しおり一覧/作成/編集、閲覧共有画面を実装した。所有者と編集メンバーは権限に応じて共同編集し、持ち物リストは利用者ごとに分かれる。閲覧共有のパスワード・期限・停止、メンバー管理、添付の取得/削除も接続済み。
+Laravel の JSON API と OpenAPI 契約を使い、Next.js App Router がホーム、規約、ポリシー、しおり一覧/作成/編集、閲覧共有を含む全画面を提供する。Laravel は認証・セッション・Policy・DB・入力検証・添付保存を担当する。所有者と編集メンバーは権限に応じて共同編集し、持ち物リストは利用者ごとに分かれる。閲覧共有のパスワード・期限・停止、メンバー管理、添付の取得/削除も API 経由で接続済み。
 
-Laravel/Vite の既定配信は残し、`docker-compose.next.yml` を明示した場合だけ Next standalone と同一オリジン Nginx gateway を追加する。API、Sanctum、OAuth、ログイン/ログアウト、Livewire、旧 Vite、添付は Laravel へ送り、移行済みページと `/_next/*` を Next へ送る。gateway は `Host`/`X-Forwarded-Host` の port を保持する。overlay は Laravel の環境を HTTP 開発用に上書きし、既定 compose の値は変更しない。
+Laravel の web route には認証開始・callback・logout の入口だけを残し、画面はすべて Next.js が配信する。Blade、Livewire、Volt、Vite の画面資産と依存関係は削除済み。ローカル Docker と Render は同一 origin の Nginx gateway を使い、`/api/v1/*`、Sanctum、認証 endpoint、添付 path は Laravel、画面と `/_next/*` は Next.js へ送る。gateway は session cookie と OAuth callback に必要な forwarded host と port を保持する。
 
-## ローカル起動と切り戻し
+## ローカル起動
 
-Node.js 22.12.0 以上と、`.env`・Composer 依存関係を用意し、通常のマイグレーションと Vite assets を準備してから起動する。
+Node.js 22.12.0 以上、`.env` と Composer 依存関係を用意して起動する。
 
 ```sh
+composer install
+npm ci
+npm ci --prefix frontend
 docker compose up -d laravel.test
 ./vendor/bin/sail artisan migrate
-npm run build
-docker compose -f docker-compose.yml -f docker-compose.next.yml up --build -d next next-gateway
+docker compose up --build -d next next-gateway
 ```
 
-既定の UI origin は `http://localhost:8081`。別 origin を使う場合、`NEXT_GATEWAY_PORT` は数値 port、`NEXT_PUBLIC_ORIGIN` は origin URL に設定する（例: `NEXT_GATEWAY_PORT=8082` と `NEXT_PUBLIC_ORIGIN=http://localhost:8082`）。Google OAuth の callback 登録も同じ origin に合わせる。overlay は Laravel に `APP_ENV=next-local`、gateway の `APP_URL`、`SESSION_SECURE_COOKIE=false` を設定する。
+既定の UI origin は `http://localhost:8081`。別 origin を使う場合、`NEXT_GATEWAY_PORT` は数値 port、`NEXT_PUBLIC_ORIGIN` は origin URL に設定する（例: `NEXT_GATEWAY_PORT=8082` と `NEXT_PUBLIC_ORIGIN=http://localhost:8082`）。Google OAuth の callback 登録も同じ origin に合わせる。標準の compose 設定が Laravel の `APP_URL` と `SESSION_SECURE_COOKIE` を gateway に合わせる。
 
-`NEXT_PUBLIC_ORIGIN` は Next.js の `NEXT_PUBLIC_SITE_URL` build argument/runtime environment に渡され、Open Graph metadata の base URL になります。公開 origin を変更した場合は `docker compose -f docker-compose.yml -f docker-compose.next.yml build next` で Next image を再ビルドする。
-
-切り戻すときは、gateway を止めた後に base compose だけで Laravel コンテナを再作成し、overlay の環境を外す。
-
-```sh
-docker compose -f docker-compose.yml -f docker-compose.next.yml stop next-gateway next
-docker compose -f docker-compose.yml up -d --force-recreate laravel.test
-```
+`NEXT_PUBLIC_ORIGIN` は Next.js の `NEXT_PUBLIC_SITE_URL` build argument/runtime environment に渡され、Open Graph metadata の base URL になります。公開 origin を変更した場合は `docker compose build next` で Next image を再ビルドする。
 
 持ち物テンプレート名の重複を許可するため、新しい migration は既存の unique 制約を外す。migration を戻す際に同名の行があれば、行を消さずに `down()` を明示的に拒否する。
 
-## 検証結果
+## 最終構成のレビューと検証（2026-10-14）
+
+- Laravel: Livewire / Volt / Breeze を実際に依存から除いた状態で、SQLite / PHP 8.4 と PostgreSQL 17 / PHP 8.3 の両方で 49 tests / 293 assertions が成功。
+- Next.js: Vitest 2 tests、TypeScript、ESLint、production build が成功。
+- 同一 origin の API HTTP suite と Playwright 9 tests が成功。添付の単体・合計容量の境界、409 後の入力保持、共有の権限、ログアウトも含む。
+- `Dockerfile.render-next` の build と隔離 PostgreSQL 上での起動が成功。ホーム・規約・ポリシー・一覧は 200、guest API は 401、CSRF は 204、旧 Livewire URL と存在しない画面は Next.js の 404 になることを確認。
+- レビューで Render Blueprint の Dockerfile 指定、削除済み Unit suite の参照、HTTP local 環境の HTTPS 強制を修正。E2E は本番と同じ upload 設定を読み、単一 PHP server に合わせて直列実行する。ログアウト用 session は他の owner 検証から分離する。
+
+## 過去の検証記録（2026-10-05）
 
 - Laravel: 添付ストレージ変更後の Pest 57 tests / 291 assertions が隔離 SQLite と PostgreSQL 17 の両方で成功。
 - Frontend: Vitest 1 file / 2 tests、TypeScript typecheck、ESLint、Prettier format check、Next production build が成功。サポートするフロントエンド runtime は `frontend/package.json` の engine 要件に従い Node 22.12 以上。runtime dependency audit は 0 findings。development dependency audit は `eslint-config-next` の古い transitive dependency に限り 5 high findings が残る。
@@ -52,7 +55,7 @@ docker compose -f docker-compose.yml up -d --force-recreate laravel.test
 
 ## 添付ストレージ
 
-添付は `FILESYSTEM_UPLOADS_DISK` で選んだ disk に保存し、各 `plan_files` 行へ disk 名を記録する。Render は private bucket `guide-attachments` を使う `r2` disk を新規添付の保存先に設定した。API/旧 Blade UI のダウンロードも同一オリジンの itinerary Policy 認可 endpoint を通る。R2 の接続情報はサーバー側の保存処理で使用し、Next.js クライアントコードやブラウザーには公開しない。`R2_*` を `NEXT_PUBLIC_*` 変数へ設定しない。AWS S3 disk は独立している。Fake disk、SDK request capture と隔離した実 Cloudflare R2 read/write/delete 検証が成功しているが、本番アプリからの実 upload/download は行っていない。
+添付は `FILESYSTEM_UPLOADS_DISK` で選んだ disk に保存し、各 `plan_files` 行へ disk 名を記録する。Render は private bucket `guide-attachments` を使う `r2` disk を新規添付の保存先に設定した。ダウンロードは同一オリジンの itinerary Policy 認可 API endpoint を通る。R2 の接続情報はサーバー側の保存処理で使用し、Next.js クライアントコードやブラウザーには公開しない。`R2_*` を `NEXT_PUBLIC_*` 変数へ設定しない。AWS S3 disk は独立している。Fake disk、SDK request capture と隔離した実 Cloudflare R2 read/write/delete 検証が成功しているが、本番アプリからの実 upload/download は行っていない。
 
 旧データで `plan_files.disk` が null の場合は `FILESYSTEM_LEGACY_UPLOADS_DISK`（既定 `public`）を使う。環境により既存ファイルの保存先が異なる場合は、R2 切替前にこの変数を従来の disk 名へ合わせる。既存ファイルのコピー・backfill は行わず、DB migration は nullable disk 列の追加のみ。
 

@@ -1,5 +1,7 @@
 # Sharing Implementation
 
+> **履歴資料:** この文書の Blade / Livewire 画面例は現在の構成では使われません。共有機能は Next.js から Laravel API を呼び出します。最新の構成は [実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) を参照してください。
+
 ## 目的
 
 しおり共有の動線を、次の 2 種類に分けて実装する。

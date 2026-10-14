@@ -3,8 +3,7 @@ server {
     server_name _;
     client_max_body_size 25m;
 
-    # The Laravel session, CSRF, OAuth, API, health and legacy endpoints stay
-    # on the same public origin as Next so browser cookies remain first-party.
+    # Laravel APIs and authentication stay on the same public origin as Next.
     location ^~ /api/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
     location ^~ /sanctum/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
     location ^~ /auth/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
@@ -12,8 +11,6 @@ server {
     location = /register { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
     location = /logout { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
     location = /up { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
-    location ^~ /livewire/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
-    location ^~ /build/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
     location ^~ /storage/ { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
 
     location ^~ /_next/ {
@@ -26,14 +23,6 @@ server {
     }
     location ^~ /images/ { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
 
-    # Pages implemented in Next are deliberately listed here. All other
-    # existing URLs continue to resolve through Laravel during migration.
-    location = / { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-    location = /policy { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-    location = /terms { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-    location = /itineraries/index { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-    location = /itineraries/create { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-    location ~ ^/itineraries/[^/]+/(edit|shared-access)$ { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
-
-    location / { proxy_pass http://laravel.test:80; include /etc/nginx/proxy_params; }
+    # Next.js owns every user-facing page.
+    location / { proxy_pass http://next:3000; include /etc/nginx/proxy_params; }
 }

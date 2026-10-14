@@ -1,5 +1,7 @@
 # AWS構築完了記録
 
+> **履歴資料:** この記録には Laravel Blade / Vite を前提にした過去の手順が含まれます。現在の UI は Next.js、Laravel は API 専用です。現行の配信構成は [Next.js 実装状況](NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md) を参照してください。
+
 ## 構築したAWSリソース
 
 | リソース | 内容 |

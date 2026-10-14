@@ -26,7 +26,6 @@ chmod -R ug+rwX storage bootstrap/cache
 php artisan storage:link || true
 php artisan migrate --force
 php artisan config:cache
-php artisan view:cache
 
 sed -i "s/__PORT__/${port}/g" /etc/nginx/http.d/render-next.conf
 nginx -t

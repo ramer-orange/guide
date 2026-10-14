@@ -4,15 +4,15 @@ const laravel = new URL(process.env.E2E_LARAVEL_ORIGIN ?? "http://127.0.0.1:8000
 const next = new URL(process.env.E2E_NEXT_ORIGIN ?? "http://127.0.0.1:3000");
 const port = Number(process.env.E2E_GATEWAY_PORT ?? 8081);
 
-function isNextPath(pathname) {
-  return pathname.startsWith("/_next/")
-    || pathname.startsWith("/images/")
-    || pathname === "/"
-    || pathname === "/policy"
-    || pathname === "/terms"
-    || pathname === "/itineraries/index"
-    || pathname === "/itineraries/create"
-    || /^\/itineraries\/[^/]+\/(edit|shared-access)$/.test(pathname);
+function isLaravelPath(pathname) {
+  return pathname.startsWith("/api/")
+    || pathname.startsWith("/sanctum/")
+    || pathname.startsWith("/auth/")
+    || pathname === "/login"
+    || pathname === "/logout"
+    || pathname === "/register"
+    || pathname === "/up"
+    || pathname.startsWith("/storage/");
 }
 
 const server = http.createServer((request, response) => {
@@ -21,7 +21,8 @@ const server = http.createServer((request, response) => {
     return;
   }
 
-  const target = new URL(isNextPath(new URL(request.url, "http://gateway.local").pathname) ? next : laravel);
+  const pathname = new URL(request.url, "http://gateway.local").pathname;
+  const target = new URL(isLaravelPath(pathname) ? laravel : next);
   const upstream = http.request({
     protocol: target.protocol,
     hostname: target.hostname,

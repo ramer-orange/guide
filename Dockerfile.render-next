@@ -1,14 +1,3 @@
-FROM node:22-alpine3.22 AS legacy-assets
-
-WORKDIR /app
-
-COPY package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js ./
-COPY resources ./resources
-COPY public ./public
-
-RUN npm ci \
-    && npm run build
-
 FROM node:22-alpine3.22 AS next-assets
 
 WORKDIR /app
@@ -75,7 +64,6 @@ WORKDIR /var/www/html
 
 COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
-COPY --from=legacy-assets /app/public/build ./public/build
 COPY --from=next-assets --chown=next:next /app/.next/standalone /opt/next/
 COPY --from=next-assets --chown=next:next /app/.next/static /opt/next/.next/static
 COPY --from=next-assets --chown=next:next /app/public /opt/next/public

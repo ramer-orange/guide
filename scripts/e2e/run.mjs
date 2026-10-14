@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { cpSync, existsSync } from "node:fs";
 import { access, writeFile as writeFileAsync, mkdir as mkdirAsync } from "node:fs/promises";
-import { resolve } from "node:path";
+import { delimiter, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
 const databasePath = resolve(root, "database/e2e.sqlite");
@@ -11,6 +11,7 @@ const base = new URL(baseURL);
 const testKey = "base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 const env = {
   ...process.env,
+  PHP_INI_SCAN_DIR: `${process.env.PHP_INI_SCAN_DIR ?? ""}${delimiter}${resolve(root, "conf/php")}`,
   APP_ENV: "e2e",
   APP_KEY: testKey,
   APP_URL: base.origin,

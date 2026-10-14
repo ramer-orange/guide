@@ -17,6 +17,14 @@ const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
         secure: boolean;
         sameSite: "Lax";
     };
+    logoutOwnerCookie: {
+        name: string;
+        value: string;
+        path: string;
+        httpOnly: boolean;
+        secure: boolean;
+        sameSite: "Lax";
+    };
     memberCookie: {
         name: string;
         value: string;
@@ -373,7 +381,7 @@ test("member sees only their own packing list and shared viewer is read-only unt
 test("mobile home shows an authenticated header and logout clears the session", async ({
     browser,
 }) => {
-    const { context, page } = await signedInPage(browser, fixture.ownerCookie);
+    const { context, page } = await signedInPage(browser, fixture.logoutOwnerCookie);
     try {
         await page.setViewportSize({ width: 390, height: 844 });
         await page.goto("/");

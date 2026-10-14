@@ -157,6 +157,7 @@ $makeSessionCookie = static function (User $user) use ($cookieName): array {
 echo json_encode([
     'travelId' => $overview->id,
     'ownerCookie' => $makeSessionCookie($owner),
+    'logoutOwnerCookie' => $makeSessionCookie($owner),
     'memberCookie' => $makeSessionCookie($member),
     'inviteEmail' => $invite->email,
     'viewerPassword' => 'viewer-pass-123',
