@@ -21,14 +21,17 @@ export default function HomePage() {
     return (
         <>
             <section className="relative isolate min-h-[680px] overflow-hidden bg-[#31535b] pt-[72px] text-white sm:min-h-[760px]">
-                <Image
-                    src="/images/mv/MV.webp"
-                    alt="海と緑に囲まれた旅先"
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="-z-20 object-cover object-center"
-                />
+                <picture className="absolute inset-0 -z-20">
+                    <img
+                        src="/images/optimized/home-hero-1920-v1.webp"
+                        srcSet="/images/optimized/home-hero-640-v1.webp 640w, /images/optimized/home-hero-1280-v1.webp 1280w, /images/optimized/home-hero-1920-v1.webp 1920w"
+                        sizes="100vw"
+                        alt="海と緑に囲まれた旅先"
+                        fetchPriority="high"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                    />
+                </picture>
                 <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#183d48]/85 via-[#1c4650]/55 to-[#31535b]/10" />
                 <div className="mx-auto flex min-h-[610px] max-w-7xl items-center px-6 py-20 sm:px-10">
                     <div className="max-w-xl">
@@ -139,10 +142,11 @@ export default function HomePage() {
                     </div>
                     <div className="relative mx-auto w-full max-w-md">
                         <Image
-                            src="/images/mockup/mockup.webp"
+                            src="/images/optimized/home-mockup-v1.webp"
                             alt="旅のしおりの画面イメージ"
                             width={720}
                             height={560}
+                            unoptimized
                             className="h-auto w-full rounded-3xl shadow-2xl"
                         />
                     </div>
