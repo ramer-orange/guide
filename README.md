@@ -198,4 +198,3 @@ Renderでは `Dockerfile.render-next` がLaravelとNext.js standaloneを1つの�
 起動時に `php artisan migrate --force` を実行します。デプロイ前に新しいmigrationとDB backupを確認してください。Renderのbranch・環境変数・DBの期限・OAuth設定などの運用状況や、確認済み/未確認の本番操作は変わるため、[実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md)を参照してください。秘密情報はRenderのruntime環境変数で管理し、ソースやNext.js buildへ含めないでください。
 
 添付の保存先は `FILESYSTEM_UPLOADS_DISK` で選びます。Renderではprivate R2 bucketを使い、ブラウザーからは認可済みのLaravel endpointを通して取得します。R2資格情報はサーバー側のruntime環境変数で管理し、Next.jsクライアントコードやブラウザーへ公開しません。AWS S3の設定とは別です。添付レコードには保存先disk名を記録し、disk名がない既存レコードは `FILESYSTEM_LEGACY_UPLOADS_DISK` で指定した従来diskから読み書き・削除します。既存ファイルの移動やbackfillは自動実行しません。
-
