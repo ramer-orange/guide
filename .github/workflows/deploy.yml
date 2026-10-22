@@ -82,7 +82,7 @@ jobs: # 実行するジョブの一覧
       infra: ${{ steps.filter.outputs.infra }} # infra/に変更があったかどうかを後続ジョブに渡す
     steps:
       - uses: actions/checkout@v4 # リポジトリのコードをチェックアウト（ファイル変更の検知に必要）
-      - uses: dorny/paths-filter@v3 # 変更されたファイルのパスでフィルタリングするアクション
+      - uses: dorny/paths-filter@v4 # 変更されたファイルのパスでフィルタリングするアクション
         id: filter # このステップをfilterという名前で参照できるようにする
         with:
           filters: | # フィルタのルールを定義
