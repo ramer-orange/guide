@@ -155,7 +155,7 @@ jobs: # 実行するジョブの一覧
           } >> "$GITHUB_OUTPUT"
 
       - name: QEMUセットアップ
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Docker Buildxセットアップ
         uses: docker/setup-buildx-action@v3
