@@ -49,6 +49,8 @@ docker compose up --build -d next next-gateway
 
 gatewayは `/api/`、`/sanctum/`、`/auth/`、`/login`、`/logout`、`/register`、`/up`、`/storage/` をLaravelへ送り、`/_next/`、`/images/` とそれ以外の画面URLをNext.jsへ送ります。Livewire/Blade画面やVite画面へフォールバックする構成ではありません。この同一origin経路では、ブラウザーがLaravelのセッションCookieとCSRF Cookieを同じoriginへ送れます。
 
+しおり一覧・作成・編集・共有画面はSSRで初回データを取得し、React Queryへ引き継ぎます。ログイン確認とAPI取得には受信したセッションCookieを使い、`cache: "no-store"` でユーザー間の共有キャッシュを避けます。編集・保存・共有パスワードの送信は従来どおりブラウザーからAPIへ送ります。トップ・規約ページは静的生成を維持します。Next.jsサーバーからLaravelへ接続するoriginはサーバー専用の `API_INTERNAL_ORIGIN` で指定します（Docker Composeでは `http://laravel.test`、Renderコンテナでは `http://127.0.0.1:10000`）。未指定時は `NEXT_PUBLIC_SITE_URL`、それも未指定なら `http://localhost:8081` を使います。ホストでNext.jsを単独起動する場合は、LaravelのURL（例: `http://127.0.0.1:8000`）を指定してください。
+
 Next.jsアプリを停止する場合はNext.jsとgatewayを停止します。停止後、gateway経由の画面は利用できません（Laravel画面へ自動で切り替わる構成ではありません）。
 
 ```sh

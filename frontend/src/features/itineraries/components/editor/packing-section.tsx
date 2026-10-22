@@ -11,7 +11,7 @@ import {
 } from "@/features/itineraries/shared/sortable-field-list";
 import { EmptyState } from "@/components/ui/empty-state";
 export function PackingSection({ disabled = false }: { disabled?: boolean }) {
-    const { control, register, setValue } =
+    const { control, register, getValues, setValue } =
         useFormContext<ItineraryFormValues>();
     const { fields, append, remove, move } = useFieldArray({
         control,
@@ -102,6 +102,9 @@ export function PackingSection({ disabled = false }: { disabled?: boolean }) {
                                         type="checkbox"
                                         aria-label={`${index + 1}番目の持ち物を準備済みにする`}
                                         className="size-5 accent-[#198e82]"
+                                        defaultChecked={getValues(
+                                            `packing_items.${index}.is_checked`,
+                                        )}
                                         {...register(
                                             `packing_items.${index}.is_checked`,
                                         )}
@@ -109,6 +112,9 @@ export function PackingSection({ disabled = false }: { disabled?: boolean }) {
                                     <input
                                         className="editor-input"
                                         placeholder="持ち物"
+                                        defaultValue={getValues(
+                                            `packing_items.${index}.name`,
+                                        )}
                                         {...register(
                                             `packing_items.${index}.name`,
                                         )}

@@ -22,6 +22,7 @@ ENV APP_ENV=production \
     LOG_CHANNEL=stderr \
     PORT=10000 \
     NODE_ENV=production \
+    API_INTERNAL_ORIGIN=http://127.0.0.1:10000 \
     NODE_OPTIONS=--enable-source-maps \
     NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}

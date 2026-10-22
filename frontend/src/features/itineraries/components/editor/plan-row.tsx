@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import type { ItineraryFormValues } from "@/features/itineraries/schemas/itinerary-form.schema";
 import { SortableFieldRow } from "@/features/itineraries/shared/sortable-field-list";
@@ -16,7 +17,9 @@ export function PlanRow({
     onRemove: () => void;
     disabled?: boolean;
 }) {
-    const { control, register } = useFormContext<ItineraryFormValues>();
+    const contentId = useId();
+    const { control, register, getValues } =
+        useFormContext<ItineraryFormValues>();
     const { errors } = useFormState<ItineraryFormValues>({
         control,
         name: `plans.${index}`,
@@ -24,13 +27,19 @@ export function PlanRow({
     });
     const error = errors.plans?.[index];
     return (
-        <SortableFieldRow id={clientId} index={index} onRemove={onRemove} disabled={disabled}>
+        <SortableFieldRow
+            id={clientId}
+            index={index}
+            onRemove={onRemove}
+            disabled={disabled}
+        >
             <input type="hidden" {...register(`plans.${index}.client_id`)} />
             <div className="mb-4 grid gap-3 pr-16 sm:grid-cols-[1fr_170px_130px]">
                 <label className="grid gap-1.5 text-xs font-semibold text-[#657774]">
                     予定の名前
                     <TextInput
                         placeholder="清水寺を散策"
+                        defaultValue={getValues(`plans.${index}.title`)}
                         {...register(`plans.${index}.title`)}
                     />
                 </label>
@@ -38,6 +47,7 @@ export function PlanRow({
                     日付
                     <TextInput
                         type="date"
+                        defaultValue={getValues(`plans.${index}.date`)}
                         {...register(`plans.${index}.date`)}
                     />
                 </label>
@@ -45,18 +55,21 @@ export function PlanRow({
                     時間
                     <TextInput
                         type="time"
+                        defaultValue={getValues(`plans.${index}.time`)}
                         {...register(`plans.${index}.time`)}
                     />
                 </label>
             </div>
-            <label className="grid gap-1.5 text-xs font-semibold text-[#657774]">
-                場所・メモ
+            <div className="grid gap-1.5 text-xs font-semibold text-[#657774]">
+                <label htmlFor={contentId}>場所・メモ</label>
                 <TextArea
+                    id={contentId}
                     rows={2}
                     placeholder="住所や予約情報など"
+                    defaultValue={getValues(`plans.${index}.content`)}
                     {...register(`plans.${index}.content`)}
                 />
-            </label>
+            </div>
             {error && (
                 <p role="alert" className="mt-2 text-xs text-rose-700">
                     {error.title?.message ??

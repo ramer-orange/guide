@@ -11,7 +11,11 @@ import { ItineraryView } from "@/features/itineraries/components/itinerary-view"
 import { normalizeApiError } from "@/lib/api/errors";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/text-input";
-export function SharedAccessScreen() {
+export function SharedAccessScreen({
+    unavailable = false,
+}: {
+    unavailable?: boolean;
+}) {
     const params = useParams<{ id: string }>();
     const id = params.id;
     const [password, setPassword] = useState("");
@@ -20,6 +24,9 @@ export function SharedAccessScreen() {
         queryFn: () => getSharedAccess(id),
         retry: false,
         gcTime: 0,
+        staleTime: 0,
+        refetchOnMount: false,
+        enabled: !unavailable,
     });
     const verify = useMutation({
         mutationFn: () => confirmSharedAccess(id, password),
@@ -31,7 +38,7 @@ export function SharedAccessScreen() {
                 <ItineraryView itinerary={verify.data} />
             </div>
         );
-    if (status.isPending)
+    if (!unavailable && status.isPending)
         return (
             <div
                 role="status"
@@ -40,7 +47,7 @@ export function SharedAccessScreen() {
                 共有情報を確認しています…
             </div>
         );
-    if (status.isError || !status.data.available)
+    if (unavailable || status.isError || !status.data?.available)
         return (
             <section className="mx-auto max-w-xl px-6 pt-36 pb-24 text-center">
                 <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#fff0ea] text-[#c67c68]">

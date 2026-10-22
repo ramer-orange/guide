@@ -31,6 +31,7 @@ const env = {
   MAIL_MAILER: "log",
   FILESYSTEM_DISK: "local",
   FILESYSTEM_UPLOADS_DISK: "public",
+  API_INTERNAL_ORIGIN: base.origin,
   E2E_BASE_URL: base.origin,
   E2E_FIXTURE_PATH: fixturePath,
   E2E_GATEWAY_PORT: base.port || "80",

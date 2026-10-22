@@ -1,12 +1,15 @@
 "use client";
+import { useId } from "react";
 import { useFormContext } from "react-hook-form";
 import type { ItineraryFormValues } from "@/features/itineraries/schemas/itinerary-form.schema";
 import { ItinerarySection } from "@/features/itineraries/shared/itinerary-section";
 import { TextInput } from "@/components/ui/text-input";
 import { TextArea } from "@/components/ui/text-area";
 export function OverviewFields() {
+    const overviewId = useId();
     const {
         register,
+        getValues,
         formState: { errors },
     } = useFormContext<ItineraryFormValues>();
     return (
@@ -20,6 +23,7 @@ export function OverviewFields() {
                     しおりのタイトル
                     <TextInput
                         placeholder="例：春の京都めぐり"
+                        defaultValue={getValues("title")}
                         {...register("title")}
                     />
                     {errors.title && (
@@ -28,14 +32,16 @@ export function OverviewFields() {
                         </span>
                     )}
                 </label>
-                <label className="grid gap-2 text-sm font-semibold text-[#526969]">
-                    旅行概要
+                <div className="grid gap-2 text-sm font-semibold text-[#526969]">
+                    <label htmlFor={overviewId}>旅行概要</label>
                     <TextArea
+                        id={overviewId}
                         rows={3}
                         placeholder="旅の目的や、みんなに伝えたいこと"
+                        defaultValue={getValues("overview_text")}
                         {...register("overview_text")}
                     />
-                </label>
+                </div>
             </div>
         </ItinerarySection>
     );

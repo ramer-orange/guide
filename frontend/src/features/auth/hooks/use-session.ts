@@ -1,7 +1,8 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { getSession } from "@/features/auth/api/session";
-export const sessionKey = ["session"] as const;
+import { sessionKey } from "@/features/auth/api/query-keys";
+export { sessionKey };
 export function useSession() {
     return useQuery({
         queryKey: sessionKey,

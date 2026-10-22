@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import { SiteHeader } from "@/features/auth/components/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { AuthErrorNotice } from "@/features/auth/components/auth-error-notice";
 
 const configuredSiteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:8081";
@@ -40,9 +38,7 @@ export default function RootLayout({
         <html lang="ja">
             <body>
                 <Providers>
-                    <SiteHeader />
-                    <AuthErrorNotice />
-                    <main>{children}</main>
+                    {children}
                     <SiteFooter />
                 </Providers>
             </body>

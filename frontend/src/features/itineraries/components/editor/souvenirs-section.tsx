@@ -8,7 +8,8 @@ import {
     SortableFieldRow,
 } from "@/features/itineraries/shared/sortable-field-list";
 export function SouvenirsSection({ disabled = false }: { disabled?: boolean }) {
-    const { control, register } = useFormContext<ItineraryFormValues>();
+    const { control, register, getValues } =
+        useFormContext<ItineraryFormValues>();
     const { fields, append, remove, move } = useFieldArray({
         control,
         name: "souvenirs",
@@ -52,6 +53,9 @@ export function SouvenirsSection({ disabled = false }: { disabled?: boolean }) {
                                         type="checkbox"
                                         aria-label={`${index + 1}番目のお土産を購入済みにする`}
                                         className="size-5 accent-[#db907b]"
+                                        defaultChecked={getValues(
+                                            `souvenirs.${index}.is_checked`,
+                                        )}
                                         {...register(
                                             `souvenirs.${index}.is_checked`,
                                         )}
@@ -59,6 +63,9 @@ export function SouvenirsSection({ disabled = false }: { disabled?: boolean }) {
                                     <input
                                         className="editor-input"
                                         placeholder="八つ橋（祖母へ）"
+                                        defaultValue={getValues(
+                                            `souvenirs.${index}.name`,
+                                        )}
                                         {...register(`souvenirs.${index}.name`)}
                                     />
                                 </div>

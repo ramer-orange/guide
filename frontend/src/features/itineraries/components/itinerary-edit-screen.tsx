@@ -14,6 +14,7 @@ export function ItineraryEditScreen({ id }: { id: string }) {
         queryKey: itineraryKeys.detail(id, principal),
         queryFn: () => getItinerary(id),
         staleTime: 0,
+        refetchOnMount: false,
         gcTime: 0,
         enabled: session.isSuccess,
     });

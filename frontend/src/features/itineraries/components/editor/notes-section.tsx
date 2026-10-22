@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Plus } from "lucide-react";
 import type { ItineraryFormValues } from "@/features/itineraries/schemas/itinerary-form.schema";
@@ -8,7 +9,9 @@ import {
     SortableFieldRow,
 } from "@/features/itineraries/shared/sortable-field-list";
 export function NotesSection({ disabled = false }: { disabled?: boolean }) {
-    const { control, register } = useFormContext<ItineraryFormValues>();
+    const labelId = useId();
+    const { control, register, getValues } =
+        useFormContext<ItineraryFormValues>();
     const { fields, append, remove, move } = useFieldArray({
         control,
         name: "notes",
@@ -49,19 +52,28 @@ export function NotesSection({ disabled = false }: { disabled?: boolean }) {
                                         <input
                                             className="editor-input"
                                             placeholder="ホテルの予約"
+                                            defaultValue={getValues(
+                                                `notes.${index}.title`,
+                                            )}
                                             {...register(
                                                 `notes.${index}.title`,
                                             )}
                                         />
                                     </label>
-                                    <label className="grid gap-1.5 text-xs font-semibold text-[#657774]">
-                                        内容
+                                    <div className="grid gap-1.5 text-xs font-semibold text-[#657774]">
+                                        <label htmlFor={`${labelId}-${index}`}>
+                                            内容
+                                        </label>
                                         <textarea
+                                            id={`${labelId}-${index}`}
                                             rows={2}
                                             className="editor-input resize-y"
+                                            defaultValue={getValues(
+                                                `notes.${index}.text`,
+                                            )}
                                             {...register(`notes.${index}.text`)}
                                         />
-                                    </label>
+                                    </div>
                                 </div>
                             </SortableFieldRow>
                         ))}
