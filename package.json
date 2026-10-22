@@ -4,10 +4,14 @@
     "scripts": {
         "e2e:next": "node scripts/e2e/run.mjs",
         "cdk:synth": "npm --prefix infra run cdk -- synth --quiet",
-        "cdk:diagram": "npm run cdk:synth && cdk-dia --tree infra/cdk.out/tree.json --target docs/aws_cdk_diagram.png"
+        "cdk:diagram": "npm run cdk:synth && cdk-dia --tree infra/cdk.out/tree.json --target docs/aws_cdk_diagram.png",
+        "preinstall": "node frontend/scripts/check-node-runtime.mjs"
     },
     "devDependencies": {
         "cdk-dia": "^0.12.4",
         "concurrently": "^9.0.1"
+    },
+    "engines": {
+        "node": "^22.23.4 || ^24.22.1 || ^26.12.1"
     }
 }

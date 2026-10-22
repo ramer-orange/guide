@@ -39,13 +39,13 @@ jobs: # 実行するジョブの一覧
       - name: PHPセットアップ
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.3.36'
           extensions: pdo_sqlite, pdo_pgsql
 
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.23.4'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
@@ -53,13 +53,28 @@ jobs: # 実行するジョブの一覧
 
       - name: アプリ検証
         run: |
+          php scripts/check-php-runtime.php
+          node frontend/scripts/check-node-runtime.mjs
+          node --test frontend/scripts/check-node-runtime.test.mjs
           composer install --no-interaction --prefer-dist
           npm ci --prefix frontend
           npm --prefix frontend run test
           npm --prefix frontend run typecheck
           npm --prefix frontend run lint
           npm --prefix frontend run build
+          composer audit
+          npm audit --prefix frontend --omit=dev
           APP_KEY=base64:54QOuuDvHgF5PcqsqkwmaUGE6vtM28BKGPFItCUxCsk= DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
+
+  runtime-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and verify production runtimes
+        run: |
+          docker build --pull -f Dockerfile.render-next -t guide-security:ci .
+          docker run --rm --entrypoint sh guide-security:ci -c 'php scripts/check-php-runtime.php && node frontend/scripts/check-node-runtime.mjs && php-fpm -v'
 
   changes: # どのファイルが変更されたかを判定するジョブ
     runs-on: ubuntu-latest # GitHubが提供するUbuntu環境で実行
@@ -91,7 +106,7 @@ jobs: # 実行するジョブの一覧
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4 # Node.jsをインストールするアクション（CDKの実行に必要）
         with:
-          node-version: '20' # Node.js 20を使用
+          node-version: '22.23.4'
           cache: 'npm' # node_modulesをキャッシュして次回の実行を高速化
           cache-dependency-path: infra/package-lock.json # キャッシュのキーとして使うファイル
 

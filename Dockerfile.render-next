@@ -1,8 +1,9 @@
-FROM node:22-alpine3.22 AS next-assets
+FROM node:22.23.4-alpine3.23 AS next-assets
 
 WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
+COPY frontend/scripts/check-node-runtime.mjs ./scripts/check-node-runtime.mjs
 RUN npm ci
 
 COPY frontend ./
@@ -13,7 +14,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 
 RUN npm run build
 
-FROM php:8.3-fpm-alpine3.22 AS runtime
+FROM php:8.3.36-fpm-alpine3.23 AS runtime
 
 ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
 
@@ -37,7 +38,7 @@ RUN apk add --no-cache \
         libxslt \
         libzip \
         nginx \
-        nodejs \
+        libstdc++ \
         oniguruma \
         supervisor \
     && apk add --no-cache --virtual .build-deps \
@@ -59,6 +60,8 @@ RUN apk add --no-cache \
     && adduser -S -G next next \
     && mkdir -p /run/nginx /run/php /var/log/supervisor /opt/next
 
+COPY --from=next-assets /usr/local/bin/node /usr/local/bin/node
+
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
@@ -76,7 +79,9 @@ COPY docker/render-next/zzz-render-next.conf /usr/local/etc/php-fpm.d/zzz-render
 COPY scripts/render-next/00-start.sh /usr/local/bin/render-next-start
 COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+RUN php scripts/check-php-runtime.php \
+    && node frontend/scripts/check-node-runtime.mjs \
+    && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     && composer check-platform-reqs --no-dev \
     && php-fpm -tt \
     && mkdir -p \
