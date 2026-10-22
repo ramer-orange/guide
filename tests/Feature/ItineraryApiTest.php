@@ -380,7 +380,7 @@ it('scopes explicit packing and plan deletions to the caller and itinerary', fun
     $this->actingAs($member)->patchJson("/api/v1/itineraries/{$trip->id}", [
         'payload' => json_encode(['deleted_packing_item_ids' => [$ownerItem->id, $memberItem->id], 'deleted_plan_ids' => [$foreignPlan->id]]),
     ])->assertOk()->assertJsonPath('packing_items', [])->assertJsonPath('title', 'New shared title');
-    expect($ownerItem->fresh()->packing_is_checked)->toBe(1)
+    expect((bool) $ownerItem->fresh()->packing_is_checked)->toBeTrue()
         ->and($foreignPlan->fresh())->not->toBeNull()->and($memberItem->fresh())->toBeNull();
 });
 
@@ -389,11 +389,12 @@ it('clears supplied nullable fields without clearing omitted fields or template'
     $trip = createOwnedItinerary($owner, 'Original');
     $trip->templateType()->create(['template_name' => 'domestic']);
     $plan = $trip->plans()->create(['plans_title' => 'Keep', 'date' => '2026-10-14', 'time' => '09:30', 'content' => 'Old', 'order' => 3]);
+    $originalTime = $plan->fresh()->time;
     $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", [
         'payload' => json_encode(['plans' => [['id' => $plan->id, 'client_id' => 'clear', 'date' => '', 'content' => null]]]),
     ])->assertOk()->assertJsonPath('plans.0.date', null)->assertJsonPath('plans.0.content', null)
         ->assertJsonPath('plans.0.title', 'Keep')->assertJsonPath('template_type', 'domestic');
-    expect($plan->fresh()->order)->toBe(3)->and($plan->fresh()->time)->toBe('09:30');
+    expect($plan->fresh()->order)->toBe(3)->and($plan->fresh()->time)->toBe($originalTime);
 });
 
 it('streams attachments only through an authorized itinerary-scoped endpoint', function () {
