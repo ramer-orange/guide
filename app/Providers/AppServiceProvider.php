@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Filesystem\R2DiskFactory;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,18 +22,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('local')) {
-            URL::forceScheme('https');
-            return;
-        }
+        Storage::extend('r2', fn ($app, array $config) => app(R2DiskFactory::class)->make($config));
 
         $appUrl = config('app.url');
 
         if (filled($appUrl)) {
             URL::forceRootUrl($appUrl);
 
-            if (parse_url($appUrl, PHP_URL_SCHEME) === 'https') {
-                URL::forceScheme('https');
+            $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+
+            if (in_array($scheme, ['http', 'https'], true)) {
+                URL::forceScheme($scheme);
             }
         }
     }

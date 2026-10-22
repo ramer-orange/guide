@@ -2,18 +2,12 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+        "e2e:next": "node scripts/e2e/run.mjs",
+        "cdk:synth": "npm --prefix infra run cdk -- synth --quiet",
+        "cdk:diagram": "npm run cdk:synth && cdk-dia --tree infra/cdk.out/tree.json --target docs/aws_cdk_diagram.png"
     },
     "devDependencies": {
-        "@tailwindcss/forms": "^0.5.2",
-        "@tailwindcss/postcss": "^4.0.0-beta.8",
-        "@wotz/livewire-sortablejs": "^1.0.0",
-        "axios": "^1.7.4",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^1.0",
-        "postcss": "^8.4.49",
-        "tailwindcss": "^4.0.0-beta.8",
-        "vite": "^5.0"
+        "cdk-dia": "^0.12.4",
+        "concurrently": "^9.0.1"
     }
 }

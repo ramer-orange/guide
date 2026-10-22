@@ -1,16 +1,15 @@
-name: Deploy # ワークフローの名前（GitHub Actions画面に表示される）
+name: CI # ワークフローの名前（GitHub Actions画面に表示される）
 
 on: # トリガー条件の定義
-  push: # pushイベントで起動
-    branches:
-      - main # mainブランチへのpushのみ対象
+  push: # すべてのブランチへのpushで起動。Render連携ブランチも検証する
+  pull_request: # Pull Requestでも同じ検証を実行
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: production-deploy
+  group: ci-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -46,22 +45,21 @@ jobs: # 実行するジョブの一覧
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
 
       - name: アプリ検証
         run: |
           composer install --no-interaction --prefer-dist
-          npm ci
-          npm run build
+          npm ci --prefix frontend
+          npm --prefix frontend run test
+          npm --prefix frontend run typecheck
+          npm --prefix frontend run lint
+          npm --prefix frontend run build
           APP_KEY=base64:54QOuuDvHgF5PcqsqkwmaUGE6vtM28BKGPFItCUxCsk= DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=guide_test DB_USERNAME=postgres DB_PASSWORD=postgres php artisan test
-
-      - name: CDK検証
-        run: |
-          cd infra
-          npm ci
-          npm test -- --runInBand
-          npm run build
 
   changes: # どのファイルが変更されたかを判定するジョブ
     runs-on: ubuntu-latest # GitHubが提供するUbuntu環境で実行

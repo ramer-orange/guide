@@ -83,12 +83,12 @@ class GoogleAuthController extends Controller
         Auth::login($user);
         request()->session()->regenerate();
 
-        return redirect()->intended(route('itineraries.index', absolute: false));
+        return redirect()->intended('/itineraries/index');
     }
 
     private function failedAuthentication(): RedirectResponse
     {
-        return redirect()->route('home')->with(
+        return redirect('/')->with(
             'auth_error',
             'Google アカウントを確認できませんでした。別のアカウントとの関連付けを確認してください。',
         );

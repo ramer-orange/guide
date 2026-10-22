@@ -1,0 +1,540 @@
+<?php
+
+use App\Models\AdditionalComment;
+use App\Models\PackingItem;
+use App\Models\Plan;
+use App\Models\PlanFile;
+use App\Models\Souvenir;
+use App\Models\TravelOverview;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+
+function itineraryPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'title' => 'Tokyo',
+        'overview_text' => null,
+        'template_type' => null,
+        'plans' => [],
+        'packing_items' => [],
+        'souvenirs' => [],
+        'notes' => [],
+    ], $overrides);
+}
+
+function createOwnedItinerary(User $owner, string $title = 'Trip'): TravelOverview
+{
+    $overview = TravelOverview::create(['user_id' => $owner->id, 'title' => $title]);
+    $overview->travelMembers()->create(['user_id' => $owner->id, 'role' => 'owner']);
+
+    return $overview;
+}
+
+it('reports guest and authenticated session state without requiring authentication', function () {
+    $this->getJson('/api/v1/session')->assertOk()->assertExactJson([
+        'authenticated' => false, 'user' => null, 'auth_error' => null,
+    ])->assertHeader('Cache-Control', 'no-store, private');
+
+    $user = User::factory()->create();
+    $this->actingAs($user)->getJson('/api/v1/session')->assertOk()
+        ->assertJsonPath('authenticated', true)->assertJsonPath('user.email', $user->email);
+});
+
+it('creates a trip and clears collections only through explicit deletion IDs', function () {
+    $user = User::factory()->create();
+    Storage::fake('public');
+    $payload = itineraryPayload([
+        'title' => 'Tokyo',
+        'overview_text' => 'Rail trip',
+        'template_type' => 'domestic',
+        'plans' => [[
+            'client_id' => 'plan-one', 'date' => '2026-10-05', 'time' => '09:30',
+            'title' => 'Asakusa', 'content' => 'Temple', 'order' => 0, 'existing_file_ids' => [],
+        ]],
+        'packing_items' => [['name' => 'Passport', 'is_checked' => false, 'order' => 0]],
+        'souvenirs' => [['name' => 'Tea', 'is_checked' => true, 'order' => 0]],
+        'notes' => [['title' => 'Hotel', 'text' => 'Check in', 'order' => 0]],
+    ]);
+
+    $response = $this->actingAs($user)->post('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+    ], ['Accept' => 'application/json']);
+
+    $response->assertCreated()->assertJsonPath('title', 'Tokyo')
+        ->assertJsonPath('template_type', 'domestic')
+        ->assertJsonPath('plans.0.time', '09:30')
+        ->assertJsonPath('packing_items.0.name', 'Passport')
+        ->assertJsonPath('permissions.can_edit', true)
+        ->assertHeader('Cache-Control', 'no-store, private');
+    $id = $response->json('id');
+
+    $updatePayload = [
+        'title' => 'Cleared',
+        'deleted_plan_ids' => [$response->json('plans.0.id')],
+        'deleted_packing_item_ids' => [$response->json('packing_items.0.id')],
+        'deleted_souvenir_ids' => [$response->json('souvenirs.0.id')],
+        'deleted_note_ids' => [$response->json('notes.0.id')],
+    ];
+    $this->actingAs($user)->putJson("/api/v1/itineraries/{$id}", [
+        'payload' => json_encode($updatePayload),
+    ])->assertOk()->assertJsonPath('plans', [])->assertJsonPath('packing_items', [])
+        ->assertJsonPath('souvenirs', [])->assertJsonPath('notes', []);
+
+    expect(TravelOverview::findOrFail($id)->title)->toBe('Cleared')
+        ->and(Plan::where('travel_id', $id)->count())->toBe(0)
+        ->and(PackingItem::where('travel_id', $id)->count())->toBe(0)
+        ->and(Souvenir::where('travel_id', $id)->count())->toBe(0)
+        ->and(AdditionalComment::where('travel_id', $id)->count())->toBe(0);
+});
+
+it('normalizes blank plan date and time values inside the JSON multipart payload', function () {
+    $user = User::factory()->create();
+    $payload = itineraryPayload([
+        'plans' => [[
+            'client_id' => 'blank-date', 'date' => '', 'time' => '', 'title' => '',
+            'content' => '', 'order' => 0, 'existing_file_ids' => [],
+        ]],
+    ]);
+    $response = $this->actingAs($user)->postJson('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+    ])->assertCreated();
+    $plan = TravelOverview::findOrFail($response->json('id'))->plans()->firstOrFail();
+    expect($plan->date)->toBeNull()->and($plan->time)->toBeNull();
+});
+
+it('maps uploaded files to the stable plan client ID and deletes only explicitly removed attachments', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+    $payload = itineraryPayload([
+        'plans' => [[
+            'client_id' => 'plan-one', 'date' => null, 'time' => null, 'title' => 'Ticket',
+            'content' => null, 'order' => 0, 'existing_file_ids' => [],
+        ]],
+    ]);
+    $response = $this->actingAs($user)->post('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+        'files' => ['plan-one' => [UploadedFile::fake()->image('ticket.png')]],
+    ], ['Accept' => 'application/json'])->assertCreated();
+    $tripId = $response->json('id');
+    $file = PlanFile::query()->whereHas('plan', fn ($query) => $query->where('travel_id', $tripId))->firstOrFail();
+    Storage::disk('public')->assertExists($file->path);
+    expect($response->json('plans.0.files.0.file_name'))->toBe('ticket.png');
+
+    $payload['plans'][0]['id'] = $response->json('plans.0.id');
+    unset($payload['plans'][0]['existing_file_ids']);
+    $payload['plans'][0]['removed_file_ids'] = [$file->id];
+    $this->actingAs($user)->post("/api/v1/itineraries/{$tripId}", [
+        '_method' => 'PUT', 'payload' => json_encode($payload),
+    ], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('plans.0.files', []);
+    Storage::disk('public')->assertMissing($file->path);
+    expect($file->fresh())->toBeNull();
+});
+
+it('stores each attachment disk and serves private R2 files through the authorized endpoint', function () {
+    Storage::fake('public');
+    Storage::fake('r2');
+    config(['filesystems.uploads' => 'r2', 'filesystems.legacy_uploads' => 'public']);
+    $owner = User::factory()->create();
+    $payload = itineraryPayload(['plans' => [[
+        'client_id' => 'r2-plan', 'title' => 'Receipt', 'order' => 0, 'existing_file_ids' => [],
+    ]]]);
+    $response = $this->actingAs($owner)->post('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+        'files' => ['r2-plan' => [UploadedFile::fake()->create('receipt.pdf', 20, 'application/pdf')]],
+    ], ['Accept' => 'application/json'])->assertCreated();
+
+    $trip = TravelOverview::findOrFail($response->json('id'));
+    $file = $trip->plans()->firstOrFail()->planFiles()->firstOrFail();
+    expect($file->disk)->toBe('r2')
+        ->and($response->json('plans.0.files.0.url'))->toContain("/api/v1/itineraries/{$trip->id}/files/{$file->id}");
+    Storage::disk('r2')->assertExists($file->path);
+    Storage::disk('public')->assertMissing($file->path);
+    $this->actingAs($owner)->get($response->json('plans.0.files.0.url'))->assertOk();
+
+    $payload['plans'][0]['id'] = $trip->plans()->firstOrFail()->id;
+    unset($payload['plans'][0]['existing_file_ids']);
+    $payload['plans'][0]['removed_file_ids'] = [$file->id];
+    $this->actingAs($owner)->put("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ], ['Accept' => 'application/json'])->assertOk();
+    Storage::disk('r2')->assertMissing($file->path);
+});
+
+it('uses the configured legacy disk for existing attachments without disk metadata', function () {
+    Storage::fake('public');
+    Storage::fake('r2');
+    config(['filesystems.uploads' => 'r2', 'filesystems.legacy_uploads' => 'public']);
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $plan = $trip->plans()->create(['plans_title' => 'Legacy file', 'order' => 0]);
+    Storage::disk('public')->put('files/legacy.pdf', 'legacy');
+    $file = $plan->planFiles()->create(['file_name' => 'legacy.pdf', 'path' => 'files/legacy.pdf']);
+
+    expect($file->fresh()->disk)->toBeNull();
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$file->id}")->assertOk();
+
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}")->assertNoContent();
+    Storage::disk('public')->assertMissing('files/legacy.pdf');
+    Storage::disk('r2')->assertMissing('files/legacy.pdf');
+});
+
+it('returns validation errors for malformed payloads and database IDs on create', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user)->postJson('/api/v1/itineraries', ['payload' => '{bad json'])->assertUnprocessable();
+    $this->actingAs($user)->postJson('/api/v1/itineraries', ['payload' => '{bad json'])
+        ->assertHeader('Cache-Control', 'no-store, private');
+    $malformedRow = itineraryPayload(['plans' => ['not-an-object']]);
+    $this->actingAs($user)->postJson('/api/v1/itineraries', ['payload' => json_encode($malformedRow)])->assertUnprocessable();
+
+    $existingTrip = createOwnedItinerary($user, 'Existing');
+    $existingPlan = $existingTrip->plans()->create(['plans_title' => 'Existing', 'order' => 0]);
+    $payload = itineraryPayload([
+        'plans' => [[
+            'id' => $existingPlan->id, 'client_id' => 'plan-one', 'order' => 0, 'existing_file_ids' => [],
+        ]],
+    ]);
+    $this->actingAs($user)->postJson('/api/v1/itineraries', ['payload' => json_encode($payload)])
+        ->assertUnprocessable()->assertJsonValidationErrors('plans.0.id');
+});
+
+it('rejects deleting an attachment from a different plan in the same itinerary', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $firstPlan = $trip->plans()->create(['plans_title' => 'First', 'order' => 0]);
+    $secondPlan = $trip->plans()->create(['plans_title' => 'Second', 'order' => 1]);
+    $file = $secondPlan->planFiles()->create(['file_name' => 'second.pdf', 'path' => 'files/second.pdf']);
+    $payload = itineraryPayload([
+        'plans' => [[
+            'id' => $firstPlan->id, 'client_id' => 'first-plan', 'order' => 0,
+            'removed_file_ids' => [$file->id],
+        ], [
+            'id' => $secondPlan->id, 'client_id' => 'second-plan', 'order' => 1,
+            'existing_file_ids' => [],
+        ]],
+    ]);
+    $this->actingAs($owner)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ])->assertUnprocessable()->assertJsonValidationErrors('plans.0.removed_file_ids');
+    expect($firstPlan->fresh())->not->toBeNull()->and($file->fresh())->not->toBeNull();
+});
+
+it('allows multiple itineraries to use the same packing template', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $payload = itineraryPayload(['template_type' => 'domestic']);
+    $first = $this->postJson('/api/v1/itineraries', ['payload' => json_encode($payload)])->assertCreated();
+    $second = $this->postJson('/api/v1/itineraries', ['payload' => json_encode($payload)])->assertCreated();
+    expect($first->json('id'))->not->toBe($second->json('id'));
+});
+
+it('treats a blank optional initial viewer password as no viewer share', function () {
+    $user = User::factory()->create();
+    $payload = itineraryPayload([
+        'shared_password' => '',
+        'shared_password_confirmation' => '',
+    ]);
+    $response = $this->actingAs($user)->postJson('/api/v1/itineraries', [
+        'payload' => json_encode($payload),
+    ])->assertCreated();
+    expect(TravelOverview::findOrFail($response->json('id'))->sharedPasswords)->toBeNull();
+});
+
+it('rejects foreign nested IDs and preserves another member personal packing list', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $other = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $trip->travelMembers()->create(['user_id' => $member->id, 'role' => 'member']);
+    $foreignTrip = createOwnedItinerary($other, 'Other');
+    $foreignPlan = $foreignTrip->plans()->create(['plans_title' => 'Private', 'order' => 0]);
+    $personal = $trip->packingItems()->create([
+        'user_id' => $owner->id, 'packing_name' => 'Owner bag', 'packing_is_checked' => false, 'order' => 0,
+    ]);
+
+    $this->actingAs($member)->getJson("/api/v1/itineraries/{$trip->id}")
+        ->assertOk()->assertJsonPath('packing_items', []);
+
+    $payload = itineraryPayload([
+        'title' => 'Member edit',
+        'plans' => [[
+            'id' => $foreignPlan->id, 'client_id' => 'plan-one', 'order' => 0,
+            'existing_file_ids' => [],
+        ]],
+    ]);
+    $this->actingAs($member)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ])->assertUnprocessable();
+
+    $payload['plans'] = [];
+    $payload['packing_items'] = [['id' => $personal->id, 'name' => 'Steal', 'is_checked' => true, 'order' => 0]];
+    $this->actingAs($member)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ])->assertUnprocessable();
+    expect($personal->fresh()->packing_name)->toBe('Owner bag');
+});
+
+it('keeps a member packing list untouched when another member saves an empty list', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $trip->travelMembers()->create(['user_id' => $member->id, 'role' => 'member']);
+    $personal = $trip->packingItems()->create([
+        'user_id' => $owner->id, 'packing_name' => 'Owner bag', 'packing_is_checked' => false, 'order' => 0,
+    ]);
+    $payload = itineraryPayload(['title' => 'Edited by member']);
+
+    $this->actingAs($member)->putJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode($payload),
+    ])->assertOk();
+    expect($personal->fresh()->packing_name)->toBe('Owner bag');
+});
+
+it('accepts changes from stale editors and preserves unrelated fields rows and attachments', function () {
+    Storage::fake('public');
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Original');
+    $trip->travelMembers()->create(['user_id' => $member->id, 'role' => 'member']);
+    $trip->templateType()->create(['template_name' => 'domestic']);
+    $plan = $trip->plans()->create(['plans_title' => 'Visit', 'content' => 'Original content', 'order' => 0]);
+    $note = $trip->additionalComments()->create(['additionalComment_title' => 'Hotel', 'additionalComment_text' => 'Old', 'order' => 0]);
+
+    $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode([
+            'title' => 'Owner title',
+            'plans' => [
+                ['id' => $plan->id, 'client_id' => 'existing', 'title' => 'Owner plan'],
+                ['client_id' => 'added', 'title' => 'New shared plan', 'order' => 1],
+            ],
+        ]),
+    ])->assertOk();
+    $added = $trip->plans()->where('plans_title', 'New shared plan')->firstOrFail();
+    $this->actingAs($owner)->post("/api/v1/itineraries/{$trip->id}", [
+        '_method' => 'PATCH',
+        'payload' => json_encode(['plans' => [['id' => $plan->id, 'client_id' => 'upload']]]),
+        'files' => ['upload' => [UploadedFile::fake()->image('new.png')]],
+    ], ['Accept' => 'application/json'])->assertOk();
+    $file = $plan->planFiles()->firstOrFail();
+
+    // A member's older editor changes a different field on the same plan.
+    $this->actingAs($member)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode([
+            'plans' => [['id' => $plan->id, 'client_id' => 'existing', 'content' => 'Member content']],
+            'notes' => [['id' => $note->id, 'text' => 'New note']],
+            'souvenirs' => [],
+        ]),
+    ])->assertOk()->assertJsonPath('title', 'Owner title')->assertJsonPath('template_type', 'domestic')
+        ->assertJsonPath('plans.0.title', 'Owner plan')->assertJsonPath('plans.0.content', 'Member content')
+        ->assertJsonPath('plans.1.id', $added->id)->assertJsonPath('plans.0.files.0.id', $file->id);
+    Storage::disk('public')->assertExists($file->path);
+    expect($note->fresh()->additionalComment_title)->toBe('Hotel');
+
+    // Overlapping field edits use the last successfully saved value.
+    $this->actingAs($member)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['title' => 'Member title']),
+    ])->assertOk()->assertJsonPath('title', 'Member title');
+    expect($plan->fresh()->content)->toBe('Member content');
+});
+
+it('preserves existing data on an empty change object and empty collections', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Original');
+    $plan = $trip->plans()->create(['plans_title' => 'Keep', 'order' => 0]);
+    foreach (['{}', json_encode(['plans' => [], 'packing_items' => [], 'souvenirs' => [], 'notes' => []])] as $payload) {
+        $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", ['payload' => $payload])
+            ->assertOk()->assertJsonPath('title', 'Original')->assertJsonPath('plans.0.id', $plan->id);
+    }
+    $this->patchJson("/api/v1/itineraries/{$trip->id}", ['payload' => '[]'])->assertUnprocessable();
+});
+
+it('does not recreate deleted rows and rejects the entire edit of a deleted item', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Original');
+    $plan = $trip->plans()->create(['plans_title' => 'Delete', 'order' => 0]);
+    $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['deleted_plan_ids' => [$plan->id]]),
+    ])->assertOk()->assertJsonPath('plans', []);
+    $this->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['title' => 'Should not save', 'plans' => [['id' => $plan->id, 'client_id' => 'deleted', 'title' => 'Revive']]]),
+    ])->assertUnprocessable()->assertJsonValidationErrors('plans.0.id');
+    expect($trip->fresh()->title)->toBe('Original')->and($trip->plans()->count())->toBe(0);
+    $this->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['deleted_plan_ids' => [$plan->id]]),
+    ])->assertOk();
+});
+
+it('scopes explicit packing and plan deletions to the caller and itinerary', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Shared');
+    $trip->travelMembers()->create(['user_id' => $member->id, 'role' => 'member']);
+    $ownerItem = $trip->packingItems()->create(['user_id' => $owner->id, 'packing_name' => 'Owner bag', 'packing_is_checked' => false, 'order' => 0]);
+    $memberItem = $trip->packingItems()->create(['user_id' => $member->id, 'packing_name' => 'Member bag', 'packing_is_checked' => false, 'order' => 0]);
+    $otherTrip = createOwnedItinerary($owner);
+    $foreignPlan = $otherTrip->plans()->create(['plans_title' => 'Foreign', 'order' => 0]);
+    $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['title' => 'New shared title', 'packing_items' => [['id' => $ownerItem->id, 'is_checked' => true]]]),
+    ])->assertOk();
+    $this->actingAs($member)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['deleted_packing_item_ids' => [$ownerItem->id, $memberItem->id], 'deleted_plan_ids' => [$foreignPlan->id]]),
+    ])->assertOk()->assertJsonPath('packing_items', [])->assertJsonPath('title', 'New shared title');
+    expect((bool) $ownerItem->fresh()->packing_is_checked)->toBeTrue()
+        ->and($foreignPlan->fresh())->not->toBeNull()->and($memberItem->fresh())->toBeNull();
+});
+
+it('clears supplied nullable fields without clearing omitted fields or template', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Original');
+    $trip->templateType()->create(['template_name' => 'domestic']);
+    $plan = $trip->plans()->create(['plans_title' => 'Keep', 'date' => '2026-10-14', 'time' => '09:30', 'content' => 'Old', 'order' => 3]);
+    $originalTime = $plan->fresh()->time;
+    $this->actingAs($owner)->patchJson("/api/v1/itineraries/{$trip->id}", [
+        'payload' => json_encode(['plans' => [['id' => $plan->id, 'client_id' => 'clear', 'date' => '', 'content' => null]]]),
+    ])->assertOk()->assertJsonPath('plans.0.date', null)->assertJsonPath('plans.0.content', null)
+        ->assertJsonPath('plans.0.title', 'Keep')->assertJsonPath('template_type', 'domestic');
+    expect($plan->fresh()->order)->toBe(3)->and($plan->fresh()->time)->toBe($originalTime);
+});
+
+it('streams attachments only through an authorized itinerary-scoped endpoint', function () {
+    Storage::fake('public');
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $plan = $trip->plans()->create(['plans_title' => 'File', 'order' => 0]);
+    $file = UploadedFile::fake()->create('ticket.pdf', 100, 'application/pdf');
+    $path = $file->store('files', 'public');
+    $record = $plan->planFiles()->create(['file_name' => 'ticket.pdf', 'path' => $path]);
+
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$record->id}")
+        ->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+    $this->actingAs($other)->getJson("/api/v1/itineraries/{$trip->id}/files/{$record->id}")->assertForbidden();
+    $this->actingAs($owner)->getJson('/api/v1/itineraries/'.createOwnedItinerary($other, 'Different')->id.'/files/'.$record->id)
+        ->assertForbidden();
+});
+
+it('previews safe image and PDF attachments inline through the authorized endpoint', function () {
+    Storage::fake('public');
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $plan = $trip->plans()->create(['plans_title' => 'Files', 'order' => 0]);
+
+    Storage::disk('public')->put('files/preview.pdf', "%PDF-1.4\nPreview fixture\n%%EOF");
+    Storage::disk('public')->put('files/preview.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p6kAAAAASUVORK5CYII='));
+    Storage::disk('public')->put('files/spoofed.pdf', '<html><script>alert(1)</script></html>');
+    $pdf = $plan->planFiles()->create(['file_name' => 'preview.pdf', 'path' => 'files/preview.pdf']);
+    $png = $plan->planFiles()->create(['file_name' => 'preview.png', 'path' => 'files/preview.png']);
+    $docx = $plan->planFiles()->create(['file_name' => 'preview.docx', 'path' => 'files/preview.pdf']);
+    $spoofed = $plan->planFiles()->create(['file_name' => 'spoofed.pdf', 'path' => 'files/spoofed.pdf']);
+
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}/preview")
+        ->assertOk()->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Disposition', 'inline; filename=preview.pdf')
+        ->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertStreamedContent("%PDF-1.4\nPreview fixture\n%%EOF");
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$png->id}/preview")
+        ->assertOk()->assertHeader('Content-Type', 'image/png')
+        ->assertHeader('Content-Disposition', 'inline; filename=preview.png');
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$docx->id}/preview")
+        ->assertStatus(415);
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$spoofed->id}/preview")
+        ->assertStatus(415);
+    $this->actingAs($other)->getJson("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}/preview")
+        ->assertForbidden();
+    $this->actingAs($owner)->get("/api/v1/itineraries/{$trip->id}/files/{$pdf->id}")
+        ->assertOk()->assertHeader('Content-Disposition', 'attachment; filename=preview.pdf');
+});
+
+it('verifies guest shared access in its session and invalidates it when revoked', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner, 'Shared');
+    $share = $trip->sharedPasswordHistory()->create([
+        'shared_password' => Hash::make('viewer-pass'), 'expires_at' => now()->addDays(7), 'access_version' => 1,
+    ]);
+
+    $this->postJson("/api/v1/itineraries/{$trip->id}/shared-access", ['shared_password' => 'wrong-pass'])
+        ->assertUnprocessable();
+    $this->postJson("/api/v1/itineraries/{$trip->id}/shared-access", ['shared_password' => 'viewer-pass'])
+        ->assertOk()->assertJsonPath('title', 'Shared')->assertJsonPath('permissions.can_edit', false)
+        ->assertJsonPath('packing_items', []);
+    $this->getJson("/api/v1/itineraries/{$trip->id}")->assertOk();
+
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}/viewer-share")->assertOk();
+    expect($share->fresh()->access_version)->toBe(2);
+});
+
+it('lets the owner extend an active viewer share without changing its password', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $share = $trip->sharedPasswordHistory()->create([
+        'shared_password' => Hash::make('viewer-pass'), 'expires_at' => now()->addDays(14), 'access_version' => 3,
+    ]);
+    $this->actingAs($owner)->putJson("/api/v1/itineraries/{$trip->id}/viewer-share", [
+        'expires_at' => now()->addDays(30)->toIso8601String(),
+    ])->assertOk()->assertJsonPath('viewer_share.active', true);
+    expect($share->fresh()->access_version)->toBe(4)
+        ->and(Hash::check('viewer-pass', $share->fresh()->shared_password))->toBeTrue();
+});
+
+it('rate limits repeated failed API shared-password verification', function () {
+    $owner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $trip->sharedPasswordHistory()->create([
+        'shared_password' => Hash::make('viewer-pass'), 'expires_at' => now()->addDays(7),
+    ]);
+    for ($attempt = 1; $attempt <= 4; $attempt++) {
+        $this->postJson("/api/v1/itineraries/{$trip->id}/shared-access", ['shared_password' => 'wrong-pass'])
+            ->assertUnprocessable();
+    }
+    $this->postJson("/api/v1/itineraries/{$trip->id}/shared-access", ['shared_password' => 'wrong-pass'])
+        ->assertTooManyRequests();
+});
+
+it('lets only the owner add or remove itinerary members', function () {
+    $owner = User::factory()->create();
+    $invite = User::factory()->create();
+    $otherOwner = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $otherTrip = createOwnedItinerary($otherOwner);
+    $otherMember = $otherTrip->travelMembers()->create(['user_id' => User::factory()->create()->id, 'role' => 'member']);
+
+    $memberId = $this->actingAs($owner)->postJson("/api/v1/itineraries/{$trip->id}/members", [
+        'email' => $invite->email,
+    ])->assertCreated()->assertJsonPath('member.user.email', $invite->email)->json('member.id');
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}/members/{$memberId}")->assertNoContent();
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}/members/{$otherMember->id}")->assertNotFound();
+    $this->actingAs($invite)->postJson("/api/v1/itineraries/{$trip->id}/members", ['email' => $otherOwner->email])
+        ->assertForbidden();
+});
+
+it('rejects viewer-share expiry beyond 180 days and forbids members from owner actions', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $trip->travelMembers()->create(['user_id' => $member->id, 'role' => 'member']);
+    $this->actingAs($owner)->postJson('/api/v1/itineraries', [
+        'payload' => json_encode(itineraryPayload([
+            'shared_password' => 'viewer-pass',
+            'shared_password_confirmation' => 'viewer-pass',
+            'viewer_share_expires_at' => now()->addDays(181)->toIso8601String(),
+        ])),
+    ])->assertUnprocessable();
+
+    $this->actingAs($member)->putJson("/api/v1/itineraries/{$trip->id}/viewer-share", [
+        'shared_password' => 'new-viewer-pass',
+        'shared_password_confirmation' => 'new-viewer-pass',
+    ])->assertForbidden();
+    $this->actingAs($member)->deleteJson("/api/v1/itineraries/{$trip->id}")->assertForbidden();
+});
+
+it('requires authentication for trip collections and creator-only mutations', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+    $trip = createOwnedItinerary($owner);
+    $this->getJson('/api/v1/itineraries')->assertUnauthorized();
+    $this->actingAs($other)->deleteJson("/api/v1/itineraries/{$trip->id}")->assertForbidden();
+    $this->actingAs($owner)->deleteJson("/api/v1/itineraries/{$trip->id}")->assertNoContent();
+});

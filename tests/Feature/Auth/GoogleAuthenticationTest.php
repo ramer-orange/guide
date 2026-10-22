@@ -68,7 +68,7 @@ test('google callback links a verified legacy user once without creating a dupli
     ]);
 
     $this->get(route('google.callback'))
-        ->assertRedirect(route('itineraries.index', absolute: false));
+        ->assertRedirect('/itineraries/index');
 
     $this->assertAuthenticatedAs($legacyUser->fresh());
     expect(User::count())->toBe(1);
@@ -91,7 +91,7 @@ test('google callback authenticates by immutable provider subject after linking'
     ]);
 
     $this->get(route('google.callback'))
-        ->assertRedirect(route('itineraries.index', absolute: false));
+        ->assertRedirect('/itineraries/index');
 
     $this->assertAuthenticatedAs($user->fresh());
     expect(User::count())->toBe(1);
@@ -104,7 +104,7 @@ test('google callback rejects missing or unverified provider email data', functi
     mockGoogleCallback($attributes, $raw);
 
     $this->get(route('google.callback'))
-        ->assertRedirect(route('home'))
+        ->assertRedirect('/')
         ->assertSessionHas('auth_error');
 
     $this->assertGuest();
@@ -128,7 +128,7 @@ test('google callback rejects an email already linked to another provider subjec
     ]);
 
     $this->get(route('google.callback'))
-        ->assertRedirect(route('home'))
+        ->assertRedirect('/')
         ->assertSessionHas('auth_error');
 
     $this->assertGuest();
@@ -151,7 +151,7 @@ test('google callback rejects when a provider subject changes to another users e
     ]);
 
     $this->get(route('google.callback'))
-        ->assertRedirect(route('home'))
+        ->assertRedirect('/')
         ->assertSessionHas('auth_error');
 
     $this->assertGuest();

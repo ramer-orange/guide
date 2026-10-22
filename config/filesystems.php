@@ -17,6 +17,9 @@ return [
 
     'uploads' => env('FILESYSTEM_UPLOADS_DISK', 'public'),
 
+    // Rows created before per-file disk tracking retain their original disk.
+    'legacy_uploads' => env('FILESYSTEM_LEGACY_UPLOADS_DISK', 'public'),
+
     'temporary_url_ttl' => env('FILESYSTEM_TEMPORARY_URL_TTL', 10),
 
     /*
@@ -59,6 +62,18 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
+        ],
+
+        'r2' => [
+            'driver' => 'r2',
+            'key' => env('R2_ACCESS_KEY_ID'),
+            'secret' => env('R2_SECRET_ACCESS_KEY'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'throw' => true,
+            'visibility' => 'private',
         ],
 
     ],

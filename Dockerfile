@@ -1,20 +1,8 @@
-FROM --platform=$BUILDPLATFORM node:22-alpine AS assets
-
-WORKDIR /var/www/html
-
-COPY package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js ./
-COPY resources ./resources
-COPY public ./public
-
-RUN npm ci \
-    && npm run build
-
 FROM richarvey/nginx-php-fpm:3.1.6
 
 WORKDIR /var/www/html
 
 COPY . .
-COPY --from=assets /var/www/html/public/build ./public/build
 COPY conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf
 COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
 

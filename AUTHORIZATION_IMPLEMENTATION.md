@@ -176,24 +176,21 @@ if (! Gate::allows('update', $overview)) {
 
 編集権限がない場合は、編集フォームではなく閲覧専用画面を表示する。
 
-## Livewire 側の防御
+## API 側の防御
 
 UI 側で編集フォームを隠すだけでは不十分。
 
-そのため、Livewire の保存処理でも `Gate::authorize('update', $overview)` を実行している。
+そのため、更新 API でも `Gate::authorize('update', $itinerary)` を実行している。
 
 ```php
-public function submit()
+public function update(TravelOverview $itinerary)
 {
-    Gate::authorize('update', $this->overview);
-
-    $this->validate();
-
-    // 保存処理
+    Gate::authorize('update', $itinerary);
+    // API 入力を検証し、保存処理を行う
 }
 ```
 
-これにより、閲覧者がブラウザ側から Livewire リクエストを直接送っても保存できない。
+これにより、閲覧者が API を直接呼び出しても保存できない。
 
 ## 閲覧用共有の有効状態
 
