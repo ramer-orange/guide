@@ -70,7 +70,7 @@ jobs: # 実行するジョブの一覧
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build and verify production runtimes
         run: |
           docker build --pull -f Dockerfile.render-next -t guide-security:ci .
@@ -158,7 +158,7 @@ jobs: # 実行するジョブの一覧
         uses: docker/setup-qemu-action@v3
 
       - name: Docker Buildxセットアップ
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: ECRログイン
         uses: aws-actions/amazon-ecr-login@v2
