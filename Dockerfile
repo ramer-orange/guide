@@ -1,25 +1,100 @@
-FROM richarvey/nginx-php-fpm:3.1.6
+FROM node:22.23.4-alpine3.23 AS next-assets
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
+COPY frontend/scripts/check-node-runtime.mjs ./scripts/check-node-runtime.mjs
+RUN npm ci
+
+COPY frontend ./
+
+ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
+RUN npm run build
+
+FROM php:8.3.36-fpm-alpine3.23 AS runtime
+
+ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
+
+ENV APP_ENV=production \
+    APP_DEBUG=false \
+    LOG_CHANNEL=stderr \
+    PORT=80 \
+    NODE_ENV=production \
+    API_INTERNAL_ORIGIN=http://127.0.0.1:80 \
+    NODE_OPTIONS=--enable-source-maps \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
+RUN apk add --no-cache \
+        freetype \
+        icu-libs \
+        libjpeg-turbo \
+        libpng \
+        libpq \
+        libxml2 \
+        libxslt \
+        libzip \
+        nginx \
+        libstdc++ \
+        oniguruma \
+        supervisor \
+    && apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        freetype-dev \
+        icu-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
+        libxml2-dev \
+        libxslt-dev \
+        postgresql-dev \
+        oniguruma-dev \
+        zlib-dev \
+        libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" gd intl mbstring pdo_pgsql pgsql xsl zip \
+    && apk del .build-deps \
+    && addgroup -S next \
+    && adduser -S -G next next \
+    && mkdir -p /run/nginx /run/php /var/log/supervisor /opt/next
+
+COPY --from=next-assets /usr/local/bin/node /usr/local/bin/node
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
 
 COPY . .
-COPY conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+COPY --from=next-assets --chown=next:next /app/.next/standalone /opt/next/
+COPY --from=next-assets --chown=next:next /app/.next/static /opt/next/.next/static
+COPY --from=next-assets --chown=next:next /app/public /opt/next/public
+COPY nginx/render-next.conf /etc/nginx/http.d/render-next.conf
+COPY nginx/render-next-proxy-params.conf /etc/nginx/render-next-proxy-params.conf
+COPY nginx/render-next-forwarded-proto.conf /etc/nginx/http.d/00-render-next-forwarded-proto.conf
+COPY docker/render-next/supervisord.conf /etc/supervisord.conf
+COPY docker/render-next/zzz-render-next.conf /usr/local/etc/php-fpm.d/zzz-render-next.conf
+COPY scripts/render-next/00-start.sh /usr/local/bin/render-next-start
 COPY conf/php/uploads.ini /usr/local/etc/php/conf.d/zzz-uploads.ini
 
-ENV SKIP_COMPOSER=1
-ENV WEBROOT=/var/www/html/public
-ENV PHP_ERRORS_STDERR=1
-ENV RUN_SCRIPTS=0
-ENV REAL_IP_HEADER=1
-ENV APP_ENV=production
-ENV APP_DEBUG=false
-ENV LOG_CHANNEL=stderr
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-RUN php -m | grep -E '^pdo_pgsql$' \
-    && php -m | grep -E '^pgsql$' \
-    && composer install --no-dev --optimize-autoloader
+RUN php scripts/check-php-runtime.php \
+    && node frontend/scripts/check-node-runtime.mjs \
+    && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+    && composer check-platform-reqs --no-dev \
+    && php-fpm -tt \
+    && mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/testing \
+        storage/framework/views \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chown -R next:next /opt/next \
+    && chmod +x /usr/local/bin/render-next-start \
+    && rm -f /etc/nginx/http.d/default.conf
 
 EXPOSE 80
 
-CMD ["/start.sh"]
+CMD ["/usr/local/bin/render-next-start"]

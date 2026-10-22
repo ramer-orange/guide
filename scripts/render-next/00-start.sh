@@ -3,6 +3,11 @@ set -eu
 
 cd /var/www/html
 
+php scripts/check-php-runtime.php
+node frontend/scripts/check-node-runtime.mjs
+php-fpm -v | head -n 1
+
+
 port="${PORT:-10000}"
 case "$port" in
     ''|*[!0-9]*)

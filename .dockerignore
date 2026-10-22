@@ -29,3 +29,5 @@ public/build
 .DS_Store
 npm-debug.log
 yarn-error.log
+
+production.env
