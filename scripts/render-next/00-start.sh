@@ -29,7 +29,11 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
 php artisan storage:link || true
-php artisan migrate --force
+# Render は起動時に migrate する。AWS（ECS）では専用の Migration タスクだけが
+# migrate するため、RUN_MIGRATIONS_ON_START=false で無効にする。
+if [ "${RUN_MIGRATIONS_ON_START:-true}" = "true" ]; then
+    php artisan migrate --force
+fi
 php artisan config:cache
 
 sed -i "s/__PORT__/${port}/g" /etc/nginx/http.d/render-next.conf
