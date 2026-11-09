@@ -1,4 +1,4 @@
-import { test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import * as cdk from 'aws-cdk-lib';
 import { Annotations, Match, Template } from 'aws-cdk-lib/assertions';
 import { GovernanceStack } from '../lib/governance-stack';

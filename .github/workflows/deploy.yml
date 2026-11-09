@@ -90,7 +90,7 @@ jobs: # 実行するジョブの一覧
         run: |
           npm ci
           npx tsc --noEmit
-          npx jest
+          npm test
 
   # mainへのpush時に、ECRへのイメージpush → Migrationタスク → cdk deploy（ECS更新）の順で本番へ反映する。
   # AWS課金停止中のため、リポジトリ変数 AWS_DEPLOY_ENABLED が 'true' のときだけ動く。
