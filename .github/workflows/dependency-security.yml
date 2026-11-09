@@ -26,7 +26,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22.23.4"
-      - run: npm audit --package-lock-only --audit-level=low
+      # Fails on any advisory of low severity or above, except advisories listed
+      # for this directory in npm-audit-allowlist.json (no patched release yet).
+      - run: node "$GITHUB_WORKSPACE/scripts/npm-audit-allowlist.mjs" "${{ matrix.directory }}"
   composer-audit:
     runs-on: ubuntu-latest
     strategy:

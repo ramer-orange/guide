@@ -1,3 +1,4 @@
+import { test } from 'vitest';
 import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { GuideStack } from '../lib/guide-stack';
