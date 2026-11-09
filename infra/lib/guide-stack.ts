@@ -1,16 +1,14 @@
 import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as backup from 'aws-cdk-lib/aws-backup';
 import * as cloudtrail from 'aws-cdk-lib/aws-cloudtrail';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
-import * as config from 'aws-cdk-lib/aws-config';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as events from 'aws-cdk-lib/aws-events';
-import * as eventTargets from 'aws-cdk-lib/aws-events-targets';
-import * as guardduty from 'aws-cdk-lib/aws-guardduty';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as rds from 'aws-cdk-lib/aws-rds';
@@ -20,17 +18,19 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as synthetics from 'aws-cdk-lib/aws-synthetics';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 
 /**
  * docs/aws_architecture_ecs.py を実装した本番向けスタック。
  *
- * 初回はECRが空なので、デフォルトのdesiredCountは0にしている。
- * 1. cdk deploy でECRを含む基盤を作成
- * 2. DockerイメージをECRへpush
+ * 初回だけは ECR が空なので、次の順に手動で実行する（docs/AWS_DEPLOYMENT_DONE.md）。
+ * 1. cdk deploy -c desiredCount=0 で ECR を含む基盤を作成
+ * 2. Docker イメージを ECR へ push
  * 3. cdk deploy -c appImageTag=<commit-sha> -c desiredCount=2
- * の順に実行すると、サービスを2タスクで起動できる。
+ * 以降は GitHub Actions が appImageTag だけを渡してデプロイする。
+ * desiredCount を渡さない場合、CloudFormation は現在のタスク数を変更しない。
  */
 export class GuideStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -38,18 +38,32 @@ export class GuideStack extends cdk.Stack {
 
     // デプロイ設定
     // イメージタグ、起動タスク数、任意機能の有効化をCDK Contextから受け取る。
-    // 初回構築時はECRが空なので、デフォルトのタスク数は0にする。
-    const appImageTag =
-      String(this.node.tryGetContext('appImageTag') ?? 'latest').trim() ||
-      'latest';
-    const desiredCount = this.numberContext('desiredCount', 0, 0, 6);
+    // desiredCount は初回構築（0）や手動での台数変更のときだけ渡す。
+    // 省略時は DesiredCount をテンプレートに出さず、現在の台数と Auto Scaling に任せる。
+    const desiredCount = this.optionalNumberContext('desiredCount', 0, 6);
+    const isBootstrap = desiredCount === 0;
+    // イメージタグは必須。latest のような可変タグに戻ってしまう事故を防ぐ。
+    // 初回構築（desiredCount=0）だけは ECR が空なのでプレースホルダーを許す。
+    const rawImageTag = String(
+      this.node.tryGetContext('appImageTag') ?? '',
+    ).trim();
+    // エラー注釈は GuideStack のデプロイだけを止め、他スタック単体のデプロイは妨げない。
+    if (!rawImageTag && !isBootstrap) {
+      cdk.Annotations.of(this).addError(
+        'CDK context appImageTag is required (e.g. -c appImageTag=<commit-sha>). ' +
+          'Use -c desiredCount=0 only for the first bootstrap deploy.',
+      );
+    }
+    if (rawImageTag === 'latest') {
+      cdk.Annotations.of(this).addError(
+        'appImageTag must be an immutable tag such as a commit SHA',
+      );
+    }
+    const appImageTag = rawImageTag || 'bootstrap';
+    // タスクにはパブリック IP があり外向き通信できるため、Interface Endpoint は既定で作らない。
     const enableInterfaceEndpoints = this.booleanContext(
       'enableInterfaceEndpoints',
-      true,
-    );
-    const enableAccountGovernance = this.booleanContext(
-      'enableAccountGovernance',
-      true,
+      false,
     );
     const githubOwner = String(
       this.node.tryGetContext('githubOwner') ?? 'ramer-orange',
@@ -102,6 +116,13 @@ export class GuideStack extends cdk.Stack {
       },
     );
 
+    const alertEmailParameter = new cdk.CfnParameter(this, 'AlertEmail', {
+      type: 'String',
+      description: 'CloudWatch アラームの通知先メールアドレス（必須）',
+      allowedPattern: '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$',
+      constraintDescription: 'メールアドレスを指定してください',
+    });
+
     const domainName = domainNameParameter.valueAsString;
     const applicationUrl = cdk.Fn.join('', ['https://', domainName]);
 
@@ -150,6 +171,11 @@ export class GuideStack extends cdk.Stack {
       ec2.Port.tcp(443),
       'HTTPS from the Internet over IPv6',
     );
+    albSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(80),
+      'HTTP from the Internet (redirected to HTTPS)',
+    );
 
     const taskSecurityGroup = new ec2.SecurityGroup(
       this,
@@ -197,8 +223,9 @@ export class GuideStack extends cdk.Stack {
     );
 
     // VPC Endpoint
-    // S3はGateway Endpointを使う。ECR、Secrets Manager、CloudWatch Logs、
-    // Parameter Storeは設定が有効な場合にInterface Endpointを経由させる。
+    // S3 は無料の Gateway Endpoint を使う。ECR・Secrets Manager・CloudWatch Logs・
+    // Parameter Store の Interface Endpoint は -c enableInterfaceEndpoints=true のときだけ作る。
+    // （月額費用がかかり、パブリック IP を持つ現構成ではセキュリティ上の効果が小さいため）
     vpc.addGatewayEndpoint('S3GatewayEndpoint', {
       service: ec2.GatewayVpcEndpointAwsService.S3,
       subnets: [{ subnetType: ec2.SubnetType.PUBLIC }],
@@ -260,6 +287,8 @@ export class GuideStack extends cdk.Stack {
       {
         repositoryName: 'guide-production-app',
         imageScanOnPush: true,
+        // 同じタグを上書きできないようにし、コミット SHA とイメージを 1 対 1 に保つ。
+        imageTagMutability: ecr.TagMutability.IMMUTABLE,
         encryption: ecr.RepositoryEncryption.AES_256,
         lifecycleRules: [
           {
@@ -306,9 +335,10 @@ export class GuideStack extends cdk.Stack {
       }),
       credentials: rds.Credentials.fromGeneratedSecret('guide'),
       databaseName: 'guide',
+      // セッション・キャッシュ・キューも DB に置くため、micro（1GB）ではなく small（2GB）にする。
       instanceType: ec2.InstanceType.of(
         ec2.InstanceClass.T4G,
-        ec2.InstanceSize.MICRO,
+        ec2.InstanceSize.SMALL,
       ),
       multiAz: true,
       publiclyAccessible: false,
@@ -319,6 +349,7 @@ export class GuideStack extends cdk.Stack {
       backupRetention: cdk.Duration.days(7),
       deletionProtection: true,
       autoMinorVersionUpgrade: true,
+      enablePerformanceInsights: true,
       cloudwatchLogsExports: ['postgresql'],
       cloudwatchLogsRetention: logs.RetentionDays.ONE_MONTH,
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
@@ -431,6 +462,8 @@ export class GuideStack extends cdk.Stack {
         '/auth/google/callback',
       ]),
       MAIL_MAILER: 'log',
+      // migrate は Migration タスクだけで実行し、Web タスクの起動時には行わない。
+      RUN_MIGRATIONS_ON_START: 'false',
     };
     const commonSecrets: Record<string, ecs.Secret> = {
       APP_NAME: ecs.Secret.fromSsmParameter(appNameParameter),
@@ -455,7 +488,8 @@ export class GuideStack extends cdk.Stack {
 
     // Web Task Definition
     // ALBからHTTPリクエストを受けるLaravelコンテナを定義する。
-    // /upをコンテナのヘルスチェックとして利用する。
+    // /healthz（Next.js → nginx → Laravel の /up）をヘルスチェックに使い、
+    // 画面を返す Next.js と API の Laravel の両方が動いていることを確認する。
     const taskDefinition = new ecs.FargateTaskDefinition(
       this,
       'ApplicationTaskDefinition',
@@ -485,7 +519,7 @@ export class GuideStack extends cdk.Stack {
         healthCheck: {
           command: [
             'CMD-SHELL',
-            'curl --fail --silent http://127.0.0.1/up || exit 1',
+            'curl --fail --silent http://127.0.0.1/healthz || exit 1',
           ],
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(5),
@@ -534,6 +568,7 @@ export class GuideStack extends cdk.Stack {
     // ECS ServiceとApplication Auto Scaling
     // Web Taskの必要数を維持し、障害Taskを自動交換する。
     // 通常運用では最低2タスクとし、CPU・メモリ使用率に応じて最大6まで増減する。
+    // desiredCount 未指定時は DesiredCount を出力せず、デプロイで台数が変わらないようにする。
     const service = new ecs.FargateService(this, 'ApplicationService', {
       cluster,
       serviceName: 'guide-production-web',
@@ -551,7 +586,7 @@ export class GuideStack extends cdk.Stack {
     });
 
     const scalableTarget = service.autoScaleTaskCount({
-      minCapacity: desiredCount === 0 ? 0 : 2,
+      minCapacity: isBootstrap ? 0 : 2,
       maxCapacity: 6,
     });
     scalableTarget.scaleOnCpuUtilization('CpuScaling', {
@@ -582,7 +617,7 @@ export class GuideStack extends cdk.Stack {
 
     // ALBとTarget Group
     // HTTPSを終端して正常なFargate TaskへHTTPで転送する。
-    // 新Taskが/upのヘルスチェックに成功してからリクエストを流す。
+    // 新Taskが/healthzのヘルスチェックに成功してからリクエストを流す。
     const alb = new elbv2.ApplicationLoadBalancer(this, 'Alb', {
       vpc,
       internetFacing: true,
@@ -603,7 +638,7 @@ export class GuideStack extends cdk.Stack {
         targetType: elbv2.TargetType.IP,
         deregistrationDelay: cdk.Duration.seconds(30),
         healthCheck: {
-          path: '/up',
+          path: '/healthz',
           healthyHttpCodes: '200',
           interval: cdk.Duration.seconds(30),
           timeout: cdk.Duration.seconds(5),
@@ -620,6 +655,18 @@ export class GuideStack extends cdk.Stack {
       certificates: [certificate],
       sslPolicy: elbv2.SslPolicy.RECOMMENDED_TLS,
       defaultTargetGroups: [targetGroup],
+    });
+
+    // HTTP（80番）は HTTPS へ 301 リダイレクトする。
+    alb.addListener('HttpRedirectListener', {
+      port: 80,
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      open: false,
+      defaultAction: elbv2.ListenerAction.redirect({
+        protocol: 'HTTPS',
+        port: '443',
+        permanent: true,
+      }),
     });
 
     // Route 53 Alias Record
@@ -683,8 +730,24 @@ export class GuideStack extends cdk.Stack {
           },
         },
         {
-          name: 'IpRateLimit',
+          name: 'AWSManagedRulesSQLiRuleSet',
           priority: 2,
+          overrideAction: { none: {} },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: 'AWS',
+              name: 'AWSManagedRulesSQLiRuleSet',
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'guide-sqli-rules',
+            sampledRequestsEnabled: true,
+          },
+        },
+        {
+          name: 'IpRateLimit',
+          priority: 3,
           action: { block: {} },
           statement: {
             rateBasedStatement: {
@@ -705,18 +768,46 @@ export class GuideStack extends cdk.Stack {
       webAclArn: webAcl.attrArn,
     });
 
+    // WAF ログ
+    // 誤検知の調査用に、遮断・許可の判定を CloudWatch Logs に残す。
+    // Cookie と Authorization ヘッダーはログに残さない。
+    const wafLogGroupName = 'aws-waf-logs-guide-production';
+    const wafLogGroup = new logs.LogGroup(this, 'WafLogGroup', {
+      logGroupName: wafLogGroupName,
+      retention: logs.RetentionDays.THREE_MONTHS,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    const wafLogging = new wafv2.CfnLoggingConfiguration(
+      this,
+      'AlbWebAclLogging',
+      {
+        resourceArn: webAcl.attrArn,
+        // WAF は末尾に :* が付かない Log Group ARN だけを受け付ける。
+        logDestinationConfigs: [
+          this.formatArn({
+            service: 'logs',
+            resource: 'log-group',
+            resourceName: wafLogGroupName,
+            arnFormat: cdk.ArnFormat.COLON_RESOURCE_NAME,
+          }),
+        ],
+        redactedFields: [
+          { singleHeader: { Name: 'cookie' } },
+          { singleHeader: { Name: 'authorization' } },
+        ],
+      },
+    );
+    wafLogging.node.addDependency(wafLogGroup);
+
     // CloudWatch監視とSNS通知
     // ECS・ALB・RDSの主要メトリクスを監視し、閾値超過時にSNSへ通知する。
     const alertTopic = new sns.Topic(this, 'OperationsTopic', {
       topicName: 'guide-production-operations',
       displayName: 'Guide production operations',
     });
-    const alertEmail = this.node.tryGetContext('alertEmail');
-    if (alertEmail) {
-      alertTopic.addSubscription(
-        new subscriptions.EmailSubscription(String(alertEmail)),
-      );
-    }
+    alertTopic.addSubscription(
+      new subscriptions.EmailSubscription(alertEmailParameter.valueAsString),
+    );
 
     const alarmAction = new cloudwatchActions.SnsAction(alertTopic);
     service
@@ -753,6 +844,169 @@ export class GuideStack extends cdk.Stack {
       })
       .addAlarmAction(alarmAction);
 
+    // 全タスク停止などで ALB 自身が 502/503/504 を返している。
+    alb.metrics
+      .httpCodeElb(elbv2.HttpCodeElb.ELB_5XX_COUNT, {
+        period: cdk.Duration.minutes(1),
+        statistic: 'Sum',
+      })
+      .createAlarm(this, 'Elb5xxAlarm', {
+        alarmName: 'guide-production-elb-5xx',
+        threshold: 5,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+
+    // 正常なタスクが 1 つも無い。データが来ない場合も障害として扱う。
+    targetGroup.metrics
+      .healthyHostCount({
+        period: cdk.Duration.minutes(1),
+        statistic: 'Minimum',
+      })
+      .createAlarm(this, 'NoHealthyTargetsAlarm', {
+        alarmName: 'guide-production-no-healthy-targets',
+        threshold: 1,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+
+    // RDS の容量・メモリ・接続数・CPU クレジット
+    database
+      .metricFreeStorageSpace({ period: cdk.Duration.minutes(5) })
+      .createAlarm(this, 'LowDatabaseStorageAlarm', {
+        alarmName: 'guide-production-low-database-storage',
+        threshold: 2 * 1024 ** 3,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+    database
+      .metricFreeableMemory({ period: cdk.Duration.minutes(5) })
+      .createAlarm(this, 'LowDatabaseMemoryAlarm', {
+        alarmName: 'guide-production-low-database-memory',
+        threshold: 128 * 1024 ** 2,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        evaluationPeriods: 3,
+        datapointsToAlarm: 3,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+    database
+      .metricDatabaseConnections({ period: cdk.Duration.minutes(5) })
+      .createAlarm(this, 'HighDatabaseConnectionsAlarm', {
+        alarmName: 'guide-production-high-database-connections',
+        // db.t4g.small の max_connections は約 200。
+        threshold: 160,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+    database
+      .metric('CPUCreditBalance', {
+        period: cdk.Duration.minutes(5),
+        statistic: 'Minimum',
+      })
+      .createAlarm(this, 'LowDatabaseCpuCreditAlarm', {
+        alarmName: 'guide-production-low-database-cpu-credit',
+        threshold: 30,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+
+    // 外形監視
+    // AWS の外から本番 URL の /healthz を 5 分ごとに確認する。
+    // DNS・証明書・WAF・ALB・アプリのどこで壊れても検知できる。
+    const healthCanary = new synthetics.Canary(this, 'HealthCanary', {
+      canaryName: 'guide-prod-health',
+      runtime: synthetics.Runtime.SYNTHETICS_NODEJS_PUPPETEER_9_1,
+      schedule: synthetics.Schedule.rate(cdk.Duration.minutes(5)),
+      test: synthetics.Test.custom({
+        handler: 'index.handler',
+        code: synthetics.Code.fromInline(`
+const https = require('https');
+exports.handler = async () => {
+  const url = process.env.TARGET_URL;
+  await new Promise((resolve, reject) => {
+    const request = https.get(url, (response) => {
+      response.resume();
+      if (response.statusCode === 200) {
+        resolve();
+      } else {
+        reject(new Error(url + ' returned ' + response.statusCode));
+      }
+    });
+    request.setTimeout(10000, () => request.destroy(new Error('timeout')));
+    request.on('error', reject);
+  });
+};
+`),
+      }),
+      environmentVariables: {
+        TARGET_URL: cdk.Fn.join('', [applicationUrl, '/healthz']),
+      },
+      artifactsBucketLifecycleRules: [
+        { expiration: cdk.Duration.days(30) },
+      ],
+    });
+    healthCanary
+      .metricSuccessPercent({ period: cdk.Duration.minutes(5) })
+      .createAlarm(this, 'HealthCanaryAlarm', {
+        alarmName: 'guide-production-health-check-failed',
+        threshold: 100,
+        comparisonOperator: cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+        evaluationPeriods: 2,
+        datapointsToAlarm: 2,
+        treatMissingData: cloudwatch.TreatMissingData.BREACHING,
+      })
+      .addAlarmAction(alarmAction);
+
+    // すべてのアラームで、復旧したときも通知する。
+    for (const construct of this.node.findAll()) {
+      if (construct instanceof cloudwatch.Alarm) {
+        construct.addOkAction(alarmAction);
+      }
+    }
+
+    // AWS Backup
+    // RDS 自動バックアップ（7 日）に加えて、日次 35 日・月次 1 年の長期保管を行う。
+    const backupVault = new backup.BackupVault(this, 'BackupVault', {
+      backupVaultName: 'guide-production',
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    const backupPlan = new backup.BackupPlan(this, 'BackupPlan', {
+      backupPlanName: 'guide-production',
+      backupVault,
+      backupPlanRules: [
+        new backup.BackupPlanRule({
+          ruleName: 'Daily',
+          scheduleExpression: events.Schedule.cron({ hour: '18', minute: '0' }),
+          deleteAfter: cdk.Duration.days(35),
+        }),
+        new backup.BackupPlanRule({
+          ruleName: 'Monthly',
+          scheduleExpression: events.Schedule.cron({
+            day: '1',
+            hour: '18',
+            minute: '30',
+          }),
+          deleteAfter: cdk.Duration.days(365),
+        }),
+      ],
+    });
+    backupPlan.addSelection('Database', {
+      resources: [backup.BackupResource.fromRdsDatabaseInstance(database)],
+    });
+
     // CloudTrail
     // AWS APIの操作履歴をCloudWatch Logsと監査用S3へ保存する。
     const trailLogGroup = new logs.LogGroup(this, 'CloudTrailLogGroup', {
@@ -769,81 +1023,6 @@ export class GuideStack extends cdk.Stack {
       includeGlobalServiceEvents: true,
       managementEvents: cloudtrail.ReadWriteType.ALL,
     });
-
-    // GuardDutyとAWS Config
-    // アカウント単位の脅威検知と構成変更監査を有効にし、
-    // 重要なFindingや非準拠への変化をSNSへ通知する。
-    if (enableAccountGovernance) {
-      const guardDutyDetector = new guardduty.CfnDetector(
-        this,
-        'GuardDutyDetector',
-        {
-          enable: true,
-          findingPublishingFrequency: 'FIFTEEN_MINUTES',
-        },
-      );
-
-      new events.Rule(this, 'GuardDutyFindingsRule', {
-        description: 'Notify operations about GuardDuty findings',
-        eventPattern: {
-          source: ['aws.guardduty'],
-          detailType: ['GuardDuty Finding'],
-          detail: {
-            detectorId: [guardDutyDetector.ref],
-            severity: [{ numeric: ['>=', 4] }],
-          },
-        },
-        targets: [new eventTargets.SnsTopic(alertTopic)],
-      });
-
-      const configRole = new iam.Role(this, 'ConfigRecorderRole', {
-        assumedBy: new iam.ServicePrincipal('config.amazonaws.com'),
-        managedPolicies: [
-          iam.ManagedPolicy.fromAwsManagedPolicyName(
-            'service-role/AWS_ConfigRole',
-          ),
-        ],
-      });
-      auditBucket.grantReadWrite(configRole);
-      alertTopic.grantPublish(configRole);
-
-      const recorder = new config.CfnConfigurationRecorder(
-        this,
-        'ConfigurationRecorder',
-        {
-          name: 'guide-production',
-          roleArn: configRole.roleArn,
-          recordingGroup: {
-            allSupported: true,
-            includeGlobalResourceTypes: true,
-          },
-        },
-      );
-      const deliveryChannel = new config.CfnDeliveryChannel(
-        this,
-        'ConfigDeliveryChannel',
-        {
-          name: 'guide-production',
-          s3BucketName: auditBucket.bucketName,
-          s3KeyPrefix: 'config',
-          snsTopicArn: alertTopic.topicArn,
-          configSnapshotDeliveryProperties: {
-            deliveryFrequency: 'TwentyFour_Hours',
-          },
-        },
-      );
-      deliveryChannel.addDependency(recorder);
-
-      new events.Rule(this, 'ConfigComplianceRule', {
-        description: 'Notify operations about AWS Config compliance changes',
-        eventPattern: {
-          source: ['aws.config'],
-          detailType: ['Config Rules Compliance Change'],
-          detail: { newEvaluationResult: { complianceType: ['NON_COMPLIANT'] } },
-        },
-        targets: [new eventTargets.SnsTopic(alertTopic)],
-      });
-    }
 
     // GitHub Actions OIDC
     // 長期Access Keyを保存せず、mainブランチとタグから一時認証する。
@@ -882,6 +1061,34 @@ export class GuideStack extends cdk.Stack {
       ),
     });
     applicationRepository.grantPullPush(githubActionsRole);
+    githubActionsRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:DescribeImages'],
+        resources: [applicationRepository.repositoryArn],
+      }),
+    );
+    // CDK のデプロイは cdk bootstrap が作った Role を引き受けて行う。
+    githubActionsRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['sts:AssumeRole'],
+        resources: [
+          this.formatArn({
+            service: 'iam',
+            region: '',
+            resource: 'role',
+            resourceName: 'cdk-*',
+          }),
+        ],
+      }),
+    );
+    githubActionsRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ['cloudformation:DescribeStacks'],
+        resources: [this.stackId],
+      }),
+    );
+    // Migration タスクのログを CI に表示する。
+    migrationLogGroup.grantRead(githubActionsRole);
     githubActionsRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ['ecs:DescribeServices', 'ecs:UpdateService'],
@@ -960,6 +1167,9 @@ export class GuideStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'MigrationTaskDefinitionArn', {
       value: migrationTaskDefinition.taskDefinitionArn,
     });
+    new cdk.CfnOutput(this, 'MigrationLogGroupName', {
+      value: migrationLogGroup.logGroupName,
+    });
     new cdk.CfnOutput(this, 'PublicSubnetIds', {
       value: publicSubnetIds,
       description: 'Migration Task実行時に指定するPublic Subnet IDs',
@@ -993,14 +1203,16 @@ export class GuideStack extends cdk.Stack {
     });
   }
 
-  private numberContext(
+  private optionalNumberContext(
     name: string,
-    defaultValue: number,
     minimum: number,
     maximum: number,
-  ): number {
+  ): number | undefined {
     const rawValue = this.node.tryGetContext(name);
-    const value = rawValue === undefined ? defaultValue : Number(rawValue);
+    if (rawValue === undefined) {
+      return undefined;
+    }
+    const value = Number(rawValue);
     if (!Number.isInteger(value) || value < minimum || value > maximum) {
       throw new Error(
         `CDK context ${name} must be an integer between ${minimum} and ${maximum}`,
