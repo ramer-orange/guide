@@ -25,5 +25,5 @@ Recheck when `aws-cdk-lib` bundles `minimatch` ≥11.0.1: update `aws-cdk-lib`, 
 - `frontend`: `npm audit --package-lock-only --audit-level=low` reports zero vulnerabilities. `test` (6 tests), `typecheck`, `lint` and `build` passed.
 - `.`: `composer audit --locked --no-interaction --abandoned=report` reports no advisories. `php artisan test`: 67 passed.
 - `.` npm: `npm audit --package-lock-only --audit-level=low` reports zero vulnerabilities.
-- `infra` npm: only the bundled `minimatch` advisory above remains. `npx tsc --noEmit` passed. `npx vitest run` has one failing test, the existing paused-infrastructure test (expected 0 VPCs, found 1), which ramer-orange/guide#192 fixes. With #192's changes applied, both tests pass under Vitest.
+- `infra` npm: only the bundled `minimatch` advisory above remains. `npx tsc --noEmit` passed. `npx vitest run`: both tests pass, including the paused-infrastructure test fixed by ramer-orange/guide#192.
 - Local PHP was 8.3.6, which `scripts/check-php-runtime.php` rejects, so `composer update/install` ran with `--no-scripts`. CI uses PHP 8.4.27.
