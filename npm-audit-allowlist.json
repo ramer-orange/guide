@@ -1,0 +1,7 @@
+[
+  {
+    "advisory": "GHSA-g3hv-75wg-m249",
+    "directories": ["infra"],
+    "reason": "minimatch bundled inside aws-cdk-lib; no aws-cdk-lib release bundles a fixed version yet. Build/deploy-time only. See docs/security-dependencies-2026-11-09.md."
+  }
+]
