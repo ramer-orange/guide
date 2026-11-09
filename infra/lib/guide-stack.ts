@@ -36,6 +36,17 @@ export class GuideStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // AWS課金停止中は既定でリソースを作らない（docs/archived-infra/README.md）。
+    // 再開時は -c pauseInfrastructure=false を指定する。
+    if (this.booleanContext('pauseInfrastructure', true)) {
+      new cdk.CfnOutput(this, 'InfrastructureStatus', {
+        value: 'paused',
+        description:
+          'AWS infrastructure is intentionally paused to avoid running costs.',
+      });
+      return;
+    }
+
     // デプロイ設定
     // イメージタグ、起動タスク数、任意機能の有効化をCDK Contextから受け取る。
     // 初回構築時はECRが空なので、デフォルトのタスク数は0にする。

@@ -6,6 +6,9 @@ The last active CDK implementation is saved in:
 
 - `docs/archived-infra/guide-stack-active-2026-07-13.ts`
 
+The current `infra/lib/guide-stack.ts` synthesizes no resources unless deployed
+with `-c pauseInfrastructure=false`, which enables the ECS Fargate stack.
+
 To resume the previous architecture, review the retained AWS resources first,
 then copy the archived stack implementation back to `infra/lib/guide-stack.ts`
 and set `AWS_DEPLOY_PAUSED` in `.github/workflows/deploy.yml` to `false`.
