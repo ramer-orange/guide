@@ -26,9 +26,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22.23.4"
-      # 修正版がまだ無い既知の脆弱性だけを .github/npm-audit-allowlist.json（期限付き）で許可する。
-      # それ以外は low 以上をすべて失敗にする。
-      - run: node "$GITHUB_WORKSPACE/scripts/npm-audit-check.mjs"
+      - run: npm audit --package-lock-only --audit-level=low
   composer-audit:
     runs-on: ubuntu-latest
     strategy:

@@ -53,7 +53,6 @@ jobs: # 実行するジョブの一覧
           php scripts/check-php-runtime.php
           node frontend/scripts/check-node-runtime.mjs
           node --test frontend/scripts/check-node-runtime.test.mjs
-          node --test scripts/npm-audit-check.test.mjs
           composer install --no-interaction --prefer-dist
           npm ci --prefix frontend
           npm --prefix frontend run test
