@@ -23,7 +23,7 @@
 | 層 | 通知する | 通知しない |
 |---|---|---|
 | Laravel | `error` 以上のログ（未捕捉例外、`report()`、明示的な `Log::error` 以上） | `warning` 以下、404、バリデーションエラー（422） |
-| AWS | 既存 CloudWatch アラーム9種の ALARM 遷移、および可用性系3種の OK 復帰 | WAF のブロック個別イベント、CloudTrail |
+| AWS | 既存 CloudWatch アラーム10種の ALARM 遷移と OK 復帰（`guide-stack.ts` の既存ループが全アラームに OK アクションを付けている） | WAF のブロック個別イベント、CloudTrail |
 | GitHub Actions | `push` イベントでの `validate` / `runtime-image` / `infra-test` / `deploy` のいずれかの失敗 | `pull_request` の失敗（PR画面で見えるため） |
 | Next.js | `onRequestError` が受け取るサーバー側エラー | クライアント側の `error.tsx` 到達（ブラウザからの直接送信はしない） |
 
@@ -449,18 +449,16 @@ test('enableSlackAlerts で SNS を購読する Lambda と NoEcho パラメー�
   ).toHaveLength(1);
 });
 
-test('可用性アラームは復旧時も通知する', () => {
+test('すべてのアラームが復旧時も通知する', () => {
   const template = makeTemplate();
 
-  for (const alarmName of [
-    'guide-production-no-healthy-targets',
-    'guide-production-elb-5xx',
-    'guide-production-target-5xx',
-  ]) {
-    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
-      AlarmName: alarmName,
-      OKActions: Match.anyValue(),
-    });
+  // 既存の this.node.findAll() ループが全 Alarm に OK アクションを付けている。
+  // Slack 通知を足したあともこの性質が保たれることの回帰ガード。
+  const alarms = template.findResources('AWS::CloudWatch::Alarm');
+  expect(Object.keys(alarms)).toHaveLength(10);
+  for (const [id, alarm] of Object.entries(alarms)) {
+    expect(alarm.Properties.OKActions, id).toBeDefined();
+    expect(alarm.Properties.AlarmActions, id).toBeDefined();
   }
 });
 
@@ -487,7 +485,7 @@ Expected: 新規4件が FAIL
 
 - [ ] **Step 7: `infra/lib/guide-stack.ts` を変更する**
 
-4点を加える。(a) `import * as lambda from 'aws-cdk-lib/aws-lambda';` を追加し、`enableSlackAlerts` を `this.node.tryGetContext('enableSlackAlerts') === true || this.node.tryGetContext('enableSlackAlerts') === 'true'` で読む。真のとき `SlackWebhookUrl`（`noEcho: true`、`allowedPattern: '^https://hooks\\.slack\\.com/services/.+$'`）を作り、`lambda.Function`（`runtime: lambda.Runtime.NODEJS_22_X`、`handler: 'index.handler'`、`code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/slack-alarm-notifier'))`、`timeout: cdk.Duration.seconds(10)`、`memorySize: 128`、`logRetention` は既存ログの保持期間に合わせる、環境変数 `SLACK_WEBHOOK_URL`）を作り、`alertTopic.addSubscription(new subscriptions.LambdaSubscription(fn))` を呼ぶ。(b) `HighTaskCpuAlarm` 以降のうち `NoHealthyTargetsAlarm` / `Elb5xxAlarm` / `Target5xxAlarm` の3つに `.addOkAction(alarmAction)` を足す。(c) ECS のコンテナ環境変数に `LOG_STACK: 'stderr,slack'` と `LOG_SLACK_LEVEL: 'error'` を足し、`enableSlackAlerts` が真のときだけ `LOG_SLACK_WEBHOOK_URL` を `ecs.Secret.fromSecretsManager(slackWebhookSecret)` で渡す（`slackWebhookSecret` は `SlackWebhookUrl` パラメータから `cdk.SecretValue.cfnParameter` で作る）。(d) `enableSlackAlerts` が真のとき `CfnOutput` `SlackNotifierFunctionName` を出力する。
+4点を加える。(a) `import * as lambda from 'aws-cdk-lib/aws-lambda';` を追加し、`enableSlackAlerts` を `this.node.tryGetContext('enableSlackAlerts') === true || this.node.tryGetContext('enableSlackAlerts') === 'true'` で読む。真のとき `SlackWebhookUrl`（`noEcho: true`、`allowedPattern: '^https://hooks\\.slack\\.com/services/.+$'`）を作り、`lambda.Function`（`runtime: lambda.Runtime.NODEJS_22_X`、`handler: 'index.handler'`、`code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/slack-alarm-notifier'))`、`timeout: cdk.Duration.seconds(10)`、`memorySize: 128`、ログは非推奨の `logRetention` ではなく明示的な `logs.LogGroup` を作って `logGroup` に渡す、環境変数 `SLACK_WEBHOOK_URL`）を作り、`alertTopic.addSubscription(new subscriptions.LambdaSubscription(fn))` を呼ぶ。(b) 復旧通知のための変更は**不要**。`infra/lib/guide-stack.ts:973-978` に `this.node.findAll()` で全 `cloudwatch.Alarm` に `addOkAction(alarmAction)` を付けるループが既にあるため、`addOkAction` の行を新たに書かないこと。Slack の Lambda は同じ SNS Topic を購読するので、これだけで全アラームの復旧通知が Slack にも届く。(c) ECS のコンテナ環境変数に `LOG_STACK: 'stderr,slack'` と `LOG_SLACK_LEVEL: 'error'` を足し、`enableSlackAlerts` が真のときだけ `LOG_SLACK_WEBHOOK_URL` を `ecs.Secret.fromSecretsManager(slackWebhookSecret)` で渡す（`slackWebhookSecret` は `SlackWebhookUrl` パラメータから `cdk.SecretValue.cfnParameter` で作る）。(d) `enableSlackAlerts` が真のとき `CfnOutput` `SlackNotifierFunctionName` を出力する。
 
 - [ ] **Step 8: テスト・型チェックを実行する**
 
