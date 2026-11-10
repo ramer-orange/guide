@@ -57,7 +57,8 @@ npx cdk deploy GuideStack \
 ```
 
 Slack へも通知する場合は、`-c enableSlackAlerts=true` と `--parameters GuideStack:SlackWebhookUrl=<Webhook URL>` を足した次のコマンドを使います（省略すると Slack 関連のリソースは作られません）。
-`-c enableSlackAlerts=true` は以降の `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 通知が外れます。
+`-c enableSlackAlerts=true` は以降の**手動の** `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 関連のリソースが削除され、Slack 通知が外れます。
+GitHub Actions からの自動デプロイは、リポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` としてそのまま渡します（未設定なら `false`）。Slack を有効にしたら、この変数も `true` に設定してください。設定しないと、次に自動デプロイが走ったとき（`main` への push で `AWS_DEPLOY_ENABLED` が `true` のとき）に Slack 関連のリソースが削除されます。
 
 ```bash
 npx cdk deploy GuideStack \
@@ -110,6 +111,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 
 1. Output `GitHubActionsRoleArn` を GitHub の Secret `AWS_ROLE_TO_ASSUME` に登録
 2. リポジトリ変数 `AWS_DEPLOY_ENABLED` を `true` に設定
+3. Slack 通知を有効にしている場合は、リポジトリ変数 `SLACK_ALERTS_ENABLED` も `true` に設定（自動デプロイが `-c enableSlackAlerts` を引き継ぐため）
 
 ## 通常デプロイ（自動）
 

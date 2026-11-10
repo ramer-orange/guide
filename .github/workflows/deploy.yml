@@ -243,13 +243,16 @@ jobs: # 実行するジョブの一覧
           cache-dependency-path: infra/package-lock.json
 
       # イメージタグだけを渡す。desiredCountを渡さないので、稼働中のタスク数は変わらない。
-      # CloudFormation Parameterは前回の値を引き継ぐ。
+      # CloudFormation Parameterは前回の値を引き継ぐ（SlackWebhookUrlも同じ）。
+      # enableSlackAlertsは合成時に効くcontextなので、付けずにデプロイするとSlack関連のリソースが削除される。
+      # 手動で有効化した状態を維持するため、リポジトリ変数 SLACK_ALERTS_ENABLED の値をそのまま引き継ぐ。
       - name: CDKデプロイ（ECS Serviceの更新）
         working-directory: infra
         run: |
           npm ci
           npx cdk deploy "$STACK_NAME" \
             -c "appImageTag=${IMAGE_TAG}" \
+            -c "enableSlackAlerts=${{ vars.SLACK_ALERTS_ENABLED || 'false' }}" \
             --require-approval never
 
       - name: 本番の疎通確認
@@ -259,3 +262,45 @@ jobs: # 実行するジョブの一覧
           curl --fail --silent --show-error \
             --retry 10 --retry-delay 10 --retry-all-errors \
             "${APPLICATION_URL}/healthz"
+
+  # pushでいずれかのジョブが失敗したときだけSlackへ通知する。報告専用で、ワークフローの成否は変えない。
+  # deployはmain以外ではスキップされるため、always() と contains(needs.*.result, 'failure') の
+  # 組み合わせでスキップを失敗扱いしない。pull_requestの失敗はPR画面で見えるので通知しない。
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [validate, runtime-image, infra-test, deploy]
+    if: ${{ always() && github.event_name == 'push' && contains(needs.*.result, 'failure') }}
+    steps:
+      - name: Slackへ失敗を通知
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          REF_NAME: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # シークレットが未登録のあいだは何もせず正常終了する（通知の有無でCIを落とさない）。
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "シークレット SLACK_WEBHOOK_URL が未登録のため、Slack通知を省略します"
+            exit 0
+          fi
+
+          failed_jobs=$(printf '%s' "$NEEDS_JSON" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure") | .key)
+            | join(", ")')
+
+          payload=$(jq -n \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg jobs "$failed_jobs" \
+            --arg ref "$REF_NAME" \
+            --arg actor "$ACTOR" \
+            --arg url "$RUN_URL" \
+            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\n実行者: \($actor)\n実行ログ: \($url)"}')
+
+          curl --fail --silent --show-error --max-time 5 \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            "$SLACK_WEBHOOK_URL"

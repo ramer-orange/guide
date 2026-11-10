@@ -5,7 +5,7 @@
 | 経路 | 送信元 | 設定先 | 有効になる条件 |
 | --- | --- | --- | --- |
 | Laravel | アプリの `error` 以上のログ（`slack` ログチャンネル） | Renderの環境変数 / ECSはCDKスタック | `LOG_STACK` に `slack` が含まれ、`LOG_SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
-| AWS | CloudWatchアラーム → SNS → Slack | `cdk deploy` のcontextとパラメータ | `-c enableSlackAlerts=true` でデプロイ済み（AWS本番は課金停止中） |
+| AWS | CloudWatchアラーム → SNS → Slack | `cdk deploy` のcontextとパラメータ | `-c enableSlackAlerts=true` でデプロイ済み（自動デプロイで維持するにはリポジトリ変数 `SLACK_ALERTS_ENABLED` も `true`。AWS本番は課金停止中） |
 | GitHub Actions | CIワークフローの失敗 | リポジトリシークレット | シークレット `SLACK_WEBHOOK_URL` が登録されている |
 | Next.js | サーバー側の `onRequestError` | Renderの環境変数 / ECSはCDKスタック | 環境変数 `SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
 
@@ -55,6 +55,8 @@ npx cdk deploy GuideStack \
 
 Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか、履歴へ残らない方法で渡してください。
 
+`enableSlackAlerts` は合成時に効くCDK contextなので、付けずに `cdk deploy` するとSlack関連のリソースが削除されます。`main` への push で走る自動デプロイはリポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` として渡すため（未設定なら `false`）、手動で有効にしたあとはこの変数も `true` にしてください。`SlackWebhookUrl` パラメータは `--parameters` を渡さなければCloudFormationが前回値を引き継ぐので、ワークフローからは渡していません。
+
 このECS側の配線はCDKの変更として本ブランチで入ります。あわせて、AWSへのデプロイ自体はリポジトリ変数 `AWS_DEPLOY_ENABLED` が `true` になるまで動かないため（`.github/workflows/deploy.yml`）、AWS経路は今日の時点では設定が用意されているだけで稼働していません。
 
 ### GitHub Actions
@@ -87,7 +89,7 @@ Slackへの送信失敗はアプリの処理へ伝播しません。通知の送
 | 経路 | 止め方 |
 | --- | --- |
 | Laravel（Render） | 環境変数 `LOG_STACK` から `slack` を外す（`stderr` だけにする）。`LOG_SLACK_WEBHOOK_URL` を空にしても止まる。 |
-| AWS（CloudWatch・ECSのLaravel/Next.js） | `-c enableSlackAlerts=false` を付けて `cdk deploy` し直す。Webhookのシークレットがタスク定義へ付かなくなる。 |
+| AWS（CloudWatch・ECSのLaravel/Next.js） | `-c enableSlackAlerts=false` を付けて `cdk deploy` し直す。Webhookのシークレットがタスク定義へ付かなくなる。あわせてリポジトリ変数 `SLACK_ALERTS_ENABLED` も `false` にする（または削除する）。`true` のままだと、次の自動デプロイが `SlackWebhookUrl` パラメータの値を持たないまま作り直そうとして失敗する。 |
 | GitHub Actions | リポジトリシークレット `SLACK_WEBHOOK_URL` を削除する。 |
 | Next.js（Render） | 環境変数 `SLACK_WEBHOOK_URL` を空にする、または削除する。 |
 
