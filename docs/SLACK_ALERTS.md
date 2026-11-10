@@ -74,6 +74,19 @@ Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか
 
 通知量を抑えるため、利用者の操作ミスで日常的に起きるもの（404、入力エラー）と、PR画面やGitHub上で確認できるものは送りません。
 
+### Laravel経路でSlackへ載る内容
+
+Slackへ送るのは、ログレベルとメッセージ本文だけです。例外の `context` と `extra` は送りません（`SlackWebhookHandler` の `includeContextAndExtra` を `false` にしている）。
+
+ただし `context` を送らないだけでは不十分なので、メッセージ本文も `App\Logging\SlackMessageSanitizer` で次のように加工しています。
+
+- 末尾の `(Connection: ..., Host: ..., Database: ..., SQL: ...)` を落として `(SQL詳細はログ参照)` に置き換える。`Illuminate\Database\QueryException` は例外メッセージ自体にこの部分を組み立てるため、何もしないと**バインド済みの値を含むSQL全文**と接続先（ホスト・ポート・DB名）がSlackへ流れます。たとえば `select * from password_reset_tokens where token = ?` がタイムアウトすると、実際のトークン値がチャンネルに出ます。
+- 残った本文を300文字で切る（超えた分は `…（以下省略）`）。
+
+この加工は `{placeholder}` の展開（`PsrLogMessageProcessor`）の**後**に走るので、`Log::error('クエリ失敗: {reason}', ['reason' => $e->getMessage()])` のように開発者が本文へ埋め込んだ値も対象になります。
+
+したがってSlackの通知は「どのレベルのエラーが、どんな文面で起きたか」までで、SQL・バインド値・接続先・スタックトレースは含みません。調査にはstderr（Renderのログ、CloudWatch Logs）の本体を使ってください。なお、ここで守れるのは例外メッセージの定型部分だけです。開発者が `Log::error()` の本文に個人情報やトークンを直接書けばそれはSlackへ送られます（300文字以内なら）。本文に機密値を書かない運用は変わらず必要です。
+
 CloudWatchアラームは10種すべてに復旧時の通知（OKアクション）が付いているため（`infra/lib/guide-stack.ts` の `addOkAction` ループ）、Slackへ送るLambdaにも障害発生と復旧の両方が届きます。これはSNSのメール通知と同じ条件で、既存の宛先や閾値は変えていません。
 
 ## 4. 重複抑制と既知の挙動

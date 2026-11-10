@@ -82,6 +82,8 @@ return [
             'username' => env('LOG_SLACK_USERNAME', 'Laravel Log'),
             'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
             'level' => env('LOG_SLACK_LEVEL', 'error'),
+            // プロセス間の重複抑制を記録するファイル。未設定なら storage/logs/slack-dedup.log。
+            'dedup_store' => env('LOG_SLACK_DEDUP_STORE'),
             'replace_placeholders' => true,
         ],
 
