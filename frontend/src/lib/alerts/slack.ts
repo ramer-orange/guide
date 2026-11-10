@@ -11,13 +11,20 @@ export type SlackAlert = {
 /** 詳細の最大文字数。スタックトレース全文や巨大な出力を送らないために切る。 */
 const DETAIL_MAX_LENGTH = 2000;
 
+/**
+ * context の値 1 件あたりの最大文字数。
+ * この関数は公開ライブラリなので、呼び出し側が長い値を渡しても
+ * 本文が無制限に膨らまないようにここで切る。
+ */
+const CONTEXT_VALUE_MAX_LENGTH = 200;
+
 /** Webhook への送信を打ち切るまでの時間（ミリ秒）。 */
 const TIMEOUT_MS = 5000;
 
 function buildText(alert: SlackAlert): string {
     const lines = [alert.title, alert.detail.slice(0, DETAIL_MAX_LENGTH)];
     for (const [key, value] of Object.entries(alert.context ?? {})) {
-        lines.push(`${key}: ${value}`);
+        lines.push(`${key}: ${value.slice(0, CONTEXT_VALUE_MAX_LENGTH)}`);
     }
     return lines.join("\n");
 }

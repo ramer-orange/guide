@@ -50,6 +50,21 @@ describe("notifySlack", () => {
         expect(String(init?.body)).toContain("GET");
     });
 
+    test("context の値は 200 文字で切る", async () => {
+        process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/T/B/x";
+
+        await notifySlack({
+            title: "エラー",
+            detail: "boom",
+            context: { path: "b".repeat(500) },
+        });
+
+        const [, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+        const body = String(init?.body);
+        expect(body).toContain("b".repeat(200));
+        expect(body).not.toContain("b".repeat(201));
+    });
+
     test("詳細は 2000 文字で切る", async () => {
         process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/T/B/x";
 
