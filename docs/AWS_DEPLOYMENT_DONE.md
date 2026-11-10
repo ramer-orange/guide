@@ -59,6 +59,7 @@ npx cdk deploy GuideStack \
 Slack へも通知する場合は、`-c enableSlackAlerts=true` と `--parameters GuideStack:SlackWebhookUrl=<Webhook URL>` を足した次のコマンドを使います（省略すると Slack 関連のリソースは作られません）。
 `-c enableSlackAlerts=true` は以降の**手動の** `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 関連のリソースが削除され、Slack 通知が外れます。
 GitHub Actions からの自動デプロイは、リポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` としてそのまま渡します（未設定なら `false`）。Slack を有効にしたら、この変数も `true` に設定してください。設定しないと、次に自動デプロイが走ったとき（`main` への push で `AWS_DEPLOY_ENABLED` が `true` のとき）に Slack 関連のリソースが削除されます。
+この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りを入れると、CDK が `CDK context enableSlackAlerts must be true or false` で例外を投げ、Slack 通知が静かに止まるのではなく**デプロイそのものが失敗**します（`infra/lib/guide-stack.ts` の `booleanContext`）。`main` への push が赤くなったらこの綴りを疑ってください。
 
 ```bash
 npx cdk deploy GuideStack \
@@ -120,7 +121,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 1. 検証（PHP / Next.js のテスト、CDK のテスト）
 2. コミット SHA をタグにしてイメージをビルドし ECR へ push（本番 URL を `NEXT_PUBLIC_SITE_URL` に渡す）
 3. 新しいイメージで Migration タスクを 1 回実行し、失敗したらここで止める
-4. `cdk deploy GuideStack -c appImageTag=<SHA>` で Web タスクをローリング更新（失敗時は自動ロールバック）
+4. `cdk deploy GuideStack -c appImageTag=<SHA> -c enableSlackAlerts=<SLACK_ALERTS_ENABLED の値>` で Web タスクをローリング更新（失敗時は自動ロールバック）
 5. `https://<ドメイン>/healthz` の疎通確認
 
 注意点:

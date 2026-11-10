@@ -246,13 +246,18 @@ jobs: # 実行するジョブの一覧
       # CloudFormation Parameterは前回の値を引き継ぐ（SlackWebhookUrlも同じ）。
       # enableSlackAlertsは合成時に効くcontextなので、付けずにデプロイするとSlack関連のリソースが削除される。
       # 手動で有効化した状態を維持するため、リポジトリ変数 SLACK_ALERTS_ENABLED の値をそのまま引き継ぐ。
+      # 変数は env: 経由で渡す。run: の本文へ直接展開すると、引用符や改行を含む値が
+      # バックスラッシュ継続のコマンドを壊す（CDK側で弾かれず、意図しない形で実行される）。
+      # 受け付けるのは小文字の true / false だけで、それ以外はCDKが例外を投げてデプロイが失敗する。
       - name: CDKデプロイ（ECS Serviceの更新）
         working-directory: infra
+        env:
+          SLACK_ALERTS_ENABLED: ${{ vars.SLACK_ALERTS_ENABLED || 'false' }}
         run: |
           npm ci
           npx cdk deploy "$STACK_NAME" \
             -c "appImageTag=${IMAGE_TAG}" \
-            -c "enableSlackAlerts=${{ vars.SLACK_ALERTS_ENABLED || 'false' }}" \
+            -c "enableSlackAlerts=${SLACK_ALERTS_ENABLED}" \
             --require-approval never
 
       - name: 本番の疎通確認
@@ -266,6 +271,9 @@ jobs: # 実行するジョブの一覧
   # pushでいずれかのジョブが失敗したときだけSlackへ通知する。報告専用で、ワークフローの成否は変えない。
   # deployはmain以外ではスキップされるため、always() と contains(needs.*.result, 'failure') の
   # 組み合わせでスキップを失敗扱いしない。pull_requestの失敗はPR画面で見えるので通知しない。
+  # このジョブがgreenの実行を赤くすることはない。needsのどれかが既にfailureのときだけ走り、
+  # かつこのファイルのどのジョブも continue-on-error を使っていないため（使うと失敗が
+  # success扱いになり、この前提が崩れる）。continue-on-error は足さない。送信失敗を隠してしまう。
   notify-failure:
     runs-on: ubuntu-latest
     needs: [validate, runtime-image, infra-test, deploy]
@@ -277,6 +285,7 @@ jobs: # 実行するジョブの一覧
           WORKFLOW_NAME: ${{ github.workflow }}
           NEEDS_JSON: ${{ toJSON(needs) }}
           REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
           ACTOR: ${{ github.actor }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -295,9 +304,10 @@ jobs: # 実行するジョブの一覧
             --arg workflow "$WORKFLOW_NAME" \
             --arg jobs "$failed_jobs" \
             --arg ref "$REF_NAME" \
+            --arg sha "$COMMIT_SHA" \
             --arg actor "$ACTOR" \
             --arg url "$RUN_URL" \
-            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\n実行者: \($actor)\n実行ログ: \($url)"}')
+            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\nコミット: \($sha)\n実行者: \($actor)\n実行ログ: \($url)"}')
 
           curl --fail --silent --show-error --max-time 5 \
             --request POST \

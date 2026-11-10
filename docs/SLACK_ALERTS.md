@@ -55,7 +55,7 @@ npx cdk deploy GuideStack \
 
 Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか、履歴へ残らない方法で渡してください。
 
-`enableSlackAlerts` は合成時に効くCDK contextなので、付けずに `cdk deploy` するとSlack関連のリソースが削除されます。`main` への push で走る自動デプロイはリポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` として渡すため（未設定なら `false`）、手動で有効にしたあとはこの変数も `true` にしてください。`SlackWebhookUrl` パラメータは `--parameters` を渡さなければCloudFormationが前回値を引き継ぐので、ワークフローからは渡していません。
+`enableSlackAlerts` は合成時に効くCDK contextなので、付けずに `cdk deploy` するとSlack関連のリソースが削除されます。`main` への push で走る自動デプロイはリポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` として渡すため（未設定なら `false`）、手動で有効にしたあとはこの変数も `true` にしてください。この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りだと、CDKが `CDK context enableSlackAlerts must be true or false` で例外を投げるため、Slack通知が静かに止まるのではなくデプロイ自体が失敗します（`infra/lib/guide-stack.ts` の `booleanContext`）。`SlackWebhookUrl` パラメータは `--parameters` を渡さなければCloudFormationが前回値を引き継ぐので、ワークフローからは渡していません。
 
 このECS側の配線はCDKの変更として本ブランチで入ります。あわせて、AWSへのデプロイ自体はリポジトリ変数 `AWS_DEPLOY_ENABLED` が `true` になるまで動かないため（`.github/workflows/deploy.yml`）、AWS経路は今日の時点では設定が用意されているだけで稼働していません。
 
@@ -69,7 +69,7 @@ Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか
 | --- | --- | --- |
 | Laravel | `error` 以上のログ（未捕捉例外、`report()`、明示的な `Log::error` 以上） | `warning` 以下、404、バリデーションエラー（422） |
 | AWS | 既存CloudWatchアラーム10種のALARM遷移とOK復帰（[アラーム一覧](AWS_DEPLOYMENT_DONE.md#監視)） | WAFのブロック個別イベント、CloudTrail |
-| GitHub Actions | `push` イベントでの `validate` / `runtime-image` / `infra-test` / `deploy` のいずれかの失敗（`deploy` は `main` かつ `AWS_DEPLOY_ENABLED=true` のときだけ実行されるため、現状は残り3つが対象） | `pull_request` の失敗（PR画面で見えるため） |
+| GitHub Actions | `push` イベントでの `validate` / `runtime-image` / `infra-test` / `deploy` のいずれかの失敗（`deploy` は `main` かつ `AWS_DEPLOY_ENABLED=true` のときだけ実行されるため、現状は残り3つが対象） | `pull_request` の失敗（PR画面で見えるため）、キャンセルされた実行（ジョブの結果が `cancelled` で `failure` ではないため）、スキップされたジョブ |
 | Next.js | `onRequestError` が受け取るサーバー側エラー | クライアント側の `error.tsx` 到達 |
 
 通知量を抑えるため、利用者の操作ミスで日常的に起きるもの（404、入力エラー）と、PR画面やGitHub上で確認できるものは送りません。
