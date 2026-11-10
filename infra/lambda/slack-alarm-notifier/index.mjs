@@ -6,8 +6,8 @@
  * 失敗は CloudWatch Logs へ記録して握りつぶす。
  */
 
-// 送信のタイムアウト。テストから値を確認できるように公開する。
-export const SEND_TIMEOUT_MS = 5000;
+// 送信のタイムアウト。AbortSignal としてリクエストに渡す（テストは init.signal を見る）。
+const SEND_TIMEOUT_MS = 5000;
 
 // ALARM は赤、OK は緑、INSUFFICIENT_DATA などは灰色で表示する。
 const STATE_COLORS = {

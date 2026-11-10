@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { SEND_TIMEOUT_MS, handler } from '../lambda/slack-alarm-notifier/index.mjs';
+import { handler } from '../lambda/slack-alarm-notifier/index.mjs';
 
 const alarmMessage = {
   AlarmName: 'guide-production-no-healthy-targets',
@@ -109,9 +109,13 @@ describe('slack-alarm-notifier', () => {
     );
   });
 
-  // タイムアウトの経過自体は偽クロックなしには検証できないため、
-  // 機能の制約である 5 秒という値だけを固定する（実際の中断は AbortSignal.timeout に任せる）。
-  test('送信のタイムアウトは 5 秒', () => {
-    expect(SEND_TIMEOUT_MS).toBe(5000);
+  // 経過時間そのものは偽クロックなしには測れないため、「中断シグナルが実際の
+  // リクエストに付いているか」を見る。定数を読むだけでは、signal を渡し忘れても気づけない。
+  test('送信リクエストに中断シグナルを付ける', async () => {
+    await handler(snsEvent(alarmMessage));
+
+    const [, init] = (globalThis.fetch as any).mock.calls[0];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(init.signal.aborted).toBe(false);
   });
 });
