@@ -526,32 +526,42 @@ git commit -m "feat: CloudWatchアラームをSlackへ通知する"
 
 ---
 
-### Task 4: GitHub Actions の失敗通知
+### Task 4: GitHub Actions の失敗通知と、CI デプロイでの Slack 有効化の維持
 
 **Files:**
-- Modify: `.github/workflows/deploy.yml`（`jobs` の末尾に追加）
+- Modify: `.github/workflows/deploy.yml`（`jobs` の末尾に `notify-failure` を追加、および `deploy` ジョブの CDK デプロイステップ）
+- Modify: `docs/AWS_DEPLOYMENT_DONE.md`（Slack 有効化の手順にリポジトリ変数の説明を足す）
+- Modify: `docs/SLACK_ALERTS.md`（AWS 経路の有効化条件にリポジトリ変数を足す）
 
 **Interfaces:**
-- Consumes: リポジトリシークレット `SLACK_WEBHOOK_URL`
+- Consumes: リポジトリシークレット `SLACK_WEBHOOK_URL`、リポジトリ変数 `SLACK_ALERTS_ENABLED`、Task 3 の CDK context `enableSlackAlerts`
 - Produces: なし
 
 - [ ] **Step 1: `notify-failure` ジョブを追加する**
 
 `needs: [validate, runtime-image, infra-test, deploy]`、`if: ${{ always() && github.event_name == 'push' && contains(needs.*.result, 'failure') }}`、`runs-on: ubuntu-latest`。ステップは1つで、`SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}` を環境変数に取り、空なら `echo` して `exit 0`。空でなければ `jq -n` でペイロードを組み、`curl --fail --silent --show-error --max-time 5` で POST する。本文に含めるのは、ワークフロー名、どのジョブが失敗したか（`${{ toJSON(needs) }}` から読める形）、`github.ref_name`、`github.actor`、`${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`。`deploy` はスキップされることが多いので、`always()` と `contains(needs.*.result, 'failure')` の組み合わせでスキップを失敗扱いしないこと。
 
-- [ ] **Step 2: ワークフローの構文を検証する**
+- [ ] **Step 2: CDK デプロイステップに Slack 有効化フラグを引き継がせる**
+
+Task 3 の Slack リソースは CDK context `enableSlackAlerts` で合成時に作られるため、フラグを付けずに `cdk deploy` すると**既存の Slack リソースが削除される**。`deploy` ジョブの「CDKデプロイ（ECS Serviceの更新）」ステップの `npx cdk deploy` に `-c "enableSlackAlerts=${{ vars.SLACK_ALERTS_ENABLED || 'false' }}"` を足す。既存の `AWS_DEPLOY_ENABLED` と同じリポジトリ変数の仕組みに合わせる。`SlackWebhookUrl` パラメータは `--parameters` を渡さなければ CloudFormation が前回値を引き継ぐため、ワークフローでは渡さない。
+
+- [ ] **Step 3: ドキュメントにリポジトリ変数を追記する**
+
+`docs/AWS_DEPLOYMENT_DONE.md` の Slack 有効化の説明に、自動デプロイでフラグを維持するにはリポジトリ変数 `SLACK_ALERTS_ENABLED` を `true` にする必要があることを書く（これが無いと次の `main` への push で Slack リソースが消える）。`docs/SLACK_ALERTS.md` の AWS 経路の「有効になる条件」にも同じ変数を足す。
+
+- [ ] **Step 4: ワークフローの構文を検証する**
 
 Run: `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest -color`
 Expected: `.github/workflows/deploy.yml` にエラーなし。Docker が使えない場合は `python3 -c "import yaml;yaml.safe_load(open('.github/workflows/deploy.yml'))"` で YAML として読めることだけ確認する。
 
-- [ ] **Step 3: 通知が既存ジョブの成否に影響しないことを確認する**
+- [ ] **Step 5: 通知が既存ジョブの成否に影響しないことを確認する**
 
 `notify-failure` を `needs` に持つジョブが存在しないこと、`deploy` の `if` 条件を変更していないことを `git diff .github/workflows/deploy.yml` で確認する。
 
-- [ ] **Step 4: コミットする**
+- [ ] **Step 6: コミットする**
 
 ```bash
-git add .github/workflows/deploy.yml
+git add .github/workflows/deploy.yml docs/AWS_DEPLOYMENT_DONE.md docs/SLACK_ALERTS.md
 git commit -m "ci: CIとデプロイの失敗をSlackへ通知する"
 ```
 
