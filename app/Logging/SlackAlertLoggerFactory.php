@@ -32,7 +32,7 @@ class SlackAlertLoggerFactory
 
         // URL 未設定（本番で Slack を使わない構成）では何もしないハンドラだけを持つ。
         if (! is_string($url) || $url === '') {
-            return new Logger('slack', [new NullHandler()]);
+            return new Logger('slack', [new NullHandler]);
         }
 
         $slack = new SlackWebhookHandler(

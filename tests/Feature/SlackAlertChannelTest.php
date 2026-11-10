@@ -2,11 +2,38 @@
 
 use App\Logging\SlackAlertLoggerFactory;
 use Illuminate\Support\Facades\Log;
+use Monolog\Handler\DeduplicationHandler;
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\SlackWebhookHandler;
+use Monolog\Handler\WhatFailureGroupHandler;
+use Monolog\Level;
 use Monolog\Logger;
+use Monolog\LogRecord;
+
+/**
+ * WhatFailureGroupHandler / DeduplicationHandler は内側のハンドラを公開しないため、
+ * リフレクションで取り出す（それぞれ GroupHandler::$handlers、BufferHandler::$handler）。
+ */
+function wrappedHandlersOf(WhatFailureGroupHandler $group): array
+{
+    return (new ReflectionProperty($group, 'handlers'))->getValue($group);
+}
+
+function dedupHandlerOf(Logger $logger): DeduplicationHandler
+{
+    return wrappedHandlersOf($logger->getHandlers()[0])[0];
+}
+
+function slackHandlerOf(Logger $logger): SlackWebhookHandler
+{
+    $dedup = dedupHandlerOf($logger);
+    $inner = (new ReflectionProperty($dedup, 'handler'))->getValue($dedup);
+
+    return wrappedHandlersOf($inner)[0];
+}
 
 it('webhook URL が無いときは何もしないハンドラだけを持つ', function () {
-    $logger = (new SlackAlertLoggerFactory())(['url' => null, 'level' => 'error']);
+    $logger = (new SlackAlertLoggerFactory)(['url' => null, 'level' => 'error']);
 
     expect($logger)->toBeInstanceOf(Logger::class);
     expect($logger->getHandlers())->toHaveCount(1);
@@ -14,7 +41,7 @@ it('webhook URL が無いときは何もしないハンドラだけを持つ', f
 });
 
 it('webhook URL が空文字でも何もしないハンドラだけを持つ', function () {
-    $logger = (new SlackAlertLoggerFactory())(['url' => '', 'level' => 'error']);
+    $logger = (new SlackAlertLoggerFactory)(['url' => '', 'level' => 'error']);
 
     expect($logger->getHandlers()[0])->toBeInstanceOf(NullHandler::class);
 });
@@ -37,4 +64,47 @@ it('Slack への送信が失敗してもログ呼び出し元に例外が出な�
     $channel->getLogger()->close();
 
     expect(true)->toBeTrue();
+});
+
+it('error 未満は Slack に送らない', function () {
+    $logger = (new SlackAlertLoggerFactory)([
+        'url' => 'https://hooks.slack.com/services/T/B/x',
+        'level' => 'error',
+    ]);
+    $slack = slackHandlerOf($logger);
+
+    expect($slack->getLevel())->toBe(Level::Error);
+    expect($slack->isHandling(new LogRecord(
+        new DateTimeImmutable, 'testing', Level::Warning, '警告は送らない',
+    )))->toBeFalse();
+});
+
+it('context と extra を Slack ペイロードに含めない', function () {
+    $logger = (new SlackAlertLoggerFactory)([
+        'url' => 'https://hooks.slack.com/services/T/B/x',
+        'level' => 'error',
+    ]);
+    $record = slackHandlerOf($logger)->getSlackRecord()->getSlackData(
+        new LogRecord(
+            new DateTimeImmutable,
+            'testing',
+            Level::Error,
+            'DB接続に失敗',
+            ['token' => 'secret-token-value', 'email' => 'user@example.com'],
+        ),
+    );
+
+    expect(json_encode($record))->not->toContain('secret-token-value');
+    expect(json_encode($record))->not->toContain('user@example.com');
+});
+
+it('同一メッセージの連続発生を重複排除ハンドラで抑える', function () {
+    $logger = (new SlackAlertLoggerFactory)([
+        'url' => 'https://hooks.slack.com/services/T/B/x',
+        'level' => 'error',
+    ]);
+    $group = $logger->getHandlers()[0];
+
+    expect($group)->toBeInstanceOf(WhatFailureGroupHandler::class);
+    expect(dedupHandlerOf($logger))->toBeInstanceOf(DeduplicationHandler::class);
 });
