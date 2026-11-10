@@ -56,11 +56,19 @@ npx cdk deploy GuideStack \
   --parameters GuideStack:AlertEmail=<通知先メール>
 ```
 
-Slack へも通知する場合は、次の 2 つを足します（省略すると Slack 関連のリソースは作られません）。
+Slack へも通知する場合は、`-c enableSlackAlerts=true` と `--parameters GuideStack:SlackWebhookUrl=<Webhook URL>` を足した次のコマンドを使います（省略すると Slack 関連のリソースは作られません）。
 `-c enableSlackAlerts=true` は以降の `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 通知が外れます。
 
 ```bash
+npx cdk deploy GuideStack \
+  -c desiredCount=0 \
   -c enableSlackAlerts=true \
+  --parameters GuideStack:DomainName=<guide.example.com> \
+  --parameters GuideStack:HostedZoneId=<Z0123...> \
+  --parameters GuideStack:HostedZoneName=<example.com> \
+  --parameters GuideStack:GoogleClientId=<client id> \
+  --parameters GuideStack:GoogleClientSecret=<client secret> \
+  --parameters GuideStack:AlertEmail=<通知先メール> \
   --parameters GuideStack:SlackWebhookUrl=https://hooks.slack.com/services/...
 ```
 

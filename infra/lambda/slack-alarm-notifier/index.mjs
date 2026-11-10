@@ -6,7 +6,8 @@
  * 失敗は CloudWatch Logs へ記録して握りつぶす。
  */
 
-const SEND_TIMEOUT_MS = 5000;
+// 送信のタイムアウト。テストから値を確認できるように公開する。
+export const SEND_TIMEOUT_MS = 5000;
 
 // ALARM は赤、OK は緑、INSUFFICIENT_DATA などは灰色で表示する。
 const STATE_COLORS = {
@@ -81,7 +82,20 @@ export async function handler(event) {
     return;
   }
 
-  for (const record of event?.Records ?? []) {
-    await postToSlack(webhookUrl, buildAttachment(record?.Sns?.Message ?? ''));
+  // Records が配列でない（= 想定外の）イベントでも TypeError を投げないようにする。
+  // ここで投げると Lambda の非同期呼び出しが再試行され、Slack へ同じ通知が重複する。
+  const records = Array.isArray(event?.Records) ? event.Records : [];
+  if (records.length === 0) {
+    console.error('No SNS records in event; skipping Slack notification');
+    return;
+  }
+
+  for (const record of records) {
+    // 1 件の異常で残りの通知を落とさない。
+    try {
+      await postToSlack(webhookUrl, buildAttachment(record?.Sns?.Message ?? ''));
+    } catch (error) {
+      console.error('Failed to handle SNS record', error);
+    }
   }
 }

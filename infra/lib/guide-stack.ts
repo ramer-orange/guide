@@ -141,7 +141,8 @@ export class GuideStack extends cdk.Stack {
       : undefined;
     const slackWebhookSecret = slackWebhookUrlParameter
       ? new secretsmanager.Secret(this, 'SlackWebhookSecret', {
-          secretName: 'guide/production/slack-webhook',
+          // 名前は付けない。enableSlackAlerts を切ると Secret は削除予約（既定 30 日）に入るため、
+          // 固定名だと入れ直しのデプロイが同名衝突で失敗する。ECS は ARN で参照する。
           description: 'Slack Incoming Webhook URL',
           secretStringValue: cdk.SecretValue.cfnParameter(
             slackWebhookUrlParameter,

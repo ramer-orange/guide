@@ -217,7 +217,10 @@ describe('GuideStack', () => {
   test('ECS タスクに Slack ログ設定を渡す', () => {
     const template = makeTemplate();
 
+    // Web タスクに入っていることを確かめる。Family を指定しないと
+    // Migration タスクだけが一致していても通ってしまう。
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      Family: 'guide-production-application',
       ContainerDefinitions: Match.arrayWith([
         Match.objectLike({
           Environment: Match.arrayWith([
@@ -236,6 +239,7 @@ describe('GuideStack', () => {
 
     // Web タスクは 1 コンテナで PHP-FPM と Next.js を動かすため、両方の変数名が必要。
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      Family: 'guide-production-application',
       ContainerDefinitions: Match.arrayWith([
         Match.objectLike({
           Secrets: Match.arrayWith([
