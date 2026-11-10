@@ -7,6 +7,7 @@ use Monolog\Handler\NullHandler;
 use Monolog\Handler\SlackWebhookHandler;
 use Monolog\Handler\WhatFailureGroupHandler;
 use Monolog\Logger;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 /**
  * Slack 障害通知用のログチャンネルを組み立てるカスタムドライバ。
@@ -46,10 +47,13 @@ class SlackAlertLoggerFactory
             $config['level'] ?? 'error',
         );
 
+        $level = $config['level'] ?? 'error';
+
         // 同一メッセージの連続通知を抑えたうえで、Slack 障害を呼び出し元から隔離する。
-        // DeduplicationHandler は自身の close()（デストラクタ経由も含む）で送信するため、
-        // 外側の WhatFailureGroupHandler だけでは送信失敗を捕まえられない。
-        // そのため内側にも WhatFailureGroupHandler を挟んで送信例外をここで止める。
+        // DeduplicationHandler は handle() 時点では送信せず、実際の送信は flush()
+        // （BufferHandler::handle() が登録する register_shutdown_function 経由の close()）で起きる。
+        // 外側の WhatFailureGroupHandler はこの経路を通らないため、内側にも挟んで
+        // 送信例外を flush() の中で止める。
         $deduplicated = new DeduplicationHandler(
             new WhatFailureGroupHandler([$slack]),
             storage_path('logs/slack-dedup.log'),
@@ -57,6 +61,13 @@ class SlackAlertLoggerFactory
             self::DEDUPLICATION_SECONDS,
         );
 
-        return new Logger('slack', [new WhatFailureGroupHandler([$deduplicated])]);
+        // DeduplicationHandler は bufferLimit = 0 / level = Debug で固定されるため、
+        // 明示的にレベルを上げないと debug まで全件バッファに溜め込んでしまう。
+        $deduplicated->setLevel($level);
+
+        // 組み込みの slack ドライバと同じく、メッセージ中のプレースホルダを展開する
+        // （config の replace_placeholders に対応）。context 自体は送信しないため、
+        // 展開されるのは開発者がメッセージ本文で明示的に参照した値だけ。
+        return new Logger('slack', [new WhatFailureGroupHandler([$deduplicated])], [new PsrLogMessageProcessor]);
     }
 }

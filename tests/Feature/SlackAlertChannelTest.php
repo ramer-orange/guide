@@ -9,6 +9,7 @@ use Monolog\Handler\WhatFailureGroupHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Monolog\LogRecord;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 /**
  * WhatFailureGroupHandler / DeduplicationHandler は内側のハンドラを公開しないため、
@@ -30,6 +31,14 @@ function slackHandlerOf(Logger $logger): SlackWebhookHandler
     $inner = (new ReflectionProperty($dedup, 'handler'))->getValue($dedup);
 
     return wrappedHandlersOf($inner)[0];
+}
+
+/**
+ * BufferHandler::$bufferSize も非公開なのでリフレクションで読む。
+ */
+function bufferSizeOf(DeduplicationHandler $dedup): int
+{
+    return (new ReflectionProperty($dedup, 'bufferSize'))->getValue($dedup);
 }
 
 it('webhook URL が無いときは何もしないハンドラだけを持つ', function () {
@@ -59,11 +68,15 @@ it('Slack への送信が失敗してもログ呼び出し元に例外が出な�
     config(['logging.channels.slack.url' => 'http://127.0.0.1:1/services/T/B/x']);
 
     $channel = Log::channel('slack');
-    $channel->error('接続できないケース');
-    // 実際の送信は重複排除ハンドラの close() で行われるため、ここで明示的に流す。
+    // 重複排除ストアは実ファイルなので、再実行時に送信経路が抑制されないよう毎回違う本文にする。
+    $channel->error('接続できないケース '.uniqid());
+    // 実際の送信は重複排除ハンドラの flush() で行われるため、ここで明示的に流す。
     $channel->getLogger()->close();
 
-    expect(true)->toBeTrue();
+    // flush() は handleBatch() が例外なく戻ったときだけ clear() まで到達する。
+    // 外側の WhatFailureGroupHandler は close() の例外も飲んでしまうため、
+    // 「バッファが空になった」ことが内側で例外を捕まえた唯一の証拠になる。
+    expect(bufferSizeOf(dedupHandlerOf($channel->getLogger())))->toBe(0);
 });
 
 it('error 未満は Slack に送らない', function () {
@@ -96,6 +109,48 @@ it('context と extra を Slack ペイロードに含めない', function () {
 
     expect(json_encode($record))->not->toContain('secret-token-value');
     expect(json_encode($record))->not->toContain('user@example.com');
+});
+
+it('error 未満は重複排除ハンドラのバッファにも溜めない', function () {
+    $logger = (new SlackAlertLoggerFactory)([
+        'url' => 'https://hooks.slack.com/services/T/B/x',
+        'level' => 'error',
+    ]);
+    $dedup = dedupHandlerOf($logger);
+
+    // DeduplicationHandler の既定は level = Debug / bufferLimit = 0（無制限）なので、
+    // レベルを上げていないと debug ログまで全件メモリに溜まり続ける。
+    expect($dedup->getLevel())->toBe(Level::Error);
+    expect($dedup->isHandling(new LogRecord(
+        new DateTimeImmutable, 'testing', Level::Warning, '警告は溜めない',
+    )))->toBeFalse();
+});
+
+it('メッセージ中のプレースホルダを展開し、参照していない context は送らない', function () {
+    $logger = (new SlackAlertLoggerFactory)([
+        'url' => 'https://hooks.slack.com/services/T/B/x',
+        'level' => 'error',
+    ]);
+
+    expect($logger->getProcessors())->toHaveCount(1);
+    expect($logger->getProcessors()[0])->toBeInstanceOf(PsrLogMessageProcessor::class);
+
+    // Logger::addRecord はハンドラへ渡す前にプロセッサを適用する。送信せずに同じ変換を再現する。
+    $processed = ($logger->getProcessors()[0])(new LogRecord(
+        new DateTimeImmutable,
+        'testing',
+        Level::Error,
+        'ユーザー {id} の処理に失敗',
+        ['id' => 42, 'token' => 'secret-token-value'],
+    ));
+
+    $payload = json_encode(
+        slackHandlerOf($logger)->getSlackRecord()->getSlackData($processed),
+        JSON_UNESCAPED_UNICODE,
+    );
+
+    expect($payload)->toContain('ユーザー 42 の処理に失敗');
+    expect($payload)->not->toContain('secret-token-value');
 });
 
 it('同一メッセージの連続発生を重複排除ハンドラで抑える', function () {
