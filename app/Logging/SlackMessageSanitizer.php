@@ -48,14 +48,18 @@ class SlackMessageSanitizer implements ProcessorInterface
     }
 
     /**
-     * QueryException が末尾に付ける `(Connection: ..., SQL: ...)` を取り除く。
+     * QueryException が付ける `(Connection: ..., SQL: ...)` を取り除く。
      *
-     * 本文は複数行になりうるため /s を付け、末尾の閉じ括弧までをまとめて落とす。
+     * 末尾に固定しない。`Log::error("DB失敗: {$e->getMessage()} 再試行します")` のように
+     * 後ろに文字が足されると、末尾アンカーでは括弧内が本文の途中に残って漏れる。
+     * 本文は複数行になりうるため /s を付け、`(Connection: ` から（貪欲に）最後の
+     * 閉じ括弧までをまとめて落とす。SQL 自体が括弧を含むため非貪欲にはしない。
+     * 括弧の後に続く文字（上の例の「再試行します」）は残る。
      */
     private static function stripConnectionDetails(string $message): string
     {
         $stripped = preg_replace(
-            '/\s*\(Connection: .*\)\s*$/s',
+            '/\s*\(Connection: .*\)/s',
             ' '.self::SQL_PLACEHOLDER,
             $message,
         );

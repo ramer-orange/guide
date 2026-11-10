@@ -12,6 +12,13 @@ export type SlackAlert = {
 const DETAIL_MAX_LENGTH = 2000;
 
 /**
+ * タイトルの最大文字数。detail と同じ理由で切る。
+ * 呼び出し側は長さを制限されていないため、切らないと抑制 Map の件数上限だけでは
+ * メモリが抑えられない。
+ */
+const TITLE_MAX_LENGTH = 200;
+
+/**
  * context の値 1 件あたりの最大文字数。
  * この関数は公開ライブラリなので、呼び出し側が長い値を渡しても
  * 本文が無制限に膨らまないようにここで切る。
@@ -39,9 +46,10 @@ const recentAlerts = new Map<string, number>();
  * 送信の成否は見ない（失敗した通知も次の窓までは再送しない）。
  */
 function isSuppressed(alert: SlackAlert, now: number): boolean {
-    // 鍵の長さも実際に送る本文と同じところで切る。呼び出し側は detail の長さを
-    // 制限されていないため、切らないと Map の上限（件数）だけではメモリが抑えられない。
-    const key = `${alert.title}\n${alert.detail.slice(0, DETAIL_MAX_LENGTH)}`;
+    // 鍵の長さも実際に送る本文と同じところで切る。呼び出し側は title / detail の
+    // 長さを制限されていないため、切らないと Map の上限（件数）だけでは
+    // メモリが抑えられない。
+    const key = `${alert.title.slice(0, TITLE_MAX_LENGTH)}\n${alert.detail.slice(0, DETAIL_MAX_LENGTH)}`;
     const lastSentAt = recentAlerts.get(key);
 
     if (lastSentAt !== undefined && now - lastSentAt < DUPLICATE_WINDOW_MS) {
@@ -73,7 +81,10 @@ export function resetSlackAlertSuppression(): void {
 }
 
 function buildText(alert: SlackAlert): string {
-    const lines = [alert.title, alert.detail.slice(0, DETAIL_MAX_LENGTH)];
+    const lines = [
+        alert.title.slice(0, TITLE_MAX_LENGTH),
+        alert.detail.slice(0, DETAIL_MAX_LENGTH),
+    ];
     for (const [key, value] of Object.entries(alert.context ?? {})) {
         lines.push(`${key}: ${value.slice(0, CONTEXT_VALUE_MAX_LENGTH)}`);
     }

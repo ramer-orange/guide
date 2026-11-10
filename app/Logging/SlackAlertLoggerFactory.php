@@ -5,6 +5,7 @@ namespace App\Logging;
 use Monolog\Handler\DeduplicationHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\ProcessableHandlerInterface;
 use Monolog\Handler\WhatFailureGroupHandler;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -38,6 +39,19 @@ class SlackAlertLoggerFactory
 
         $level = $config['level'] ?? 'error';
 
+        $slack = $this->makeSlackHandler($config, $url, $level);
+
+        // サニタイズはこの Slack ハンドラの書き込み直前だけで行う。
+        // Logger のプロセッサにすると stack チャンネルへ漏れる。
+        // LogManager::createStackDriver は `LOG_STACK` に挙げた全チャンネルの
+        // ハンドラとプロセッサを1つの Logger にまとめるため
+        // （vendor/laravel/framework/src/Illuminate/Log/LogManager.php:282-294）、
+        // 本番の `LOG_STACK=stderr,slack` では stderr のレコードまで
+        // 切り詰め・SQL 削除の対象になってしまう。
+        // ハンドラのプロセッサは AbstractProcessingHandler::handle() が write() の
+        // 直前に適用するので、他のハンドラには一切影響しない。
+        $slack->pushProcessor(new SlackMessageSanitizer);
+
         // 1 リクエスト内の重複を畳んだうえで、Slack 障害を呼び出し元から隔離する。
         // DeduplicationHandler は handle() 時点では送信せず、実際の送信は flush()
         // （BufferHandler::handle() が登録する register_shutdown_function 経由の close()）で起きる。
@@ -45,7 +59,7 @@ class SlackAlertLoggerFactory
         // 送信例外を flush() の中で止める。
         $deduplicated = new DeduplicationHandler(
             new WhatFailureGroupHandler([
-                new OncePerProcessHandler($this->makeSlackHandler($config, $url, $level)),
+                new OncePerProcessHandler($slack, self::DEDUPLICATION_SECONDS),
             ]),
             $this->deduplicationStore($config),
             'error',
@@ -56,13 +70,16 @@ class SlackAlertLoggerFactory
         // 明示的にレベルを上げないと debug まで全件バッファに溜め込んでしまう。
         $deduplicated->setLevel($level);
 
-        // プロセッサは配列の順に適用される（Monolog\Logger::addRecord）。
-        // PsrLogMessageProcessor でメッセージ中のプレースホルダを展開したあとに
-        // SlackMessageSanitizer を通す。展開で本文へ入った値も削除・切り詰めの対象にする。
+        // Logger のプロセッサは PsrLogMessageProcessor だけ。これは組み込みの slack
+        // ドライバと同じ挙動（config の replace_placeholders 相当）で、stack チャンネルへ
+        // まとめられても他のハンドラの挙動を変えない。
+        // Logger のプロセッサは Logger::addRecord がハンドラへ渡す前に走り、
+        // ハンドラのプロセッサはその後 write() の直前に走るため、
+        // 「プレースホルダ展開 → サニタイズ」の順序は Monolog の構造で保証される。
         return new Logger(
             'slack',
             [new WhatFailureGroupHandler([$deduplicated])],
-            [new PsrLogMessageProcessor, new SlackMessageSanitizer],
+            [new PsrLogMessageProcessor],
         );
     }
 
@@ -71,7 +88,7 @@ class SlackAlertLoggerFactory
      *
      * @param  array<string, mixed>  $config
      */
-    protected function makeSlackHandler(array $config, string $url, mixed $level): HandlerInterface
+    protected function makeSlackHandler(array $config, string $url, mixed $level): HandlerInterface&ProcessableHandlerInterface
     {
         return new SlackAlertWebhookHandler(
             $url,

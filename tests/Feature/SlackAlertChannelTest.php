@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Monolog\Handler\DeduplicationHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\ProcessableHandlerInterface;
 use Monolog\Handler\TestHandler;
 use Monolog\Handler\WhatFailureGroupHandler;
 use Monolog\Level;
@@ -46,8 +47,10 @@ function slackHandlerOf(Logger $logger): SlackAlertWebhookHandler
 }
 
 /**
- * Logger のプロセッサを定義順に適用して、Slack へ送るペイロードを組み立てる。
- * Monolog\Logger::addRecord がハンドラへ渡す前に行う変換と同じ順序を再現する。
+ * Slack へ送るペイロードを、実際の経路と同じ順序の変換で組み立てる。
+ *
+ * 1. Logger のプロセッサ（Monolog\Logger::addRecord がハンドラへ渡す前に適用）
+ * 2. ハンドラのプロセッサ（AbstractProcessingHandler::handle が write() の直前に適用）
  */
 function renderSlackPayload(Logger $logger, LogRecord $record): string
 {
@@ -55,10 +58,21 @@ function renderSlackPayload(Logger $logger, LogRecord $record): string
         $record = $processor($record);
     }
 
+    $slack = slackHandlerOf($logger);
+    $record = (new ReflectionMethod($slack, 'processRecord'))->invoke($slack, $record);
+
     return json_encode(
-        slackHandlerOf($logger)->getSlackRecord()->getSlackData($record),
+        $slack->getSlackRecord()->getSlackData($record),
         JSON_UNESCAPED_UNICODE,
     );
+}
+
+/**
+ * ハンドラに積まれたプロセッサ（ProcessableHandlerTrait::$processors）を読む。
+ */
+function handlerProcessorsOf(object $handler): array
+{
+    return (new ReflectionProperty($handler, 'processors'))->getValue($handler);
 }
 
 function slackLogger(array $overrides = []): Logger
@@ -79,7 +93,7 @@ function slackLoggerSendingTo(TestHandler $handler, string $store): Logger
     {
         public function __construct(private TestHandler $testHandler) {}
 
-        protected function makeSlackHandler(array $config, string $url, mixed $level): HandlerInterface
+        protected function makeSlackHandler(array $config, string $url, mixed $level): HandlerInterface&ProcessableHandlerInterface
         {
             return $this->testHandler;
         }
@@ -191,10 +205,15 @@ it('メッセージ中のプレースホルダを展開し、参照していな�
         'level' => 'error',
     ]);
 
-    // 展開してから本文を削る順序（PSR → サニタイザ）でなければならない。
-    expect($logger->getProcessors())->toHaveCount(2);
+    // Logger 側は PsrLogMessageProcessor だけ。サニタイザを Logger に積むと、
+    // LogManager::createStackDriver が stack チャンネルへ全チャンネルのプロセッサを
+    // まとめるため、stderr のレコードまで書き換えてしまう。
+    expect($logger->getProcessors())->toHaveCount(1);
     expect($logger->getProcessors()[0])->toBeInstanceOf(PsrLogMessageProcessor::class);
-    expect($logger->getProcessors()[1])->toBeInstanceOf(SlackMessageSanitizer::class);
+
+    // サニタイザは Slack ハンドラ側。Logger のプロセッサ（展開）より後に走る。
+    expect(handlerProcessorsOf(slackHandlerOf($logger))[0])
+        ->toBeInstanceOf(SlackMessageSanitizer::class);
 
     // Logger::addRecord はハンドラへ渡す前にプロセッサを適用する。送信せずに同じ変換を再現する。
     $processed = ($logger->getProcessors()[0])(new LogRecord(
@@ -367,6 +386,173 @@ it('長いメッセージは300文字で切る', function () {
     expect($payload)->toContain(str_repeat('あ', 300));
     expect($payload)->not->toContain(str_repeat('あ', 301));
     expect($payload)->toContain('以下省略');
+});
+
+it('stack にまとめられても他のチャンネルのハンドラの本文を変えない', function () {
+    OncePerProcessHandler::forgetSentRecords();
+    $store = tempnam(sys_get_temp_dir(), 'slack-dedup-');
+    $slackLeg = new TestHandler;
+    $stderrLeg = new TestHandler;
+
+    try {
+        $slackChannel = slackLoggerSendingTo($slackLeg, $store);
+
+        // LogManager::createStackDriver と同じ組み立て。`LOG_STACK=stderr,slack` は
+        // 各チャンネルのハンドラとプロセッサを1つの Logger にまとめる
+        // （vendor/laravel/framework/src/Illuminate/Log/LogManager.php:282-294）。
+        $stack = new Logger(
+            'stack',
+            array_merge([$stderrLeg], $slackChannel->getHandlers()),
+            $slackChannel->getProcessors(),
+        );
+
+        $long = str_repeat('Y', 400);
+        $sql = 'SQLSTATE[08006] timeout (Connection: pgsql, Host: db.internal, Port: 5432, Database: guide_production, SQL: select * from users where email = leak@example.com)';
+
+        $stack->info($long);
+        $stack->error($sql);
+        $stack->close();
+
+        // stderr 相当のハンドラには素のまま届く。ここが切り詰められていると、
+        // 「詳細はログ本体で見る」という運用手順（docs/SLACK_ALERTS.md）が成立しない。
+        expect($stderrLeg->getRecords())->toHaveCount(2);
+        expect($stderrLeg->getRecords()[0]->message)->toBe($long);
+        expect($stderrLeg->getRecords()[1]->message)->toBe($sql);
+
+        // Slack 側だけサニタイズされる（info は Slack のレベルに届かない）。
+        expect($slackLeg->getRecords())->toHaveCount(1);
+        expect($slackLeg->getRecords()[0]->message)
+            ->not->toContain('guide_production')
+            ->not->toContain('leak@example.com')
+            ->toContain('SQL詳細はログ参照');
+    } finally {
+        @unlink($store);
+    }
+});
+
+it('抑制窓を過ぎた同一メッセージは再び送る', function () {
+    OncePerProcessHandler::forgetSentRecords();
+    $now = 1_000_000;
+    $inner = new TestHandler;
+    $handler = new OncePerProcessHandler($inner, 300, function () use (&$now) {
+        return $now;
+    });
+    $record = fn () => new LogRecord(
+        new DateTimeImmutable, 'testing', Level::Error, '同じ障害',
+    );
+
+    $handler->handle($record());
+    $handler->handle($record());
+    expect($inner->getRecords())->toHaveCount(1);
+
+    // 窓の内側（299秒後）はまだ抑制される。
+    $now += 299;
+    $handler->handle($record());
+    expect($inner->getRecords())->toHaveCount(1);
+
+    // 300秒経てば、同じワーカープロセスでも再び送る。
+    // 時刻を持たない実装（送信済みの印だけ）では、ここが永久に抑制されたままになる。
+    $now += 1;
+    $handler->handle($record());
+    expect($inner->getRecords())->toHaveCount(2);
+});
+
+it('reset() で送信済みの記憶を捨て、内側のハンドラへも伝える', function () {
+    OncePerProcessHandler::forgetSentRecords();
+    $inner = new TestHandler;
+    $handler = new OncePerProcessHandler($inner, 300);
+    $record = fn () => new LogRecord(
+        new DateTimeImmutable, 'testing', Level::Error, '同じ障害',
+    );
+
+    $handler->handle($record());
+    $handler->handle($record());
+    expect($inner->getRecords())->toHaveCount(1);
+
+    // TestHandler::reset() は記録を消すので、伝播したことが観測できる。
+    $handler->reset();
+    expect($inner->getRecords())->toHaveCount(0);
+
+    // 記憶も捨てられているので、同じ本文がもう一度送られる。
+    $handler->handle($record());
+    expect($inner->getRecords())->toHaveCount(1);
+});
+
+it('Logger::reset() が OncePerProcessHandler まで届く', function () {
+    OncePerProcessHandler::forgetSentRecords();
+    $store = tempnam(sys_get_temp_dir(), 'slack-dedup-');
+    $sent = new TestHandler;
+
+    try {
+        $logger = slackLoggerSendingTo($sent, $store);
+        $logger->error('障害');
+        $logger->close();
+        expect($sent->getRecords())->toHaveCount(1);
+
+        // Logger::reset() は GroupHandler / BufferHandler を通って内側へ伝わる。
+        // OncePerProcessHandler が reset() を実装していないと（AbstractHandler の
+        // 空実装のまま）TestHandler::reset() まで届かず、記録が残る。
+        $logger->reset();
+        expect($sent->getRecords())->toHaveCount(0);
+    } finally {
+        @unlink($store);
+    }
+});
+
+it('send() に渡したオプションを curl ハンドルへ適用する', function () {
+    $handler = new class('http://127.0.0.1:1/services/T/B/x') extends SlackAlertWebhookHandler
+    {
+        public function sendOptions(array $options): void
+        {
+            $this->send($options);
+        }
+    };
+
+    $options = $handler->curlOptions(new LogRecord(
+        new DateTimeImmutable, 'testing', Level::Error, 'オプション適用の確認',
+    ));
+
+    try {
+        $handler->sendOptions($options);
+        $thrown = null;
+    } catch (RuntimeException $e) {
+        $thrown = $e;
+    }
+
+    // 127.0.0.1:1 は接続拒否されるので、CURLE_COULDNT_CONNECT(7) まで到達したことが
+    // 「URL を含むオプションがハンドルへ適用された」証拠になる。
+    // curl_setopt_array を外すと URL 未設定のまま curl_exec が走り、
+    // CURLE_URL_MALFORMAT(3)「No URL set」で落ちるため、このテストが落ちる。
+    expect($thrown)->not->toBeNull();
+    expect($thrown->getMessage())->toContain('code '.CURLE_COULDNT_CONNECT);
+    expect($thrown->getMessage())->not->toContain('code '.CURLE_URL_MALFORMAT);
+});
+
+it('本文の途中にある接続情報とSQLも落とす', function () {
+    // 例外メッセージの後ろに文字を足すと、末尾アンカーの正規表現では括弧内が残る。
+    $exception = new QueryException(
+        'pgsql',
+        'select * from password_reset_tokens where token = ?',
+        ['tok_live_SECRETVALUE'],
+        new PDOException('SQLSTATE[08006] connection timed out'),
+        ['driver' => 'pgsql', 'host' => 'db.internal.example', 'database' => 'guide_production'],
+    );
+
+    $payload = renderSlackPayload(slackLogger(), new LogRecord(
+        new DateTimeImmutable,
+        'testing',
+        Level::Error,
+        'DB失敗: '.$exception->getMessage().' 再試行します',
+    ));
+
+    expect($payload)->not->toContain('tok_live_SECRETVALUE');
+    expect($payload)->not->toContain('db.internal.example');
+    expect($payload)->not->toContain('guide_production');
+    expect($payload)->not->toContain('Connection:');
+
+    // 前後の文はそのまま残る。
+    expect($payload)->toContain('DB失敗: SQLSTATE[08006] connection timed out');
+    expect($payload)->toContain('再試行します');
 });
 
 it('プレースホルダ展開後の本文もサニタイズの対象にする', function () {
