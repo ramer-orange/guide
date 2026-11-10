@@ -34,7 +34,11 @@ export const onRequestError: Instrumentation.onRequestError = (
                 method: request.method,
                 routeType: context.routeType,
             },
-        }).catch(() => {});
+        }).catch((reason: unknown) => {
+            // notifySlack は自身の送信失敗を記録するので、ここへ来るのは
+            // その try/catch の外側で起きた想定外の例外だけ。黙って捨てると痕跡が残らない。
+            console.error("Slack 通知の送信に失敗しました", reason);
+        });
     } catch {
         // 通知の組み立て自体が失敗しても握りつぶす。
         // エラー処理中のランタイムへ二次的な例外を投げないことを優先する。

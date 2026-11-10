@@ -28,6 +28,8 @@ describe("onRequestError", () => {
     });
     afterEach(() => {
         vi.clearAllMocks();
+        // console.error のスパイを後続のテストへ持ち越さない。
+        vi.restoreAllMocks();
     });
 
     test("エラー名・メッセージとリクエスト情報を通知する", () => {
@@ -81,8 +83,28 @@ describe("onRequestError", () => {
         expect(catchSpy).toHaveBeenCalled();
     });
 
+    test("通知が reject したら記録する", async () => {
+        const reason = new Error("unexpected");
+        vi.mocked(notifySlack).mockRejectedValue(reason);
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        onRequestError(new Error("boom"), request, context);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(consoleError).toHaveBeenCalledWith(
+            "Slack 通知の送信に失敗しました",
+            reason,
+        );
+    });
+
+    // 補助的な確認。.catch を外しても（測定したところ）この書き方では
+    // 未処理 rejection が観測されずパスしてしまうため、回帰はこのテストでは捕まらない。
+    // 上の「通知が reject したら記録する」が .catch の有無を見ている。
     test("通知が reject しても未処理の rejection にしない", async () => {
         vi.mocked(notifySlack).mockRejectedValue(new Error("unexpected"));
+        vi.spyOn(console, "error").mockImplementation(() => {});
         const unhandled: unknown[] = [];
         const onUnhandled = (reason: unknown) => unhandled.push(reason);
         process.on("unhandledRejection", onUnhandled);

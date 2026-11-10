@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { notifySlack } from "./slack";
+import { notifySlack, resetSlackAlertSuppression } from "./slack";
 
 describe("notifySlack", () => {
     beforeEach(() => {
+        // 抑制はモジュール全体で共有される状態なので、テストごとに捨てる。
+        resetSlackAlertSuppression();
         vi.stubGlobal(
             "fetch",
             vi.fn(async () => new Response("ok", { status: 200 })),
@@ -102,5 +104,82 @@ describe("notifySlack", () => {
             notifySlack({ title: "エラー", detail: "boom" }),
         ).resolves.toBeUndefined();
         expect(console.error).toHaveBeenCalled();
+    });
+});
+
+describe("notifySlack の重複抑制", () => {
+    const webhookUrl = "https://hooks.slack.com/services/T/B/x";
+    const alert = { title: "Next.js サーバーエラー", detail: "TypeError: boom" };
+
+    beforeEach(() => {
+        resetSlackAlertSuppression();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-11T00:00:00.000Z"));
+        process.env.SLACK_WEBHOOK_URL = webhookUrl;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response("ok", { status: 200 })),
+        );
+        vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        delete process.env.SLACK_WEBHOOK_URL;
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    test("同じ通知は1回しか送らない", async () => {
+        await notifySlack(alert);
+        await notifySlack(alert);
+        await notifySlack(alert);
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    test("別の通知は抑制しない", async () => {
+        await notifySlack(alert);
+        await notifySlack({ ...alert, detail: "RangeError: other" });
+        await notifySlack({ ...alert, title: "別のタイトル" });
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    test("300秒を過ぎれば同じ通知でも送る", async () => {
+        await notifySlack(alert);
+
+        vi.setSystemTime(new Date("2026-11-11T00:04:59.000Z"));
+        await notifySlack(alert);
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+        vi.setSystemTime(new Date("2026-11-11T00:05:00.000Z"));
+        await notifySlack(alert);
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    test("記憶件数には上限があり、古いものから捨てる", async () => {
+        await notifySlack(alert);
+
+        // 上限（200件）を超えるまで別のメッセージを送る。Map が無制限に増えるなら
+        // 最初の通知はいつまでも抑制されたままになる。
+        for (let i = 0; i < 250; i++) {
+            await notifySlack({ ...alert, detail: `別のエラー ${i}` });
+        }
+
+        vi.mocked(globalThis.fetch).mockClear();
+        await notifySlack(alert);
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    test("Webhook URL が無いときは抑制の記録もしない", async () => {
+        delete process.env.SLACK_WEBHOOK_URL;
+        await notifySlack(alert);
+
+        process.env.SLACK_WEBHOOK_URL = webhookUrl;
+        await notifySlack(alert);
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 });
