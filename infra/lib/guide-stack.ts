@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as backup from 'aws-cdk-lib/aws-backup';
@@ -10,6 +11,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as route53 from 'aws-cdk-lib/aws-route53';
@@ -122,6 +124,30 @@ export class GuideStack extends cdk.Stack {
       allowedPattern: '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$',
       constraintDescription: 'メールアドレスを指定してください',
     });
+
+    // Slack 障害通知（docs/SLACK_ALERTS.md）
+    // 既定では何も作らない。-c enableSlackAlerts=true のときだけ、
+    // Webhook URL のパラメータと、それを保持する Secret を作る。
+    const enableSlackAlerts = this.booleanContext('enableSlackAlerts', false);
+    const slackWebhookUrlParameter = enableSlackAlerts
+      ? new cdk.CfnParameter(this, 'SlackWebhookUrl', {
+          type: 'String',
+          noEcho: true,
+          description: 'Slack Incoming Webhook URL（障害通知の送信先）',
+          allowedPattern: '^https://hooks\\.slack\\.com/services/.+$',
+          constraintDescription:
+            'https://hooks.slack.com/services/ で始まる URL を指定してください',
+        })
+      : undefined;
+    const slackWebhookSecret = slackWebhookUrlParameter
+      ? new secretsmanager.Secret(this, 'SlackWebhookSecret', {
+          secretName: 'guide/production/slack-webhook',
+          description: 'Slack Incoming Webhook URL',
+          secretStringValue: cdk.SecretValue.cfnParameter(
+            slackWebhookUrlParameter,
+          ),
+        })
+      : undefined;
 
     const domainName = domainNameParameter.valueAsString;
     const applicationUrl = cdk.Fn.join('', ['https://', domainName]);
@@ -441,7 +467,12 @@ export class GuideStack extends cdk.Stack {
     const commonEnvironment: Record<string, string> = {
       APP_DEBUG: 'false',
       APP_TIMEZONE: 'Asia/Tokyo',
-      LOG_CHANNEL: 'stderr',
+      // stderr（CloudWatch Logs）へ出しつつ、error 以上は slack チャンネルへも送る。
+      // slack チャンネルは stack 経由でしか効かないため、LOG_CHANNEL は stack にする。
+      // Webhook URL が無いあいだ slack チャンネルは何もしないので、常にこの構成で渡す。
+      LOG_CHANNEL: 'stack',
+      LOG_STACK: 'stderr,slack',
+      LOG_SLACK_LEVEL: 'error',
       LOG_LEVEL: 'info',
       DB_CONNECTION: 'pgsql',
       DB_HOST: database.dbInstanceEndpointAddress,
@@ -481,6 +512,16 @@ export class GuideStack extends cdk.Stack {
         'client_secret',
       ),
     };
+    if (slackWebhookSecret) {
+      // Web タスクは 1 コンテナで nginx・PHP-FPM・Next.js を動かす。
+      // Laravel は LOG_SLACK_WEBHOOK_URL、Next.js は SLACK_WEBHOOK_URL を読むため、
+      // 同じ Secret を両方の名前で渡す。
+      commonSecrets.LOG_SLACK_WEBHOOK_URL =
+        ecs.Secret.fromSecretsManager(slackWebhookSecret);
+      commonSecrets.SLACK_WEBHOOK_URL =
+        ecs.Secret.fromSecretsManager(slackWebhookSecret);
+      slackWebhookSecret.grantRead(executionRole);
+    }
     const image = ecs.ContainerImage.fromEcrRepository(
       applicationRepository,
       appImageTag,
@@ -808,6 +849,44 @@ export class GuideStack extends cdk.Stack {
     alertTopic.addSubscription(
       new subscriptions.EmailSubscription(alertEmailParameter.valueAsString),
     );
+
+    // アラームの発生と復旧を Slack へ転送する Lambda。
+    // Webhook URL は Secrets Manager ではなく環境変数で渡す。
+    // ECS は自前で Secret を解決するが、Lambda から読むには AWS SDK が必要になるため。
+    let slackNotifier: lambda.Function | undefined;
+    if (slackWebhookUrlParameter) {
+      const slackNotifierLogGroup = new logs.LogGroup(
+        this,
+        'SlackAlarmNotifierLogGroup',
+        {
+          logGroupName: '/aws/lambda/guide-production-slack-alarm-notifier',
+          retention: logs.RetentionDays.ONE_MONTH,
+          // 通知の送信ログだけなので残さない。
+          // 残すと enableSlackAlerts を切って入れ直すときに同名で衝突する。
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        },
+      );
+      slackNotifier = new lambda.Function(this, 'SlackAlarmNotifier', {
+        functionName: 'guide-production-slack-alarm-notifier',
+        description: 'CloudWatch アラームの状態変化を Slack へ転送する',
+        runtime: lambda.Runtime.NODEJS_22_X,
+        handler: 'index.handler',
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, '../lambda/slack-alarm-notifier'),
+          // 型定義はテスト専用なので、デプロイパッケージには含めない。
+          { exclude: ['*.d.mts'] },
+        ),
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        logGroup: slackNotifierLogGroup,
+        environment: {
+          SLACK_WEBHOOK_URL: slackWebhookUrlParameter.valueAsString,
+        },
+      });
+      alertTopic.addSubscription(
+        new subscriptions.LambdaSubscription(slackNotifier),
+      );
+    }
 
     const alarmAction = new cloudwatchActions.SnsAction(alertTopic);
     service
@@ -1196,6 +1275,12 @@ exports.handler = async () => {
     new cdk.CfnOutput(this, 'OperationsTopicArn', {
       value: alertTopic.topicArn,
     });
+    if (slackNotifier) {
+      new cdk.CfnOutput(this, 'SlackNotifierFunctionName', {
+        value: slackNotifier.functionName,
+        description: 'CloudWatch アラームを Slack へ転送する Lambda 関数名',
+      });
+    }
     new cdk.CfnOutput(this, 'BootstrapNextStep', {
       value:
         'Push an image to ApplicationRepositoryUri, then deploy with -c appImageTag=<sha> -c desiredCount=2',

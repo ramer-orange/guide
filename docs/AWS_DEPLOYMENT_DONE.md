@@ -20,6 +20,7 @@
 - Route 53 に公開ホストゾーンがあること
 - Google OAuth のクライアント ID とシークレット
 - アラーム通知を受け取るメールアドレス
+- Slack へも通知する場合は Slack Incoming Webhook URL（`docs/SLACK_ALERTS.md`）
 
 ```bash
 npm install -g aws-cdk
@@ -53,6 +54,14 @@ npx cdk deploy GuideStack \
   --parameters GuideStack:GoogleClientId=<client id> \
   --parameters GuideStack:GoogleClientSecret=<client secret> \
   --parameters GuideStack:AlertEmail=<通知先メール>
+```
+
+Slack へも通知する場合は、次の 2 つを足します（省略すると Slack 関連のリソースは作られません）。
+`-c enableSlackAlerts=true` は以降の `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 通知が外れます。
+
+```bash
+  -c enableSlackAlerts=true \
+  --parameters GuideStack:SlackWebhookUrl=https://hooks.slack.com/services/...
 ```
 
 デプロイ後、SNS から届く確認メールのリンクを開いて購読を有効にしてください（有効にしないと通知が届きません）。
@@ -113,6 +122,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 ## 監視
 
 通知先は CloudFormation Parameter `AlertEmail` の SNS 購読です。障害時と復旧時の両方に通知します。
+`-c enableSlackAlerts=true` でデプロイすると、同じ SNS トピックを購読する Lambda（`guide-production-slack-alarm-notifier`）が Slack へも転送します。設定の詳細は `docs/SLACK_ALERTS.md` にあります。
 
 | アラーム | 内容 |
 |---------|------|

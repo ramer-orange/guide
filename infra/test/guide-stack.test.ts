@@ -175,6 +175,78 @@ describe('GuideStack', () => {
     });
   });
 
+  test('既定では Slack 通知のリソースを作らない', () => {
+    const template = makeTemplate();
+    expect(
+      Object.keys(template.findResources('AWS::SNS::Subscription', {
+        Properties: { Protocol: 'lambda' },
+      })),
+    ).toHaveLength(0);
+    expect(Object.keys(template.findParameters('SlackWebhookUrl'))).toHaveLength(0);
+  });
+
+  test('enableSlackAlerts で SNS を購読する Lambda と NoEcho パラメータを作る', () => {
+    const template = makeTemplate({ appImageTag: 'abc123', enableSlackAlerts: true });
+
+    template.hasParameter('SlackWebhookUrl', { NoEcho: true });
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      Runtime: 'nodejs22.x',
+      Timeout: 10,
+      Environment: { Variables: { SLACK_WEBHOOK_URL: { Ref: 'SlackWebhookUrl' } } },
+    });
+    expect(
+      Object.keys(template.findResources('AWS::SNS::Subscription', {
+        Properties: { Protocol: 'lambda' },
+      })),
+    ).toHaveLength(1);
+  });
+
+  test('すべてのアラームが復旧時も通知する', () => {
+    const template = makeTemplate();
+
+    // 既存の this.node.findAll() ループが全 Alarm に OK アクションを付けている。
+    // Slack 通知を足したあともこの性質が保たれることの回帰ガード。
+    const alarms = template.findResources('AWS::CloudWatch::Alarm');
+    expect(Object.keys(alarms)).toHaveLength(10);
+    for (const [id, alarm] of Object.entries(alarms)) {
+      expect(alarm.Properties.OKActions, id).toBeDefined();
+      expect(alarm.Properties.AlarmActions, id).toBeDefined();
+    }
+  });
+
+  test('ECS タスクに Slack ログ設定を渡す', () => {
+    const template = makeTemplate();
+
+    template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      ContainerDefinitions: Match.arrayWith([
+        Match.objectLike({
+          Environment: Match.arrayWith([
+            // slack チャンネルは stack 経由でしか効かないため LOG_CHANNEL は stack にする。
+            { Name: 'LOG_CHANNEL', Value: 'stack' },
+            { Name: 'LOG_STACK', Value: 'stderr,slack' },
+            { Name: 'LOG_SLACK_LEVEL', Value: 'error' },
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  test('enableSlackAlerts で PHP と Next.js の両方に webhook を渡す', () => {
+    const template = makeTemplate({ appImageTag: 'abc123', enableSlackAlerts: true });
+
+    // Web タスクは 1 コンテナで PHP-FPM と Next.js を動かすため、両方の変数名が必要。
+    template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      ContainerDefinitions: Match.arrayWith([
+        Match.objectLike({
+          Secrets: Match.arrayWith([
+            Match.objectLike({ Name: 'LOG_SLACK_WEBHOOK_URL' }),
+            Match.objectLike({ Name: 'SLACK_WEBHOOK_URL' }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
   test('GuardDuty と AWS Config はアプリのスタックに含めない', () => {
     const template = makeTemplate();
     template.resourceCountIs('AWS::GuardDuty::Detector', 0);
