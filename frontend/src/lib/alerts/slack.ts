@@ -39,7 +39,9 @@ const recentAlerts = new Map<string, number>();
  * 送信の成否は見ない（失敗した通知も次の窓までは再送しない）。
  */
 function isSuppressed(alert: SlackAlert, now: number): boolean {
-    const key = `${alert.title}\n${alert.detail}`;
+    // 鍵の長さも実際に送る本文と同じところで切る。呼び出し側は detail の長さを
+    // 制限されていないため、切らないと Map の上限（件数）だけではメモリが抑えられない。
+    const key = `${alert.title}\n${alert.detail.slice(0, DETAIL_MAX_LENGTH)}`;
     const lastSentAt = recentAlerts.get(key);
 
     if (lastSentAt !== undefined && now - lastSentAt < DUPLICATE_WINDOW_MS) {
