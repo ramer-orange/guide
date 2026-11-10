@@ -26,6 +26,7 @@
   - [公開アプリの技術構成](#公開アプリの技術構成)
   - [今後の実装方針：Lightsailへ移行](#今後の実装方針lightsailへ移行)
     - [Lightsail移行後のアーキテクチャ案](#lightsail移行後のアーキテクチャ案)
+  - [障害通知](#障害通知)
 
 ## 開発背景
 
@@ -202,3 +203,9 @@ Renderでは `Dockerfile.render-next` がLaravelとNext.js standaloneを1つの�
 ## ランタイムのセキュリティ更新
 
 本番・開発・CIで修正済みNode.js/PHPを使用し、古いバージョンではインストール・ビルド・起動を失敗させます。[対象バージョン・検証方法・残る開発用依存の警告](docs/RUNTIME_SECURITY.md)を参照してください。公開一時停止は、修正版の本番反映と確認が済むまで継続します。
+
+## 障害通知
+
+障害に気づくための通知を、Laravelのエラーログ、CloudWatchアラーム、GitHub ActionsのCI失敗、Next.jsのサーバー側エラーから、1つのSlack Incoming Webhookへまとめて送ります。Webhook URLはRenderの環境変数・GitHubのシークレット・CloudFormationのパラメータで管理し、ソースやNext.js buildへ含めません。URLが未設定の環境では通知を送らず、アプリの動作も変わりません。
+
+[Webhookの発行手順・経路ごとの設定先・通知されるものとされないもの・通知の止め方](docs/SLACK_ALERTS.md)を参照してください。AWS経路は設定を用意済みですが、AWS課金停止中のため、リポジトリ変数 `AWS_DEPLOY_ENABLED` を `true` にして再デプロイするまで稼働しません。

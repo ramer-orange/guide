@@ -50,7 +50,16 @@ services:
       - key: QUEUE_CONNECTION
         value: database
       - key: LOG_CHANNEL
-        value: stderr
+        value: stack
+      - key: LOG_STACK
+        value: stderr,slack
+      - key: LOG_SLACK_LEVEL
+        value: error
+      # Slack Incoming Webhook URL はRenderのダッシュボードで手入力する（docs/SLACK_ALERTS.md）。
+      - key: LOG_SLACK_WEBHOOK_URL
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false
       - key: FILESYSTEM_DISK
         value: local
       - key: MAIL_MAILER
