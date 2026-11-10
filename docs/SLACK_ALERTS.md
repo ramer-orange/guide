@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | Laravel | アプリの `error` 以上のログ（`slack` ログチャンネル） | Renderの環境変数 / ECSはCDKスタック | `LOG_STACK` に `slack` が含まれ、`LOG_SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
 | AWS | CloudWatchアラーム → SNS → Slack | `cdk deploy` のcontextとパラメータ | `-c enableSlackAlerts=true` でデプロイ済み（自動デプロイで維持するにはリポジトリ変数 `SLACK_ALERTS_ENABLED` も `true`。AWS本番は課金停止中） |
-| GitHub Actions | CIワークフローの失敗 | リポジトリシークレット | シークレット `SLACK_WEBHOOK_URL` が登録されている |
+| GitHub Actions | CI（`deploy.yml`）と依存監査（`dependency-security.yml`）の失敗 | リポジトリシークレット | シークレット `SLACK_WEBHOOK_URL` が登録されている |
 | Next.js | サーバー側の `onRequestError` | Renderの環境変数 / ECSはCDKスタック | 環境変数 `SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
 
 AWS本番環境は課金を停止しているため、GitHub Actionsのデプロイジョブはリポジトリ変数 `AWS_DEPLOY_ENABLED` が `true` のときだけ動きます。AWS経路は設定を用意してあるだけで、この変数を `true` にして再デプロイするまで稼働しません（[AWSデプロイ記録](AWS_DEPLOYMENT_DONE.md)）。
@@ -69,10 +69,13 @@ Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか
 | --- | --- | --- |
 | Laravel | `error` 以上のログ（未捕捉例外、`report()`、明示的な `Log::error` 以上） | `warning` 以下、404、バリデーションエラー（422） |
 | AWS | 既存CloudWatchアラーム10種のALARM遷移とOK復帰（[アラーム一覧](AWS_DEPLOYMENT_DONE.md#監視)） | WAFのブロック個別イベント、CloudTrail |
-| GitHub Actions | `push` イベントでの `validate` / `runtime-image` / `infra-test` / `deploy` のいずれかの失敗（`deploy` は `main` かつ `AWS_DEPLOY_ENABLED=true` のときだけ実行されるため、現状は残り3つが対象） | `pull_request` の失敗（PR画面で見えるため）、キャンセルされた実行（ジョブの結果が `cancelled` で `failure` ではないため）、スキップされたジョブ |
+| GitHub Actions（CI / `deploy.yml`） | **`main` への push** での `validate` / `runtime-image` / `infra-test` / `deploy` のいずれかの失敗（`deploy` は `AWS_DEPLOY_ENABLED=true` のときだけ実行されるため、現状は残り3つが対象） | `main` 以外のブランチへの push、`pull_request` の失敗、キャンセルされた実行（ジョブの結果が `cancelled` で `failure` ではないため）、スキップされたジョブ |
+| GitHub Actions（依存監査 / `dependency-security.yml`） | 週次cron（毎週月曜 01:17 UTC）と `main` / `master` への push での `npm-audit` / `composer-audit` の失敗 | `pull_request` の失敗、`workflow_dispatch`（手動実行）の失敗 |
 | Next.js | `onRequestError` が受け取るサーバー側エラー | クライアント側の `error.tsx` 到達 |
 
 通知量を抑えるため、利用者の操作ミスで日常的に起きるもの（404、入力エラー）と、PR画面やGitHub上で確認できるものは送りません。
+
+GitHub Actionsの通知を `main`（依存監査は `main` / `master` と週次cron）に限っているのは意図的な判断です。`pull_request` の失敗はPR画面で見えるため除外していますが、PRブランチへのpushは `push` イベントも起こすので、ブランチを絞らないと同じコミットの失敗が結局通知され、障害用チャンネルが日常の開発CI失敗で埋まります。feature ブランチのCI失敗は、通知ではなくGitHubのActions画面（およびPR画面）で確認してください。逆に週次の依存監査は誰も結果を見ていないため、新しいCVEで赤くなったことに気づく手段がこの通知だけになります。そのためcron実行は通知対象に含めています。
 
 ### Laravel経路でSlackへ載る内容
 
@@ -91,11 +94,20 @@ CloudWatchアラームは10種すべてに復旧時の通知（OKアクション
 
 ## 4. 重複抑制と既知の挙動
 
-Laravel経路では、`error` 以上について、同じログレベルと同じメッセージの連続発生を300秒だけ抑制します。抑制の判定レベルは `error` に固定されているため（`app/Logging/SlackAlertLoggerFactory.php`）、`LOG_SLACK_LEVEL` を `warning` などへ下げた場合、`warning` の通知は抑制されずに毎回届きます。抑制の記録は各コンテナの `storage/logs/slack-dedup.log` に書かれるため、抑制はコンテナ単位です。ECSタスクやRenderのインスタンスが複数あれば、同じエラーがインスタンスごとに1回ずつ届きます。
+Laravel経路の抑制は2段構えで、どちらも「同じログレベル」と「同じメッセージ（1行目）」の一致で判定します。
 
-既知の運用上の性質として、重複抑制を行う `DeduplicationHandler` は送信を試みる前に記録を書きます。そのためSlackへ届かなかった通知も、次の300秒は「すでに通知済み」として抑制されます。Slack側の障害やWebhook URLの失効中に起きたエラーは、Slackには現れないことがあります。同じエラーはstderr（Renderのログ、CloudWatch Logs）にはそのまま残るので、Slackに通知が来ないときや障害調査のときはログ本体を確認してください。
+1. **同一プロセス内（`App\Logging\OncePerProcessHandler`）** — 1リクエスト（またはワーカープロセス）の中で同じエラーを何回ログしても、Slackへ送るのは1回だけです。Monologの `DeduplicationHandler` は送るか送らないかを1つの真偽値で決め、送ると決めたらバッファ全体を内側のハンドラへ渡すため、これを挟まないとループの中で起きたN件がN回Slackへ送られます。記憶しているのは送信済みの印だけで、200件に達したら捨てて作り直します。
+2. **プロセスをまたぐ抑制（`DeduplicationHandler`、300秒）** — 1度Slackへ送ったメッセージは、次の300秒のあいだ、別のリクエストから同じものが来ても送りません。記録は各コンテナの `storage/logs/slack-dedup.log` に書かれるため、抑制はコンテナ単位です。ECSタスクやRenderのインスタンスが複数あれば、同じエラーがインスタンスごとに1回ずつ届きます。保存先は環境変数 `LOG_SLACK_DEDUP_STORE` で変えられます。
 
-Slackへの送信失敗はアプリの処理へ伝播しません。通知の送信が失敗しても、リクエストやジョブは通常どおり続きます。
+抑制の判定レベルは `error` に固定されているため（`app/Logging/SlackAlertLoggerFactory.php`）、`LOG_SLACK_LEVEL` を `warning` などへ下げた場合、`warning` の通知は（プロセス内の1回化は効きますが）300秒の抑制には乗らず、プロセスごとに届きます。
+
+判定はメッセージの完全一致なので、本文にリクエストIDやユーザーIDのような毎回変わる値が入っていると、同じ障害でも別メッセージとして扱われて抑制が効きません。上の §3 のサニタイズでSQLとバインド値が本文から落ちるため、DBエラーについてはこの取りこぼしが減ります。
+
+既知の運用上の性質として、どちらの抑制も送信を試みる前に「送った」と記録します。そのためSlackへ届かなかった通知も、次の300秒は「すでに通知済み」として抑制されます。Slack側の障害やWebhook URLの失効中に起きたエラーは、Slackには現れないことがあります。同じエラーはstderr（Renderのログ、CloudWatch Logs）にはそのまま残るので、Slackに通知が来ないときや障害調査のときはログ本体を確認してください。
+
+Next.js経路（`frontend/src/lib/alerts/slack.ts`）にも同じ300秒の抑制があります。`onRequestError` はリクエストごとに呼ばれるため、壊れたルート1つとクローラーだけでチャンネルが埋まります。抑制の鍵は「タイトル + 詳細（エラー名とメッセージ）」で、パスは鍵に含めません。同じエラーが複数のパスで起きている場合、通知に出るのは最初の1件だけです。記憶はプロセス内のMapなので、インスタンス単位・再起動でリセットされ、上限は200件です。
+
+Slackへの送信失敗はアプリの処理へ伝播しません。通知の送信が失敗しても、リクエストやジョブは通常どおり続きます。Laravel・Next.jsのどちらも、送信のタイムアウトは5秒（Laravelは接続2秒）で、失敗しても再試行しません。
 
 ## 5. 通知を止める方法
 

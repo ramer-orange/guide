@@ -46,3 +46,54 @@ jobs:
           tools: composer
           coverage: none
       - run: composer audit --locked --no-interaction --abandoned=report
+
+  # 監査が失敗したときSlackへ通知する。報告専用で、ワークフローの成否は変えない。
+  # 対象は cron（週次）と main/master へのpushだけ。週次実行は誰も見ていないので、
+  # 新しいCVEで赤くなっても気づけないことがこの通知の主目的。
+  # pull_request はPR画面で見えるため除外し、workflow_dispatch は手で起動した本人が
+  # 結果を見ているため除外する（on: の branches 指定により、pushはmain/masterに限られる）。
+  #
+  # このステップは .github/workflows/deploy.yml の notify-failure と**意図的に同じ内容の複製**。
+  # reusable workflow（workflow_call）へ切り出していないのは、この環境でactionlintが
+  # 実行できず（イメージを取得できない）、誰も検証できないYAML構造を持ち込まない判断。
+  # 片方を直すときはもう片方も直すこと。
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [npm-audit, composer-audit]
+    if: ${{ always() && (github.event_name == 'schedule' || github.event_name == 'push') && contains(needs.*.result, 'failure') }}
+    steps:
+      - name: Slackへ失敗を通知
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # シークレットが未登録のあいだは何もせず正常終了する（通知の有無でCIを落とさない）。
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "シークレット SLACK_WEBHOOK_URL が未登録のため、Slack通知を省略します"
+            exit 0
+          fi
+
+          failed_jobs=$(printf '%s' "$NEEDS_JSON" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure") | .key)
+            | join(", ")')
+
+          payload=$(jq -n \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg jobs "$failed_jobs" \
+            --arg ref "$REF_NAME" \
+            --arg sha "$COMMIT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg url "$RUN_URL" \
+            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\nコミット: \($sha)\n実行者: \($actor)\n実行ログ: \($url)"}')
+
+          curl --fail --silent --show-error --max-time 5 \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            "$SLACK_WEBHOOK_URL"
