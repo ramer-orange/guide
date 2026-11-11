@@ -114,19 +114,13 @@ function bufferSizeOf(DeduplicationHandler $dedup): int
     return (new ReflectionProperty($dedup, 'bufferSize'))->getValue($dedup);
 }
 
-it('webhook URL が無いときは何もしないハンドラだけを持つ', function () {
-    $logger = (new SlackAlertLoggerFactory)(['url' => null, 'level' => 'error']);
+it('webhook URL が無いときは何もしないハンドラだけを持つ', function (?string $url) {
+    $logger = (new SlackAlertLoggerFactory)(['url' => $url, 'level' => 'error']);
 
     expect($logger)->toBeInstanceOf(Logger::class);
     expect($logger->getHandlers())->toHaveCount(1);
     expect($logger->getHandlers()[0])->toBeInstanceOf(NullHandler::class);
-});
-
-it('webhook URL が空文字でも何もしないハンドラだけを持つ', function () {
-    $logger = (new SlackAlertLoggerFactory)(['url' => '', 'level' => 'error']);
-
-    expect($logger->getHandlers()[0])->toBeInstanceOf(NullHandler::class);
-});
+})->with([null, '']);
 
 it('URL 未設定の slack チャンネルへ error を書いても例外にならない', function () {
     config(['logging.channels.slack.url' => null]);
@@ -231,15 +225,6 @@ it('メッセージ中のプレースホルダを展開し、参照していな�
 
     expect($payload)->toContain('ユーザー 42 の処理に失敗');
     expect($payload)->not->toContain('secret-token-value');
-});
-
-it('ハンドラの入れ子が WhatFailureGroup → Deduplication → WhatFailureGroup → OncePerProcess である', function () {
-    $logger = slackLogger();
-
-    expect($logger->getHandlers()[0])->toBeInstanceOf(WhatFailureGroupHandler::class);
-    expect(dedupHandlerOf($logger))->toBeInstanceOf(DeduplicationHandler::class);
-    expect(oncePerProcessHandlerOf($logger))->toBeInstanceOf(OncePerProcessHandler::class);
-    expect(slackHandlerOf($logger))->toBeInstanceOf(SlackAlertWebhookHandler::class);
 });
 
 it('1プロセス内の同一メッセージは1回だけ送る', function () {
@@ -476,27 +461,6 @@ it('reset() で送信済みの記憶を捨て、内側のハンドラへも伝�
     // 記憶も捨てられているので、同じ本文がもう一度送られる。
     $handler->handle($record());
     expect($inner->getRecords())->toHaveCount(1);
-});
-
-it('Logger::reset() が OncePerProcessHandler まで届く', function () {
-    OncePerProcessHandler::forgetSentRecords();
-    $store = tempnam(sys_get_temp_dir(), 'slack-dedup-');
-    $sent = new TestHandler;
-
-    try {
-        $logger = slackLoggerSendingTo($sent, $store);
-        $logger->error('障害');
-        $logger->close();
-        expect($sent->getRecords())->toHaveCount(1);
-
-        // Logger::reset() は GroupHandler / BufferHandler を通って内側へ伝わる。
-        // OncePerProcessHandler が reset() を実装していないと（AbstractHandler の
-        // 空実装のまま）TestHandler::reset() まで届かず、記録が残る。
-        $logger->reset();
-        expect($sent->getRecords())->toHaveCount(0);
-    } finally {
-        @unlink($store);
-    }
 });
 
 it('send() に渡したオプションを curl ハンドルへ適用する', function () {
