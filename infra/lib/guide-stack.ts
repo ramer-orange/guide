@@ -292,8 +292,10 @@ export class GuideStack extends cdk.Stack {
         encryption: ecr.RepositoryEncryption.AES_256,
         lifecycleRules: [
           {
-            description: 'Keep the latest 30 deployable images',
-            maxImageCount: 30,
+            // 1イメージが数百MB〜1GB（PHP + Next.js ビルド込み）あるため、
+            // ロールバック先として十分な本数だけ残す。
+            description: 'Keep the latest 10 deployable images',
+            maxImageCount: 10,
           },
         ],
         removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -414,11 +416,14 @@ export class GuideStack extends cdk.Stack {
     filesBucket.grantReadWrite(taskRole);
 
     // ECS ClusterとCloudWatch Logs
-    // Fargate Taskを収容するClusterを作り、Container Insightsとログ出力を有効にする。
+    // Fargate Taskを収容するClusterを作り、ログ出力を有効にする。
+    // Container Insights は切る。CPU とメモリは ECS の標準メトリクスで取れており、
+    // アラームもそちらで組んでいるため、追加課金のカスタムメトリクスを払う理由がない。
+    // 詳細なタスク単位の内訳が必要になった時点で ENABLED / ENHANCED に戻す。
     const cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
       clusterName: 'guide-production',
-      containerInsightsV2: ecs.ContainerInsights.ENABLED,
+      containerInsightsV2: ecs.ContainerInsights.DISABLED,
     });
 
     const applicationLogGroup = new logs.LogGroup(
@@ -773,7 +778,9 @@ export class GuideStack extends cdk.Stack {
     });
 
     // WAF ログ
-    // 誤検知の調査用に、遮断・許可の判定を CloudWatch Logs に残す。
+    // 遮断した判定だけを CloudWatch Logs に残す。許可まで残すと全リクエストが
+    // ログ取り込みの課金対象になり、量がトラフィック次第で読めなくなる。
+    // 誤検知を追うときは Conditions に COUNT を足して一時的に広げる。
     // Cookie と Authorization ヘッダーはログに残さない。
     const wafLogGroupName = 'aws-waf-logs-guide-production';
     const wafLogGroup = new logs.LogGroup(this, 'WafLogGroup', {
@@ -795,6 +802,17 @@ export class GuideStack extends cdk.Stack {
             arnFormat: cdk.ArnFormat.COLON_RESOURCE_NAME,
           }),
         ],
+        // CloudFormation の LoggingFilter はパスカルケースのキーを取る。
+        loggingFilter: {
+          DefaultBehavior: 'DROP',
+          Filters: [
+            {
+              Behavior: 'KEEP',
+              Requirement: 'MEETS_ANY',
+              Conditions: [{ ActionCondition: { Action: 'BLOCK' } }],
+            },
+          ],
+        },
         redactedFields: [
           { singleHeader: { Name: 'cookie' } },
           { singleHeader: { Name: 'authorization' } },
@@ -928,12 +946,15 @@ export class GuideStack extends cdk.Stack {
       .addAlarmAction(alarmAction);
 
     // 外形監視
-    // AWS の外から本番 URL の /healthz を 5 分ごとに確認する。
+    // AWS の外から本番 URL の /healthz を 15 分ごとに確認する。
+    // 実行回数がそのまま課金なので、5 分間隔（月 8,640 回）までは要らない。
+    // ALB のターゲットヘルスチェックと no-healthy-targets アラームが別にあり、
+    // この Canary が固有に見ているのは DNS・証明書・WAF の外側からの経路。
     // DNS・証明書・WAF・ALB・アプリのどこで壊れても検知できる。
     const healthCanary = new synthetics.Canary(this, 'HealthCanary', {
       canaryName: 'guide-prod-health',
       runtime: synthetics.Runtime.SYNTHETICS_NODEJS_PUPPETEER_9_1,
-      schedule: synthetics.Schedule.rate(cdk.Duration.minutes(5)),
+      schedule: synthetics.Schedule.rate(cdk.Duration.minutes(15)),
       test: synthetics.Test.custom({
         handler: 'index.handler',
         code: synthetics.Code.fromInline(`
@@ -963,7 +984,9 @@ exports.handler = async () => {
       ],
     });
     healthCanary
-      .metricSuccessPercent({ period: cdk.Duration.minutes(5) })
+      // period は Canary の実行間隔と揃える。実行間隔より短いと、
+      // データの無い期間が treatMissingData: BREACHING に拾われて誤報になる。
+      .metricSuccessPercent({ period: cdk.Duration.minutes(15) })
       .createAlarm(this, 'HealthCanaryAlarm', {
         alarmName: 'guide-production-health-check-failed',
         threshold: 100,
@@ -992,9 +1015,11 @@ exports.handler = async () => {
       backupVault,
       backupPlanRules: [
         new backup.BackupPlanRule({
+          // RDS 自身の自動バックアップ（7 日・PITR 可）と重なる範囲なので、
+          // 35 日は持たない。2 週間前まで戻せれば個人開発では足りる。
           ruleName: 'Daily',
           scheduleExpression: events.Schedule.cron({ hour: '18', minute: '0' }),
-          deleteAfter: cdk.Duration.days(35),
+          deleteAfter: cdk.Duration.days(14),
         }),
         new backup.BackupPlanRule({
           ruleName: 'Monthly',
@@ -1003,7 +1028,8 @@ exports.handler = async () => {
             hour: '18',
             minute: '30',
           }),
-          deleteAfter: cdk.Duration.days(365),
+          // 1 年分は持たない。四半期ぶん遡れれば足りる。
+          deleteAfter: cdk.Duration.days(90),
         }),
       ],
     });
