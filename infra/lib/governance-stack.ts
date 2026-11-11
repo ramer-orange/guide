@@ -1,21 +1,26 @@
 import * as cdk from 'aws-cdk-lib';
+import * as cloudtrail from 'aws-cdk-lib/aws-cloudtrail';
 import * as config from 'aws-cdk-lib/aws-config';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as eventTargets from 'aws-cdk-lib/aws-events-targets';
 import * as guardduty from 'aws-cdk-lib/aws-guardduty';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 
 /**
- * アカウント・リージョンに 1 つしか作れない GuardDuty と AWS Config をまとめたスタック。
+ * アカウントに 1 つだけ置くもの（GuardDuty・AWS Config・CloudTrail・GitHub Actions の
+ * OIDC Provider）をまとめたスタック。
  *
  * アプリのスタック（GuideStack）から分けることで、
  * - 既に有効なアカウントでもアプリのデプロイが失敗しない
  * - アプリのスタックを作り直しても監査が止まらない
- * ようにする。既に有効な機能は -c enableGuardDuty=false / -c enableConfig=false で外す。
+ * - production と staging を同じアカウントに並べても、監査や OIDC Provider が重複しない
+ * ようにする。既にあるものは -c enableGuardDuty=false / -c enableConfig=false /
+ * -c enableCloudTrail=false / -c createGithubOidcProvider=false で外す。
  */
 export class GovernanceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -23,6 +28,11 @@ export class GovernanceStack extends cdk.Stack {
 
     const enableGuardDuty = this.booleanContext('enableGuardDuty', true);
     const enableConfig = this.booleanContext('enableConfig', true);
+    const enableCloudTrail = this.booleanContext('enableCloudTrail', true);
+    const createGithubOidcProvider = this.booleanContext(
+      'createGithubOidcProvider',
+      true,
+    );
 
     const alertEmailParameter = new cdk.CfnParameter(this, 'AlertEmail', {
       type: 'String',
@@ -38,6 +48,44 @@ export class GovernanceStack extends cdk.Stack {
     alertTopic.addSubscription(
       new subscriptions.EmailSubscription(alertEmailParameter.valueAsString),
     );
+
+    // GitHub Actions OIDC Provider
+    // 環境ごとのデプロイ用 Role（GuideStack）が信頼する。同じ URL の Provider は
+    // アカウントに 1 つしか作れないため、環境ごとのスタックではなくここに置く。
+    // Role 側は ARN を名前から組み立てて参照する（スタック間の Export を作らない）。
+    if (createGithubOidcProvider) {
+      new iam.OpenIdConnectProvider(this, 'GitHubOidcProvider', {
+        url: 'https://token.actions.githubusercontent.com',
+        clientIds: ['sts.amazonaws.com'],
+      });
+    }
+
+    // CloudTrail
+    // AWS APIの操作履歴をCloudWatch Logsと監査用S3へ保存する。
+    // 証跡はアカウント全体を記録するので、環境ごとに作ると同じイベントを二重に保存して課金される。
+    if (enableCloudTrail) {
+      const trailBucket = new s3.Bucket(this, 'TrailBucket', {
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        enforceSSL: true,
+        lifecycleRules: [{ expiration: cdk.Duration.days(365) }],
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+      });
+      const trailLogGroup = new logs.LogGroup(this, 'CloudTrailLogGroup', {
+        logGroupName: '/aws/cloudtrail/guide-account',
+        retention: logs.RetentionDays.THREE_MONTHS,
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+      });
+      new cloudtrail.Trail(this, 'AuditTrail', {
+        trailName: 'guide-account',
+        bucket: trailBucket,
+        s3KeyPrefix: 'cloudtrail',
+        sendToCloudWatchLogs: true,
+        cloudWatchLogGroup: trailLogGroup,
+        includeGlobalServiceEvents: true,
+        managementEvents: cloudtrail.ReadWriteType.ALL,
+      });
+    }
 
     if (enableGuardDuty) {
       const detector = new guardduty.CfnDetector(this, 'GuardDutyDetector', {

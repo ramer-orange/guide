@@ -120,7 +120,7 @@ it('webhook URL が無いときは何もしないハンドラだけを持つ', f
     expect($logger)->toBeInstanceOf(Logger::class);
     expect($logger->getHandlers())->toHaveCount(1);
     expect($logger->getHandlers()[0])->toBeInstanceOf(NullHandler::class);
-})->with([null, '']);
+})->with([null, '', 'unset', 'hooks.slack.com/services/T/B/x']);
 
 it('URL 未設定の slack チャンネルへ error を書いても例外にならない', function () {
     config(['logging.channels.slack.url' => null]);

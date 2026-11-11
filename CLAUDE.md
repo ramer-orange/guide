@@ -9,7 +9,7 @@ PLAGINE（旅のしおり）。Laravel 12 の API と Next.js 16 のフロント
 | `app/`, `routes/`, `config/`, `database/` | Laravel 12 の API |
 | `tests/` | Pest 3。`tests/Feature` には `RefreshDatabase` が自動で付く（`tests/Pest.php`） |
 | `frontend/` | Next.js 16（App Router、`output: "standalone"`）。テストは vitest |
-| `infra/` | AWS CDK v2。`infra/lib/guide-stack.ts` が本体 |
+| `infra/` | AWS CDK v2。環境ごとの値は `infra/lib/environments.ts`、消えると戻せないもの（VPC・RDS・S3・ECR・Secret）は `guide-data-stack.ts`、作り直せるもの（ECS・ALB・監視）は `guide-stack.ts` |
 | `docs/` | 設計・運用ドキュメント。`docs/superpowers/plans/` は実装計画 |
 | `scripts/`, `docker/`, `conf/`, `nginx/` | 実行環境とランタイム検証 |
 
@@ -53,7 +53,10 @@ npm run cdk:synth
 ## 環境ごとの事情
 
 - **Render**: 無料プラン。PHP の脆弱性対応のため現在は公開を一時停止している。設定は `render.yaml`。
-- **AWS**: 請求停止中のため、`.github/workflows/deploy.yml` のデプロイはリポジトリ変数 `AWS_DEPLOY_ENABLED` で止めてある。
+- **AWS**: 請求停止中のため、`.github/workflows/deploy.yml` のデプロイはリポジトリ変数 `AWS_DEPLOY_ENABLED`（production）と `AWS_STAGING_DEPLOY_ENABLED`（staging）で止めてある。構築と運用の手順は `docs/AWS_DEPLOYMENT_DONE.md`、復元の手順は `docs/AWS_RESTORE_RUNBOOK.md`。
+- **AWS のスタック**: production は `GuideDataStack` + `GuideStack`、staging は `GuideStagingDataStack` + `GuideStagingStack`。CI は `cdk deploy --exclusively` でアプリ側だけを更新する。データ側（`guide-data-stack.ts`）を変えたら手動でデプロイする。データ側には合成時の context を読ませない。
+- **DB の接続ユーザー**: Web タスクは権限を絞った `guide_app`、Migration タスクだけがマスターユーザーで接続する。`guide_app` は Migration タスクが `php artisan db:provision-app-user` で用意する。DDL が要る処理を Web タスク側（リクエスト処理や起動スクリプト）に書かない。
+- **秘密の値**: CloudFormation のパラメータで受け取らない。Secrets Manager に仮の値で Secret を作り、デプロイ後に `put-secret-value` で入れる。
 - **CDK の context フラグ**: `enableSlackAlerts` のような合成時フラグは、付けずに `cdk deploy` すると対応するリソースが削除される。CI 側（`deploy.yml`）が同じ値を渡していることを必ず確認する。
 
 ## 障害通知

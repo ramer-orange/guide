@@ -29,6 +29,22 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Web アプリ用の DB ユーザー
+    |--------------------------------------------------------------------------
+    |
+    | `php artisan db:provision-app-user` が作成・更新する、権限を絞った
+    | PostgreSQL ユーザー。AWS の Migration タスクだけが設定する。
+    | Web アプリ自身はこの値を読まず、DB_USERNAME / DB_PASSWORD で接続する。
+    |
+    */
+
+    'app_user' => [
+        'username' => env('DB_APP_USERNAME'),
+        'password' => env('DB_APP_PASSWORD'),
+    ],
+
     'connections' => [
 
         'sqlite' => [

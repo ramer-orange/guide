@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import * as cdk from 'aws-cdk-lib';
 import { Annotations, Match, Template } from 'aws-cdk-lib/assertions';
+import {
+  environments,
+  GuideEnvironmentConfig,
+} from '../lib/environments';
 import { GovernanceStack } from '../lib/governance-stack';
+import { GuideDataStack } from '../lib/guide-data-stack';
 import { GuideStack } from '../lib/guide-stack';
 
 const env = { account: '123456789012', region: 'ap-northeast-1' };
@@ -13,13 +18,39 @@ const lookupContext = {
   ],
 };
 
-function makeGuideStack(context: Record<string, unknown> = { appImageTag: 'abc123' }) {
+function makeStacks(
+  context: Record<string, unknown> = { appImageTag: 'abc123' },
+  config: GuideEnvironmentConfig = environments.production,
+) {
   const app = new cdk.App({ context: { ...lookupContext, ...context } });
-  return new GuideStack(app, 'TestStack', { env });
+  const data = new GuideDataStack(app, 'TestDataStack', { env, config });
+  const stack = new GuideStack(app, 'TestStack', { env, config, data });
+  return { app, data, stack };
+}
+
+function makeGuideStack(context?: Record<string, unknown>) {
+  return makeStacks(context).stack;
 }
 
 function makeTemplate(context?: Record<string, unknown>): Template {
   return Template.fromStack(makeGuideStack(context));
+}
+
+function makeDataTemplate(
+  config: GuideEnvironmentConfig = environments.production,
+): Template {
+  return Template.fromStack(makeStacks(undefined, config).data);
+}
+
+/** Family が一致するタスク定義の先頭コンテナを返す。 */
+function containerOf(template: Template, family: string) {
+  const definitions = Object.values(
+    template.findResources('AWS::ECS::TaskDefinition', {
+      Properties: { Family: family },
+    }),
+  );
+  expect(definitions).toHaveLength(1);
+  return definitions[0].Properties.ContainerDefinitions[0];
 }
 
 describe('GuideStack', () => {
@@ -95,13 +126,13 @@ describe('GuideStack', () => {
   });
 
   test('ECR のタグは上書きできない', () => {
-    makeTemplate().hasResourceProperties('AWS::ECR::Repository', {
+    makeDataTemplate().hasResourceProperties('AWS::ECR::Repository', {
       ImageTagMutability: 'IMMUTABLE',
     });
   });
 
   test('RDS は t4g.small・Multi-AZ・Performance Insights 有効', () => {
-    makeTemplate().hasResourceProperties('AWS::RDS::DBInstance', {
+    makeDataTemplate().hasResourceProperties('AWS::RDS::DBInstance', {
       DBInstanceClass: 'db.t4g.small',
       MultiAZ: true,
       EnablePerformanceInsights: true,
@@ -160,18 +191,26 @@ describe('GuideStack', () => {
     });
   });
 
-  test('外形監視の Canary と AWS Backup がある', () => {
+  test('外形監視の Canary は 5 分間隔で、アラームの period も同じ', () => {
     const template = makeTemplate();
     template.hasResourceProperties('AWS::Synthetics::Canary', {
       Name: 'guide-prod-health',
-      // 実行回数がそのまま課金になるので間隔を固定する。
-      Schedule: Match.objectLike({ Expression: 'rate(15 minutes)' }),
+      Schedule: Match.objectLike({ Expression: 'rate(5 minutes)' }),
     });
-    template.hasResourceProperties('AWS::Backup::BackupPlan', {
+    // 実行間隔より短い period にすると、データの無い期間が BREACHING に拾われて誤報になる。
+    template.hasResourceProperties('AWS::CloudWatch::Alarm', {
+      AlarmName: 'guide-production-health-check-failed',
+      Period: 300,
+      TreatMissingData: 'breaching',
+    });
+  });
+
+  test('AWS Backup は日次 35 日・月次 1 年で保管する', () => {
+    makeDataTemplate().hasResourceProperties('AWS::Backup::BackupPlan', {
       BackupPlan: Match.objectLike({
         BackupPlanRule: Match.arrayWith([
-          Match.objectLike({ RuleName: 'Daily', Lifecycle: { DeleteAfterDays: 14 } }),
-          Match.objectLike({ RuleName: 'Monthly', Lifecycle: { DeleteAfterDays: 90 } }),
+          Match.objectLike({ RuleName: 'Daily', Lifecycle: { DeleteAfterDays: 35 } }),
+          Match.objectLike({ RuleName: 'Monthly', Lifecycle: { DeleteAfterDays: 365 } }),
         ]),
       }),
     });
@@ -184,17 +223,22 @@ describe('GuideStack', () => {
         Properties: { Protocol: 'lambda' },
       })),
     ).toHaveLength(0);
-    expect(Object.keys(template.findParameters('SlackWebhookUrl'))).toHaveLength(0);
+    template.resourceCountIs('AWS::SecretsManager::Secret', 0);
+    template.resourceCountIs('AWS::Lambda::Function', 0);
   });
 
-  test('enableSlackAlerts で SNS を購読する Lambda と NoEcho パラメータを作る', () => {
+  test('enableSlackAlerts で SNS を購読する Lambda を作り、Webhook URL は Secret から読ませる', () => {
     const template = makeTemplate({ appImageTag: 'abc123', enableSlackAlerts: true });
 
-    template.hasParameter('SlackWebhookUrl', { NoEcho: true });
+    // URL は CloudFormation のパラメータでも Lambda の環境変数でも受け渡さない。
+    expect(Object.keys(template.findParameters('SlackWebhookUrl'))).toHaveLength(0);
+    const secrets = template.findResources('AWS::SecretsManager::Secret');
+    expect(Object.keys(secrets)).toHaveLength(1);
+    const [secretId] = Object.keys(secrets);
     template.hasResourceProperties('AWS::Lambda::Function', {
       Runtime: 'nodejs22.x',
       Timeout: 10,
-      Environment: { Variables: { SLACK_WEBHOOK_URL: { Ref: 'SlackWebhookUrl' } } },
+      Environment: { Variables: { SLACK_WEBHOOK_SECRET_ARN: { Ref: secretId } } },
     });
     expect(
       Object.keys(template.findResources('AWS::SNS::Subscription', {
@@ -277,35 +321,235 @@ describe('GuideStack', () => {
     });
 
     // ECR は1イメージが大きいが、稼働中イメージの失効を避けて余裕を持たせる。
-    template.hasResourceProperties('AWS::ECR::Repository', {
+    makeDataTemplate().hasResourceProperties('AWS::ECR::Repository', {
       LifecyclePolicy: {
         LifecyclePolicyText: Match.stringLikeRegexp('"countNumber":20'),
       },
     });
   });
 
-  test('GuardDuty と AWS Config はアプリのスタックに含めない', () => {
+  test('アカウントに 1 つだけのものはアプリのスタックに含めない', () => {
+    for (const template of [makeTemplate(), makeDataTemplate()]) {
+      template.resourceCountIs('AWS::GuardDuty::Detector', 0);
+      template.resourceCountIs('AWS::Config::ConfigurationRecorder', 0);
+      template.resourceCountIs('AWS::CloudTrail::Trail', 0);
+      template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 0);
+    }
+  });
+
+  test('消えると戻せないものはアプリのスタックに置かない', () => {
+    const template = makeTemplate({ appImageTag: 'abc123', enableSlackAlerts: true });
+    for (const type of [
+      'AWS::EC2::VPC',
+      'AWS::RDS::DBInstance',
+      'AWS::ECR::Repository',
+      'AWS::Backup::BackupVault',
+    ]) {
+      template.resourceCountIs(type, 0);
+    }
+    // S3 は Canary の実行結果（30 日で失効）を置くバケットだけ。添付ファイルと監査ログは無い。
+    template.resourceCountIs('AWS::S3::Bucket', 1);
+  });
+
+  test('秘密の値を CloudFormation のパラメータで受け取らない', () => {
+    const { data, stack } = makeStacks({ appImageTag: 'abc123', enableSlackAlerts: true });
+    for (const template of [Template.fromStack(data), Template.fromStack(stack)]) {
+      const parameters = template.findParameters('*');
+      for (const [name, parameter] of Object.entries(parameters)) {
+        expect(parameter.NoEcho, name).toBeUndefined();
+        expect(name).not.toMatch(/secret|password|webhook|clientid/i);
+      }
+    }
+  });
+
+  test('Web タスクは権限を絞った DB ユーザーで接続し、マスターユーザーの Secret を読めない', () => {
+    const { data, stack } = makeStacks();
+    const template = Template.fromStack(stack);
+    const dataTemplate = Template.fromStack(data);
+
+    // マスターユーザーのパスワードは RDS が管理し、テンプレートには現れない。
+    dataTemplate.hasResourceProperties('AWS::RDS::DBInstance', {
+      MasterUsername: 'guide_admin',
+      ManageMasterUserPassword: true,
+      MasterUserPassword: Match.absent(),
+    });
+
+    const secretOf = (family: string, name: string) =>
+      JSON.stringify(
+        containerOf(template, family).Secrets.find(
+          (secret: { Name: string }) => secret.Name === name,
+        ),
+      );
+    // Web はアプリ用ユーザーの Secret、Migration は RDS 管理のマスター Secret を参照する。
+    expect(secretOf('guide-production-application', 'DB_PASSWORD')).toContain('DatabaseAppSecret');
+    expect(secretOf('guide-production-application', 'DB_PASSWORD')).not.toContain('MasterUserSecret');
+    expect(secretOf('guide-production-migration', 'DB_PASSWORD')).toContain('MasterUserSecret');
+    expect(secretOf('guide-production-migration', 'DB_APP_PASSWORD')).toContain('DatabaseAppSecret');
+    expect(
+      containerOf(template, 'guide-production-application').Secrets.map(
+        (secret: { Name: string }) => secret.Name,
+      ),
+    ).not.toContain('DB_APP_PASSWORD');
+
+    // Web タスクの Execution Role のポリシーにマスター Secret が含まれない。
+    const policies = template.findResources('AWS::IAM::Policy');
+    const policyFor = (rolePrefix: string) =>
+      Object.values(policies).filter((policy) =>
+        policy.Properties.Roles.some((role: { Ref: string }) => role.Ref.startsWith(rolePrefix)),
+      );
+    expect(JSON.stringify(policyFor('EcsExecutionRole'))).not.toContain('MasterUserSecret');
+    expect(JSON.stringify(policyFor('MigrationExecutionRole'))).toContain('MasterUserSecret');
+    // Migration タスクは S3 に触れない。
+    expect(JSON.stringify(policyFor('MigrationTaskRole'))).not.toContain('s3:');
+  });
+
+  test('Migration タスクはアプリ用ユーザーを用意してから migrate する', () => {
+    expect(containerOf(makeTemplate(), 'guide-production-migration').Command).toEqual([
+      'sh',
+      '-c',
+      // 空の DB には --isolated のロックを取る cache_locks が無いので、初回だけロック無しで流す。
+      'php artisan db:provision-app-user' +
+        ' && { php artisan migrate:status > /dev/null 2>&1 || php artisan migrate --force; }' +
+        ' && php artisan migrate --force --isolated',
+    ]);
+  });
+
+  test('RDS へは Fargate タスクの Security Group からだけ接続できる', () => {
+    const { data, stack } = makeStacks();
+    Template.fromStack(stack).hasResourceProperties('AWS::EC2::SecurityGroupIngress', {
+      IpProtocol: 'tcp',
+      FromPort: 5432,
+      ToPort: 5432,
+      SourceSecurityGroupId: { 'Fn::GetAtt': [Match.stringLikeRegexp('^TaskSecurityGroup'), 'GroupId'] },
+    });
+    // データ側のスタックには、アプリ側を参照するルールを置かない（循環依存になる）。
+    Template.fromStack(data).resourceCountIs('AWS::EC2::SecurityGroupIngress', 0);
+  });
+
+  test('デプロイ用 Role は GitHub の Environment を指定したジョブだけが引き受けられる', () => {
     const template = makeTemplate();
-    template.resourceCountIs('AWS::GuardDuty::Detector', 0);
-    template.resourceCountIs('AWS::Config::ConfigurationRecorder', 0);
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'guide-production-github-actions',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Action: 'sts:AssumeRoleWithWebIdentity',
+            // ブランチやタグを見る StringLike は使わない。
+            Condition: {
+              StringEquals: {
+                'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+                'token.actions.githubusercontent.com:sub':
+                  'repo:ramer-orange/guide:environment:production',
+              },
+            },
+          }),
+        ],
+      },
+    });
+
+    // cdk-* 全体ではなく、bootstrap の Role を名指しで引き受ける。
+    const policies = JSON.stringify(template.findResources('AWS::IAM::Policy'));
+    expect(policies).not.toContain('role/cdk-*');
+    for (const role of ['deploy-role', 'file-publishing-role', 'lookup-role']) {
+      expect(policies).toContain(`role/cdk-hnb659fds-${role}-123456789012-ap-northeast-1`);
+    }
+    expect(policies).not.toContain('cfn-exec-role');
+  });
+});
+
+describe('staging', () => {
+  const staging = () => makeStacks({ appImageTag: 'abc123' }, environments.staging);
+
+  test('production と同じアカウントに並べられるよう、名前に環境名が入る', () => {
+    const { data, stack } = staging();
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::ECS::Cluster', { ClusterName: 'guide-staging' });
+    template.hasResourceProperties('AWS::ECS::Service', { ServiceName: 'guide-staging-web' });
+    template.hasResourceProperties('AWS::IAM::Role', {
+      RoleName: 'guide-staging-github-actions',
+      AssumeRolePolicyDocument: {
+        Statement: [
+          Match.objectLike({
+            Condition: Match.objectLike({
+              StringEquals: Match.objectLike({
+                'token.actions.githubusercontent.com:sub':
+                  'repo:ramer-orange/guide:environment:staging',
+              }),
+            }),
+          }),
+        ],
+      },
+    });
+    Template.fromStack(data).hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'guide-staging-app',
+    });
+    // どちらのテンプレートにも production の名前が残っていない。
+    for (const target of [data, stack]) {
+      expect(JSON.stringify(Template.fromStack(target).toJSON())).not.toMatch(
+        /guide[-/]production|guide-prod-/,
+      );
+    }
+  });
+
+  test('小さく安く作り、壊せる', () => {
+    const { data, stack } = staging();
+    const dataTemplate = Template.fromStack(data);
+    dataTemplate.hasResourceProperties('AWS::RDS::DBInstance', {
+      DBInstanceClass: 'db.t4g.micro',
+      MultiAZ: false,
+      DeletionProtection: false,
+    });
+    dataTemplate.hasResource('AWS::RDS::DBInstance', { DeletionPolicy: 'Delete' });
+    dataTemplate.resourceCountIs('AWS::Backup::BackupPlan', 0);
+
+    const template = Template.fromStack(stack);
+    template.hasResourceProperties('AWS::ApplicationAutoScaling::ScalableTarget', {
+      MinCapacity: 1,
+      MaxCapacity: 1,
+    });
+    template.resourceCountIs('AWS::Synthetics::Canary', 0);
+    // Canary が無いぶん、アラームは production より 1 本少ない。
+    template.resourceCountIs('AWS::CloudWatch::Alarm', 9);
+  });
+
+  test('production のデータは削除から守る', () => {
+    const dataTemplate = makeDataTemplate();
+    dataTemplate.hasResourceProperties('AWS::RDS::DBInstance', { DeletionProtection: true });
+    dataTemplate.hasResource('AWS::RDS::DBInstance', { DeletionPolicy: 'Snapshot' });
+    for (const bucket of Object.values(dataTemplate.findResources('AWS::S3::Bucket'))) {
+      expect(bucket.DeletionPolicy).toBe('Retain');
+    }
+    dataTemplate.hasResource('AWS::ECR::Repository', { DeletionPolicy: 'Retain' });
   });
 });
 
 describe('GovernanceStack', () => {
-  test('GuardDuty と AWS Config を作る', () => {
+  test('GuardDuty・AWS Config・CloudTrail・GitHub の OIDC Provider を作る', () => {
     const app = new cdk.App();
     const template = Template.fromStack(new GovernanceStack(app, 'Gov', { env }));
     template.resourceCountIs('AWS::GuardDuty::Detector', 1);
     template.resourceCountIs('AWS::Config::ConfigurationRecorder', 1);
+    template.resourceCountIs('AWS::CloudTrail::Trail', 1);
+    template.hasResourceProperties('Custom::AWSCDKOpenIdConnectProvider', {
+      Url: 'https://token.actions.githubusercontent.com',
+      ClientIDList: ['sts.amazonaws.com'],
+    });
     template.hasParameter('AlertEmail', { Type: 'String' });
   });
 
   test('既に有効な機能は context で外せる', () => {
     const app = new cdk.App({
-      context: { enableGuardDuty: false, enableConfig: false },
+      context: {
+        enableGuardDuty: false,
+        enableConfig: false,
+        enableCloudTrail: false,
+        createGithubOidcProvider: false,
+      },
     });
     const template = Template.fromStack(new GovernanceStack(app, 'Gov', { env }));
     template.resourceCountIs('AWS::GuardDuty::Detector', 0);
     template.resourceCountIs('AWS::Config::ConfigurationRecorder', 0);
+    template.resourceCountIs('AWS::CloudTrail::Trail', 0);
+    template.resourceCountIs('Custom::AWSCDKOpenIdConnectProvider', 0);
   });
 });
