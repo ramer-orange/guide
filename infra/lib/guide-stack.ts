@@ -40,7 +40,7 @@ export class GuideStack extends cdk.Stack {
     // イメージタグ、起動タスク数、任意機能の有効化をCDK Contextから受け取る。
     // desiredCount は初回構築（0）や手動での台数変更のときだけ渡す。
     // 省略時は DesiredCount をテンプレートに出さず、現在の台数と Auto Scaling に任せる。
-    const desiredCount = this.optionalNumberContext('desiredCount', 0, 6);
+    const desiredCount = this.optionalNumberContext('desiredCount', 0, 3);
     const isBootstrap = desiredCount === 0;
     // イメージタグは必須。latest のような可変タグに戻ってしまう事故を防ぐ。
     // 初回構築（desiredCount=0）だけは ECR が空なのでプレースホルダーを許す。
@@ -587,7 +587,11 @@ export class GuideStack extends cdk.Stack {
 
     const scalableTarget = service.autoScaleTaskCount({
       minCapacity: isBootstrap ? 0 : 2,
-      maxCapacity: 6,
+      // 上限は 3。到達しなければ費用はかからないが、実需と無関係な
+      // スケールアウト（メモリ基準の張り付きなど）が起きたときの上限額を決める。
+      // 2 台で捌けない負荷では db.t4g.small 側が先に詰まるため、
+      // Web タスクだけを横に伸ばしてもこれ以上は効果が出ない。
+      maxCapacity: 3,
     });
     scalableTarget.scaleOnCpuUtilization('CpuScaling', {
       targetUtilizationPercent: 60,

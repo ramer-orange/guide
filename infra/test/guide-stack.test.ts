@@ -57,7 +57,7 @@ describe('GuideStack', () => {
     }
     template.hasResourceProperties('AWS::ApplicationAutoScaling::ScalableTarget', {
       MinCapacity: 2,
-      MaxCapacity: 6,
+      MaxCapacity: 3,
     });
   });
 

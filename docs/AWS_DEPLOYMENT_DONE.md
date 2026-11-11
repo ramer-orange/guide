@@ -7,7 +7,7 @@
 
 | スタック | 主なリソース |
 |---------|-------------|
-| `GuideStack` | VPC（Public / Private isolated × 2AZ）、ALB（HTTPS、HTTP→HTTPS リダイレクト）、AWS WAF（ログ出力あり）、ECS Fargate（2〜6タスク）、RDS PostgreSQL 17（db.t4g.small・Multi-AZ）、ECR（タグ上書き不可）、S3（添付ファイル・監査ログ）、Secrets Manager、Parameter Store、CloudWatch アラーム、Synthetics Canary（外形監視）、AWS Backup、CloudTrail、GitHub Actions 用 OIDC Role |
+| `GuideStack` | VPC（Public / Private isolated × 2AZ）、ALB（HTTPS、HTTP→HTTPS リダイレクト）、AWS WAF（ログ出力あり）、ECS Fargate（2〜3タスク）、RDS PostgreSQL 17（db.t4g.small・Multi-AZ）、ECR（タグ上書き不可）、S3（添付ファイル・監査ログ）、Secrets Manager、Parameter Store、CloudWatch アラーム、Synthetics Canary（外形監視）、AWS Backup、CloudTrail、GitHub Actions 用 OIDC Role |
 | `GuideGovernanceStack` | GuardDuty、AWS Config（アカウント・リージョンに 1 つだけ作れるもの） |
 
 - Web タスクは 1 コンテナ内で nginx・PHP-FPM・Next.js を動かします。
