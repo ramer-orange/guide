@@ -39,6 +39,7 @@
 - Route 53 に公開ホストゾーンがあること
 - Google OAuth のクライアント ID とシークレット
 - アラーム通知を受け取るメールアドレス
+- Slack へも通知する場合は Slack Incoming Webhook URL（`docs/SLACK_ALERTS.md`）
 
 ```bash
 npm install -g aws-cdk
@@ -72,6 +73,24 @@ npx cdk deploy GuideStack \
   --parameters GuideStack:GoogleClientId=<client id> \
   --parameters GuideStack:GoogleClientSecret=<client secret> \
   --parameters GuideStack:AlertEmail=<通知先メール>
+```
+
+Slack へも通知する場合は、`-c enableSlackAlerts=true` と `--parameters GuideStack:SlackWebhookUrl=<Webhook URL>` を足した次のコマンドを使います（省略すると Slack 関連のリソースは作られません）。
+`-c enableSlackAlerts=true` は以降の**手動の** `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 関連のリソースが削除され、Slack 通知が外れます。
+GitHub Actions からの自動デプロイは、リポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` としてそのまま渡します（未設定なら `false`）。Slack を有効にしたら、この変数も `true` に設定してください。設定しないと、次に自動デプロイが走ったとき（`main` への push で `AWS_DEPLOY_ENABLED` が `true` のとき）に Slack 関連のリソースが削除されます。
+この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りを入れると、CDK が `CDK context enableSlackAlerts must be true or false` で例外を投げ、Slack 通知が静かに止まるのではなく**デプロイそのものが失敗**します（`infra/lib/guide-stack.ts` の `booleanContext`）。`main` への push が赤くなったらこの綴りを疑ってください。
+
+```bash
+npx cdk deploy GuideStack \
+  -c desiredCount=0 \
+  -c enableSlackAlerts=true \
+  --parameters GuideStack:DomainName=<guide.example.com> \
+  --parameters GuideStack:HostedZoneId=<Z0123...> \
+  --parameters GuideStack:HostedZoneName=<example.com> \
+  --parameters GuideStack:GoogleClientId=<client id> \
+  --parameters GuideStack:GoogleClientSecret=<client secret> \
+  --parameters GuideStack:AlertEmail=<通知先メール> \
+  --parameters GuideStack:SlackWebhookUrl=https://hooks.slack.com/services/...
 ```
 
 デプロイ後、SNS から届く確認メールのリンクを開いて購読を有効にしてください（有効にしないと通知が届きません）。
@@ -112,6 +131,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 
 1. Output `GitHubActionsRoleArn` を GitHub の Secret `AWS_ROLE_TO_ASSUME` に登録
 2. リポジトリ変数 `AWS_DEPLOY_ENABLED` を `true` に設定
+3. Slack 通知を有効にしている場合は、リポジトリ変数 `SLACK_ALERTS_ENABLED` も `true` に設定（自動デプロイが `-c enableSlackAlerts` を引き継ぐため）
 
 ## 通常デプロイ（自動）
 
@@ -120,7 +140,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 1. 検証（PHP / Next.js のテスト、CDK のテスト）
 2. コミット SHA をタグにしてイメージをビルドし ECR へ push（本番 URL を `NEXT_PUBLIC_SITE_URL` に渡す）
 3. 新しいイメージで Migration タスクを 1 回実行し、失敗したらここで止める
-4. `cdk deploy GuideStack -c appImageTag=<SHA>` で Web タスクをローリング更新（失敗時は自動ロールバック）
+4. `cdk deploy GuideStack -c appImageTag=<SHA> -c enableSlackAlerts=<SLACK_ALERTS_ENABLED の値>` で Web タスクをローリング更新（失敗時は自動ロールバック）
 5. `https://<ドメイン>/healthz` の疎通確認
 
 注意点:
@@ -132,6 +152,7 @@ npx cdk deploy GuideStack -c appImageTag=${TAG} -c desiredCount=2
 ## 監視
 
 通知先は CloudFormation Parameter `AlertEmail` の SNS 購読です。障害時と復旧時の両方に通知します。
+`-c enableSlackAlerts=true` でデプロイすると、同じ SNS トピックを購読する Lambda（`guide-production-slack-alarm-notifier`）が Slack へも転送します。設定の詳細は `docs/SLACK_ALERTS.md` にあります。
 
 | アラーム | 内容 |
 |---------|------|

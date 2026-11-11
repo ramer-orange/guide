@@ -243,13 +243,21 @@ jobs: # 実行するジョブの一覧
           cache-dependency-path: infra/package-lock.json
 
       # イメージタグだけを渡す。desiredCountを渡さないので、稼働中のタスク数は変わらない。
-      # CloudFormation Parameterは前回の値を引き継ぐ。
+      # CloudFormation Parameterは前回の値を引き継ぐ（SlackWebhookUrlも同じ）。
+      # enableSlackAlertsは合成時に効くcontextなので、付けずにデプロイするとSlack関連のリソースが削除される。
+      # 手動で有効化した状態を維持するため、リポジトリ変数 SLACK_ALERTS_ENABLED の値をそのまま引き継ぐ。
+      # 変数は env: 経由で渡す。run: の本文へ直接展開すると、引用符や改行を含む値が
+      # バックスラッシュ継続のコマンドを壊す（CDK側で弾かれず、意図しない形で実行される）。
+      # 受け付けるのは小文字の true / false だけで、それ以外はCDKが例外を投げてデプロイが失敗する。
       - name: CDKデプロイ（ECS Serviceの更新）
         working-directory: infra
+        env:
+          SLACK_ALERTS_ENABLED: ${{ vars.SLACK_ALERTS_ENABLED || 'false' }}
         run: |
           npm ci
           npx cdk deploy "$STACK_NAME" \
             -c "appImageTag=${IMAGE_TAG}" \
+            -c "enableSlackAlerts=${SLACK_ALERTS_ENABLED}" \
             --require-approval never
 
       - name: 本番の疎通確認
@@ -259,3 +267,55 @@ jobs: # 実行するジョブの一覧
           curl --fail --silent --show-error \
             --retry 10 --retry-delay 10 --retry-all-errors \
             "${APPLICATION_URL}/healthz"
+
+  # mainへのpushでいずれかのジョブが失敗したときだけSlackへ通知する。報告専用で、ワークフローの成否は変えない。
+  # deployはmain以外ではスキップされるため、always() と contains(needs.*.result, 'failure') の
+  # 組み合わせでスキップを失敗扱いしない。
+  # 通知をmainに限るのは意図的。pull_requestの失敗はPR画面で見えるので除いているが、
+  # PRブランチへのpushはpushイベントも起こすため、ref を絞らないと同じコミットが結局通知され、
+  # 障害用チャンネルが日常の開発CI失敗で埋まる。feature ブランチの失敗はActions画面で見る。
+  # （同じ理由の通知を .github/workflows/dependency-security.yml にも置いている。
+  #   共通化せず意図的に複製している。理由はあちら側のコメントを参照。）
+  # このジョブがgreenの実行を赤くすることはない。needsのどれかが既にfailureのときだけ走り、
+  # かつこのファイルのどのジョブも continue-on-error を使っていないため（使うと失敗が
+  # success扱いになり、この前提が崩れる）。continue-on-error は足さない。送信失敗を隠してしまう。
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [validate, runtime-image, infra-test, deploy]
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
+    steps:
+      - name: Slackへ失敗を通知
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # シークレットが未登録のあいだは何もせず正常終了する（通知の有無でCIを落とさない）。
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "シークレット SLACK_WEBHOOK_URL が未登録のため、Slack通知を省略します"
+            exit 0
+          fi
+
+          failed_jobs=$(printf '%s' "$NEEDS_JSON" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure") | .key)
+            | join(", ")')
+
+          payload=$(jq -n \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg jobs "$failed_jobs" \
+            --arg ref "$REF_NAME" \
+            --arg sha "$COMMIT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg url "$RUN_URL" \
+            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\nコミット: \($sha)\n実行者: \($actor)\n実行ログ: \($url)"}')
+
+          curl --fail --silent --show-error --max-time 5 \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            "$SLACK_WEBHOOK_URL"

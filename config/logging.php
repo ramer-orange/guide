@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\SlackAlertLoggerFactory;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -73,12 +74,16 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Webhook URL が未設定でも安全に動くカスタムドライバ（App\Logging\SlackAlertLoggerFactory）を使う。
         'slack' => [
-            'driver' => 'slack',
+            'driver' => 'custom',
+            'via' => SlackAlertLoggerFactory::class,
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
             'username' => env('LOG_SLACK_USERNAME', 'Laravel Log'),
             'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_LEVEL', 'critical'),
+            'level' => env('LOG_SLACK_LEVEL', 'error'),
+            // プロセス間の重複抑制を記録するファイル。未設定なら storage/logs/slack-dedup.log。
+            'dedup_store' => env('LOG_SLACK_DEDUP_STORE'),
             'replace_placeholders' => true,
         ],
 
