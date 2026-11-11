@@ -7,13 +7,32 @@
 
 | スタック | 主なリソース |
 |---------|-------------|
-| `GuideStack` | VPC（Public / Private isolated × 2AZ）、ALB（HTTPS、HTTP→HTTPS リダイレクト）、AWS WAF（ログ出力あり）、ECS Fargate（2〜3タスク）、RDS PostgreSQL 17（db.t4g.small・Multi-AZ）、ECR（タグ上書き不可）、S3（添付ファイル・監査ログ）、Secrets Manager、Parameter Store、CloudWatch アラーム、Synthetics Canary（外形監視）、AWS Backup、CloudTrail、GitHub Actions 用 OIDC Role |
+| `GuideStack` | VPC（Public / Private isolated × 2AZ）、ALB（HTTPS、HTTP→HTTPS リダイレクト）、AWS WAF（遮断した判定のみログ出力）、ECS Fargate（2〜3タスク）、RDS PostgreSQL 17（db.t4g.small・Multi-AZ）、ECR（タグ上書き不可）、S3（添付ファイル・監査ログ）、Secrets Manager、Parameter Store、CloudWatch アラーム、Synthetics Canary（外形監視）、AWS Backup、CloudTrail、GitHub Actions 用 OIDC Role |
 | `GuideGovernanceStack` | GuardDuty、AWS Config（アカウント・リージョンに 1 つだけ作れるもの） |
 
 - Web タスクは 1 コンテナ内で nginx・PHP-FPM・Next.js を動かします。
 - ALB とコンテナのヘルスチェックは `/healthz` です。Next.js が nginx 経由で Laravel の `/up` を確認し、両方が動いているときだけ 200 を返します。
 - `php artisan migrate` は専用の Migration タスクだけが実行します（Web タスクは `RUN_MIGRATIONS_ON_START=false`）。
 - Interface VPC Endpoint は既定で作りません。必要なら `-c enableInterfaceEndpoints=true` を付けます（月額約 100 USD）。
+
+## 費用と監視の設定方針
+
+量に比例して課金される設定は、現在の構成の規模（1クラスタ・1サービス・1コンテナ、利用者は限定）に合わせて絞っています。
+いずれも前提が変わったら戻す判断になるため、下げた理由と戻す条件を残します。
+
+| 設定 | 現在の値 | 下げた理由 | 戻す条件 |
+|------|---------|-----------|---------|
+| Container Insights | 無効 | 1コンテナ構成では分解する対象がない。アラームとオートスケールは `AWS/ECS` の標準メトリクスを使っており影響しない | コンテナを分割する、サービスを増やす |
+| WAF ログ | 遮断のみ | ALB アクセスログが別に S3 へ出ており、全リクエストの記録はそちらに残る | 本番公開の直後（誤検知で正常な利用を止めていないか確認する期間）。ルールを `COUNT` でチューニングするときはフィルタの `Conditions` に `COUNT` を足す |
+| Synthetics Canary | 15 分間隔 | 検知まで約 30 分。アプリやコンテナの異常は `no-healthy-targets` などが 1 分周期で見ており、Canary が固有に捕まえるのは証明書・DNS・WAF の設定ミス（放置しても自然に直らない種類） | 利用者が広がり、30 分の全面停止が許容できなくなったとき。5 分間隔に戻す場合は、アラームの `period` も同じ値に揃える（実行間隔より短いと、データの無い期間が `treatMissingData: BREACHING` に拾われて誤報する） |
+| ECR 保持数 | 20 本 | 保管費は月 1 USD 未満。ライフサイクルは稼働中かどうかを見ないため、本数を削りすぎると動いているタスクのイメージが消えうる | デプロイ頻度が上がり、20 本が数日ぶんを下回ったとき |
+| AWS Backup | 日次 14 日 / 月次 90 日 | 直近 7 日は RDS 自動バックアップの PITR（ほぼ任意の時点へ復元可）が別にある。保持は容量 × 期間の課金 | 他人のデータを預かる責任が生じたとき、保持期間の要件が決まったとき |
+
+次の 3 つは据え置きで、AWS の課金を再開するときに判断します。
+
+- **AWS Config**: `allSupported: true` で全リソース種別を継続記録しています（`infra/lib/governance-stack.ts`）。構成項目 1 件あたりの課金なので、ECS タスクの起動停止やデプロイの回数に比例して増えます。Config ルールは 1 本も定義していないため、現状は記録しているだけです。
+- **CloudTrail**: `managementEvents: ALL` で読み取りイベントまで CloudWatch Logs へ流しています。監査価値は書き込み側にあるため、`WRITE_ONLY` にすればログ量を大きく減らせます。
+- **RDS Multi-AZ**: 月額の中で最大の項目です。可用性を買っているので、SLA を負うかどうかで決まります。
 
 ## 事前準備
 

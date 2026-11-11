@@ -292,10 +292,12 @@ export class GuideStack extends cdk.Stack {
         encryption: ecr.RepositoryEncryption.AES_256,
         lifecycleRules: [
           {
-            // 1イメージが数百MB〜1GB（PHP + Next.js ビルド込み）あるため、
-            // ロールバック先として十分な本数だけ残す。
-            description: 'Keep the latest 10 deployable images',
-            maxImageCount: 10,
+            // 1イメージが数百MB〜1GB（PHP + Next.js ビルド込み）ある。
+            // ライフサイクルは「そのイメージが稼働中か」を見ないため、
+            // 短時間に保持数を超えてデプロイすると動いているタスクの
+            // イメージが消えうる。保管費は月1 USD未満なので余裕を持たせる。
+            description: 'Keep the latest 20 deployable images',
+            maxImageCount: 20,
           },
         ],
         removalPolicy: cdk.RemovalPolicy.RETAIN,

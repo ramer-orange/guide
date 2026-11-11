@@ -200,10 +200,10 @@ describe('GuideStack', () => {
       },
     });
 
-    // ECR は1イメージが大きいので保持本数を抑える。
+    // ECR は1イメージが大きいが、稼働中イメージの失効を避けて余裕を持たせる。
     template.hasResourceProperties('AWS::ECR::Repository', {
       LifecyclePolicy: {
-        LifecyclePolicyText: Match.stringLikeRegexp('"countNumber":10'),
+        LifecyclePolicyText: Match.stringLikeRegexp('"countNumber":20'),
       },
     });
   });
