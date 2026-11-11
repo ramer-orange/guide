@@ -57,7 +57,7 @@ describe('GuideStack', () => {
     }
     template.hasResourceProperties('AWS::ApplicationAutoScaling::ScalableTarget', {
       MinCapacity: 2,
-      MaxCapacity: 6,
+      MaxCapacity: 3,
     });
   });
 
@@ -164,14 +164,47 @@ describe('GuideStack', () => {
     const template = makeTemplate();
     template.hasResourceProperties('AWS::Synthetics::Canary', {
       Name: 'guide-prod-health',
+      // 実行回数がそのまま課金になるので間隔を固定する。
+      Schedule: Match.objectLike({ Expression: 'rate(15 minutes)' }),
     });
     template.hasResourceProperties('AWS::Backup::BackupPlan', {
       BackupPlan: Match.objectLike({
         BackupPlanRule: Match.arrayWith([
-          Match.objectLike({ RuleName: 'Daily', Lifecycle: { DeleteAfterDays: 35 } }),
-          Match.objectLike({ RuleName: 'Monthly', Lifecycle: { DeleteAfterDays: 365 } }),
+          Match.objectLike({ RuleName: 'Daily', Lifecycle: { DeleteAfterDays: 14 } }),
+          Match.objectLike({ RuleName: 'Monthly', Lifecycle: { DeleteAfterDays: 90 } }),
         ]),
       }),
+    });
+  });
+
+  test('課金が量に比例する設定を絞っている', () => {
+    const template = makeTemplate();
+
+    // Container Insights はカスタムメトリクスの追加課金になるため切る。
+    template.hasResourceProperties('AWS::ECS::Cluster', {
+      ClusterSettings: Match.arrayWith([
+        { Name: 'containerInsights', Value: 'disabled' },
+      ]),
+    });
+
+    // WAF ログは遮断した判定だけ。許可まで残すと全リクエストが課金対象になる。
+    template.hasResourceProperties('AWS::WAFv2::LoggingConfiguration', {
+      LoggingFilter: {
+        DefaultBehavior: 'DROP',
+        Filters: [
+          Match.objectLike({
+            Behavior: 'KEEP',
+            Conditions: [{ ActionCondition: { Action: 'BLOCK' } }],
+          }),
+        ],
+      },
+    });
+
+    // ECR は1イメージが大きいが、稼働中イメージの失効を避けて余裕を持たせる。
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      LifecyclePolicy: {
+        LifecyclePolicyText: Match.stringLikeRegexp('"countNumber":20'),
+      },
     });
   });
 
