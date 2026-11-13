@@ -199,13 +199,3 @@ Renderでは `Dockerfile.render-next` がLaravelとNext.js standaloneを1つの�
 起動時に `php artisan migrate --force` を実行します。デプロイ前に新しいmigrationとDB backupを確認してください。Renderのbranch・環境変数・DBの期限・OAuth設定などの運用状況や、確認済み/未確認の本番操作は変わるため、[実装状況](docs/NEXT_TYPESCRIPT_IMPLEMENTATION_STATUS.md)を参照してください。秘密情報はRenderのruntime環境変数で管理し、ソースやNext.js buildへ含めないでください。
 
 添付の保存先は `FILESYSTEM_UPLOADS_DISK` で選びます。Renderではprivate R2 bucketを使い、ブラウザーからは認可済みのLaravel endpointを通して取得します。R2資格情報はサーバー側のruntime環境変数で管理し、Next.jsクライアントコードやブラウザーへ公開しません。AWS S3の設定とは別です。添付レコードには保存先disk名を記録し、disk名がない既存レコードは `FILESYSTEM_LEGACY_UPLOADS_DISK` で指定した従来diskから読み書き・削除します。既存ファイルの移動やbackfillは自動実行しません。
-
-## ランタイムのセキュリティ更新
-
-本番・開発・CIで修正済みNode.js/PHPを使用し、古いバージョンではインストール・ビルド・起動を失敗させます。[対象バージョン・検証方法・残る開発用依存の警告](docs/RUNTIME_SECURITY.md)を参照してください。公開一時停止は、修正版の本番反映と確認が済むまで継続します。
-
-## 障害通知
-
-障害に気づくための通知を、Laravelのエラーログ、CloudWatchアラーム、GitHub ActionsのCI失敗、Next.jsのサーバー側エラーから、1つのSlack Incoming Webhookへまとめて送ります。Webhook URLはRenderの環境変数・GitHubのシークレット・CloudFormationのパラメータで管理し、ソースやNext.js buildへ含めません。URLが未設定の環境では通知を送らず、アプリの動作も変わりません。
-
-[Webhookの発行手順・経路ごとの設定先・通知されるものとされないもの・通知の止め方](docs/SLACK_ALERTS.md)を参照してください。AWS経路は設定を用意済みですが、AWS課金停止中のため、リポジトリ変数 `AWS_DEPLOY_ENABLED` を `true` にして再デプロイするまで稼働しません。
