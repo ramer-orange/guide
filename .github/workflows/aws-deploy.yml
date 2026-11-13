@@ -80,7 +80,7 @@ jobs:
         uses: docker/setup-qemu-action@v3
 
       - name: Docker Buildxセットアップ
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       # ECRのタグは上書き不可なので、同じコミットの再実行ではビルドを省略する。
       - name: Docker imageをECRへpush
