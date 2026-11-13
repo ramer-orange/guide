@@ -34,7 +34,7 @@ jobs:
       IMAGE_TAG: ${{ github.sha }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: AWS認証
         uses: aws-actions/configure-aws-credentials@v4
