@@ -4,8 +4,8 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
 # ハッシュが空のままだと、ダウンロードした RPM の実際の値を表示して止まる。
 ARG EMULATOR_VERSION=1.0.341-1
 ARG EMULATOR_ARCH
-ARG EMULATOR_SHA256_X86_64=
-ARG EMULATOR_SHA256_AARCH64=
+ARG EMULATOR_SHA256_X86_64=a977c72e095ae17a68b314ac7ba02337a474db214c895d6a9842433a1fee06ee
+ARG EMULATOR_SHA256_AARCH64=23ab15bcdb5f010e74c693baef5e1b9b28553d5c62940c0db18dea4dd86ab175
 
 # 外部から取ってきた RPM をそのまま root でインストールするので、配布元の差し替えに
 # 気づけるよう SHA-256 を固定する。ADD --checksum はアーキテクチャごとに値を切り替え
