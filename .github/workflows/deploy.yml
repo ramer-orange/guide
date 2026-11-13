@@ -31,7 +31,7 @@ jobs: # 実行するジョブの一覧
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: PHPセットアップ
         uses: shivammathur/setup-php@v2
@@ -66,7 +66,7 @@ jobs: # 実行するジョブの一覧
   runtime-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build and verify production runtimes
         run: |
@@ -76,7 +76,7 @@ jobs: # 実行するジョブの一覧
   infra-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Node.jsセットアップ
         uses: actions/setup-node@v4
