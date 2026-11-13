@@ -67,7 +67,7 @@ jobs: # 実行するジョブの一覧
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build and verify production runtimes
         run: |
           docker build --pull -f Dockerfile.render-next -t guide-security:ci .
