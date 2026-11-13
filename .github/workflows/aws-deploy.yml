@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: AWS認証
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           # Environment のシークレット。値は各環境のスタックの Output GitHubActionsRoleArn。
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
