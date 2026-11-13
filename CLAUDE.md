@@ -56,7 +56,7 @@ npm run cdk:synth
 - **AWS**: 請求停止中のため、`.github/workflows/deploy.yml` のデプロイはリポジトリ変数 `AWS_DEPLOY_ENABLED`（production）と `AWS_STAGING_DEPLOY_ENABLED`（staging）で止めてある。構築と運用の手順は `docs/AWS_DEPLOYMENT_DONE.md`、復元の手順は `docs/AWS_RESTORE_RUNBOOK.md`。
 - **AWS のスタック**: production は `GuideDataStack` + `GuideStack`、staging は `GuideStagingDataStack` + `GuideStagingStack`。CI は `cdk deploy --exclusively` でアプリ側だけを更新する。データ側（`guide-data-stack.ts`）を変えたら手動でデプロイする。データ側には合成時の context を読ませない。
 - **DB の接続ユーザー**: Web タスクは権限を絞った `guide_app`、Migration タスクだけがマスターユーザーで接続する。`guide_app` は Migration タスクが `php artisan db:provision-app-user` で用意する。DDL が要る処理を Web タスク側（リクエスト処理や起動スクリプト）に書かない。
-- **秘密の値**: CloudFormation のパラメータで受け取らない。Secrets Manager に仮の値で Secret を作り、デプロイ後に `put-secret-value` で入れる。
+- **秘密の値**: Google OAuth は CloudFormation のパラメータで受け取らない。Secrets Manager に仮の値で Secret を作り、デプロイ後に `put-secret-value` で入れる。Slack の Webhook URL だけは NoEcho パラメータ（`SlackWebhookUrl`）で受け取る。
 - **CDK の context フラグ**: `enableSlackAlerts` のような合成時フラグは、付けずに `cdk deploy` すると対応するリソースが削除される。CI 側（`deploy.yml`）が同じ値を渡していることを必ず確認する。
 
 ## 障害通知

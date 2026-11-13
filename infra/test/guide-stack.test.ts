@@ -223,22 +223,19 @@ describe('GuideStack', () => {
         Properties: { Protocol: 'lambda' },
       })),
     ).toHaveLength(0);
+    expect(Object.keys(template.findParameters('SlackWebhookUrl'))).toHaveLength(0);
     template.resourceCountIs('AWS::SecretsManager::Secret', 0);
     template.resourceCountIs('AWS::Lambda::Function', 0);
   });
 
-  test('enableSlackAlerts で SNS を購読する Lambda を作り、Webhook URL は Secret から読ませる', () => {
+  test('enableSlackAlerts で SNS を購読する Lambda と NoEcho パラメータを作る', () => {
     const template = makeTemplate({ appImageTag: 'abc123', enableSlackAlerts: true });
 
-    // URL は CloudFormation のパラメータでも Lambda の環境変数でも受け渡さない。
-    expect(Object.keys(template.findParameters('SlackWebhookUrl'))).toHaveLength(0);
-    const secrets = template.findResources('AWS::SecretsManager::Secret');
-    expect(Object.keys(secrets)).toHaveLength(1);
-    const [secretId] = Object.keys(secrets);
+    template.hasParameter('SlackWebhookUrl', { NoEcho: true });
     template.hasResourceProperties('AWS::Lambda::Function', {
       Runtime: 'nodejs22.x',
       Timeout: 10,
-      Environment: { Variables: { SLACK_WEBHOOK_SECRET_ARN: { Ref: secretId } } },
+      Environment: { Variables: { SLACK_WEBHOOK_URL: { Ref: 'SlackWebhookUrl' } } },
     });
     expect(
       Object.keys(template.findResources('AWS::SNS::Subscription', {
@@ -351,15 +348,17 @@ describe('GuideStack', () => {
     template.resourceCountIs('AWS::S3::Bucket', 1);
   });
 
-  test('秘密の値を CloudFormation のパラメータで受け取らない', () => {
+  test('CloudFormation のパラメータで受け取る秘密の値は Slack の Webhook URL だけ', () => {
     const { data, stack } = makeStacks({ appImageTag: 'abc123', enableSlackAlerts: true });
-    for (const template of [Template.fromStack(data), Template.fromStack(stack)]) {
-      const parameters = template.findParameters('*');
-      for (const [name, parameter] of Object.entries(parameters)) {
-        expect(parameter.NoEcho, name).toBeUndefined();
-        expect(name).not.toMatch(/secret|password|webhook|clientid/i);
-      }
-    }
+    // データ側のスタックはパラメータで何も受け取らない（Google OAuth は Secret へ直接入れる）。
+    expect(Object.keys(Template.fromStack(data).findParameters('*'))).toEqual(['BootstrapVersion']);
+
+    const parameters = Template.fromStack(stack).findParameters('*');
+    const noEcho = Object.entries(parameters)
+      .filter(([, parameter]) => parameter.NoEcho)
+      .map(([name]) => name);
+    expect(noEcho).toEqual(['SlackWebhookUrl']);
+    expect(Object.keys(parameters).join(',')).not.toMatch(/google|password/i);
   });
 
   test('Web タスクは権限を絞った DB ユーザーで接続し、マスターユーザーの Secret を読めない', () => {
@@ -367,11 +366,9 @@ describe('GuideStack', () => {
     const template = Template.fromStack(stack);
     const dataTemplate = Template.fromStack(data);
 
-    // マスターユーザーのパスワードは RDS が管理し、テンプレートには現れない。
+    // マスターユーザーは guide_admin で、アプリ用の guide_app とは別の Secret を持つ。
     dataTemplate.hasResourceProperties('AWS::RDS::DBInstance', {
       MasterUsername: 'guide_admin',
-      ManageMasterUserPassword: true,
-      MasterUserPassword: Match.absent(),
     });
 
     const secretOf = (family: string, name: string) =>
@@ -380,10 +377,10 @@ describe('GuideStack', () => {
           (secret: { Name: string }) => secret.Name === name,
         ),
       );
-    // Web はアプリ用ユーザーの Secret、Migration は RDS 管理のマスター Secret を参照する。
+    // Web はアプリ用ユーザーの Secret、Migration はマスターユーザーの Secret を参照する。
     expect(secretOf('guide-production-application', 'DB_PASSWORD')).toContain('DatabaseAppSecret');
-    expect(secretOf('guide-production-application', 'DB_PASSWORD')).not.toContain('MasterUserSecret');
-    expect(secretOf('guide-production-migration', 'DB_PASSWORD')).toContain('MasterUserSecret');
+    expect(secretOf('guide-production-application', 'DB_PASSWORD')).not.toContain('DatabaseSecretAttachment');
+    expect(secretOf('guide-production-migration', 'DB_PASSWORD')).toContain('DatabaseSecretAttachment');
     expect(secretOf('guide-production-migration', 'DB_APP_PASSWORD')).toContain('DatabaseAppSecret');
     expect(
       containerOf(template, 'guide-production-application').Secrets.map(
@@ -397,8 +394,8 @@ describe('GuideStack', () => {
       Object.values(policies).filter((policy) =>
         policy.Properties.Roles.some((role: { Ref: string }) => role.Ref.startsWith(rolePrefix)),
       );
-    expect(JSON.stringify(policyFor('EcsExecutionRole'))).not.toContain('MasterUserSecret');
-    expect(JSON.stringify(policyFor('MigrationExecutionRole'))).toContain('MasterUserSecret');
+    expect(JSON.stringify(policyFor('EcsExecutionRole'))).not.toContain('DatabaseSecretAttachment');
+    expect(JSON.stringify(policyFor('MigrationExecutionRole'))).toContain('DatabaseSecretAttachment');
     // Migration タスクは S3 に触れない。
     expect(JSON.stringify(policyFor('MigrationTaskRole'))).not.toContain('s3:');
   });

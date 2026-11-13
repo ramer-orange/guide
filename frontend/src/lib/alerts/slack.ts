@@ -94,9 +94,7 @@ function buildText(alert: SlackAlert): string {
 export async function notifySlack(alert: SlackAlert): Promise<void> {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
     // 未設定なら通知機能は無効。警告も出さない。
-    // http(s):// で始まらない値も未設定として扱う。AWS では Webhook URL を入れる Secret を
-    // 仮の値（"unset"）で先に作り、あとから値を入れるため、その間に送信を試みないようにする。
-    if (!webhookUrl || !/^https?:\/\//i.test(webhookUrl)) {
+    if (!webhookUrl) {
         return;
     }
 

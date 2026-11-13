@@ -24,19 +24,6 @@ describe("notifySlack", () => {
         expect(console.error).not.toHaveBeenCalled();
     });
 
-    // AWS では Secret を仮の値で先に作るため、URL を入れるまでは未設定と同じに扱う。
-    test.each(["unset", "hooks.slack.com/services/T/B/x"])(
-        "http(s):// で始まらない値（%s）は未設定として扱い、送信しない",
-        async (value) => {
-            process.env.SLACK_WEBHOOK_URL = value;
-
-            await notifySlack({ title: "エラー", detail: "boom" });
-
-            expect(globalThis.fetch).not.toHaveBeenCalled();
-            expect(console.error).not.toHaveBeenCalled();
-        },
-    );
-
     test("タイトルと詳細を送る", async () => {
         process.env.SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/T/B/x";
 

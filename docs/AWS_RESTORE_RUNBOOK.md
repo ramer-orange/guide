@@ -100,9 +100,10 @@ aws rds modify-db-instance --db-instance-identifier "${DB}-restored" \
   --new-db-instance-identifier "$DB" --apply-immediately
 ```
 
-入れ替えたあと、次の 2 点を元のインスタンスと同じ状態に戻します。
+DB ユーザーとパスワードは DB の中身と一緒に戻るので、マスターユーザーと `guide_app` のどちらの Secret もそのまま使えます（戻した時点より後にパスワードを替えていた場合だけ、Secret を戻した時点の値に合わせる）。
 
-- マスターユーザーのパスワード管理: `aws rds modify-db-instance --db-instance-identifier "$DB" --manage-master-user-password --apply-immediately` で、RDS に Secret を作り直させる。**このとき Secret の ARN が元と変わる。** Migration タスクが参照しているのは CloudFormation が以前に出力した ARN なので、そのままでは Migration タスクが起動できない。CloudFormation 側の値をどう更新するのが確実かは未確認（テンプレートに差分が無いと出力値は更新されない）。復元訓練で確かめて、ここに手順を書くこと。それまでの回避策は、Migration タスクのタスク定義を手で複製し、`DB_USERNAME` / `DB_PASSWORD` の参照先を新しい Secret の ARN に差し替えて実行すること。Web タスクはマスターの Secret を使わないので、この作業を待たずに起動できる
+入れ替えたあと、次の設定を元のインスタンスと同じ状態に戻します。
+
 - 自動バックアップの保持日数・Performance Insights・ログ出力: `aws rds describe-db-instances` で元のインスタンス（`${DB}-broken`）と見比べ、違いを `modify-db-instance` で揃える
 
 ### A-6. 再開する
@@ -135,7 +136,6 @@ DB を過去へ戻した場合、その時点より後にアップロードさ�
 - [ ] A-1 から A-6 までの所要時間を測り、目標復旧時間（2 時間）に収まるか確かめる
 - [ ] A-4 の確認用タスクの具体的なコマンドをこの文書に書き足す
 - [ ] 手順 B で、削除したファイルと上書きしたファイルを 1 つずつ戻す
-- [ ] 入れ替え後にマスターユーザーの Secret の ARN が変わることを確かめ、Migration タスクの参照先を更新する確実な手順を決めて A-5 に書く
 - [ ] 入れ替え後に Migration タスクと通常のデプロイが成功することを確かめる
 
 | 実施日 | 環境 | 所要時間 | 気づいた点 |

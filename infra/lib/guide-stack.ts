@@ -93,7 +93,7 @@ export class GuideStack extends cdk.Stack {
 
     // CloudFormation入力値
     // 既存のRoute 53 Hosted Zoneと独自ドメインをデプロイ時のParameterとして受け取る。
-    // 秘密の値はここで受け取らない（GuideDataStack の Secret と、下の Slack 用 Secret を参照）。
+    // Google OAuth などの秘密の値はここで受け取らない（GuideDataStack の Secret を参照）。
     const domainNameParameter = new cdk.CfnParameter(this, 'DomainName', {
       type: 'String',
       description: 'ALBへ向ける完全修飾ドメイン名（例: guide.example.com）',
@@ -124,24 +124,30 @@ export class GuideStack extends cdk.Stack {
     });
 
     // Slack 障害通知（docs/SLACK_ALERTS.md）
-    // 既定では何も作らない。-c enableSlackAlerts=true のときだけ Webhook URL を入れる Secret を作る。
-    // URL は CloudFormation のパラメータで受け取らず、デプロイ後に put-secret-value で入れる。
-    // 値を入れるまでは "unset" で、Laravel・Next.js・Lambda はいずれも http(s):// で
-    // 始まらない値を未設定として扱い、何も送らない。
+    // 既定では何も作らない。-c enableSlackAlerts=true のときだけ、
+    // Webhook URL のパラメータと、それを保持する Secret を作る。
+    // Webhook URL だけは CloudFormation のパラメータで受け取る。漏れてもできるのは
+    // チャンネルへの投稿だけで、Secret へ後から入れる方式にすると Laravel・Next.js・Lambda の
+    // 3 か所に「まだ値が入っていない」状態の扱いが要る。その複雑さに見合わない。
     const enableSlackAlerts = this.booleanContext('enableSlackAlerts', false);
-    const slackWebhookSecret = enableSlackAlerts
+    const slackWebhookUrlParameter = enableSlackAlerts
+      ? new cdk.CfnParameter(this, 'SlackWebhookUrl', {
+          type: 'String',
+          noEcho: true,
+          description: 'Slack Incoming Webhook URL（障害通知の送信先）',
+          allowedPattern: '^https://hooks\\.slack\\.com/services/.+$',
+          constraintDescription:
+            'https://hooks.slack.com/services/ で始まる URL を指定してください',
+        })
+      : undefined;
+    const slackWebhookSecret = slackWebhookUrlParameter
       ? new secretsmanager.Secret(this, 'SlackWebhookSecret', {
           // 名前は付けない。enableSlackAlerts を切ると Secret は削除予約（既定 30 日）に入るため、
-          // 固定名だと入れ直しのデプロイが同名衝突で失敗する。ECS と Lambda は ARN で参照する。
-          description:
-            'Slack Incoming Webhook URL ({"url": "https://hooks.slack.com/services/..."}); set with put-secret-value after deploy',
-          // この generateSecretString は変えないこと。変えると CloudFormation が値を作り直し、
-          // 手で入れた URL が "unset" に戻る。
-          generateSecretString: {
-            secretStringTemplate: JSON.stringify({ url: 'unset' }),
-            generateStringKey: 'placeholder',
-            excludePunctuation: true,
-          },
+          // 固定名だと入れ直しのデプロイが同名衝突で失敗する。ECS は ARN で参照する。
+          description: 'Slack Incoming Webhook URL',
+          secretStringValue: cdk.SecretValue.cfnParameter(
+            slackWebhookUrlParameter,
+          ),
         })
       : undefined;
 
@@ -395,14 +401,10 @@ export class GuideStack extends cdk.Stack {
       // Web タスクは 1 コンテナで nginx・PHP-FPM・Next.js を動かす。
       // Laravel は LOG_SLACK_WEBHOOK_URL、Next.js は SLACK_WEBHOOK_URL を読むため、
       // 同じ Secret を両方の名前で渡す。
-      commonSecrets.LOG_SLACK_WEBHOOK_URL = ecs.Secret.fromSecretsManager(
-        slackWebhookSecret,
-        'url',
-      );
-      commonSecrets.SLACK_WEBHOOK_URL = ecs.Secret.fromSecretsManager(
-        slackWebhookSecret,
-        'url',
-      );
+      commonSecrets.LOG_SLACK_WEBHOOK_URL =
+        ecs.Secret.fromSecretsManager(slackWebhookSecret);
+      commonSecrets.SLACK_WEBHOOK_URL =
+        ecs.Secret.fromSecretsManager(slackWebhookSecret);
       slackWebhookSecret.grantRead(executionRole);
       slackWebhookSecret.grantRead(migrationExecutionRole);
     }
@@ -793,11 +795,10 @@ export class GuideStack extends cdk.Stack {
     );
 
     // アラームの発生と復旧を Slack へ転送する Lambda。
-    // Webhook URL は環境変数に入れず、実行時に Secrets Manager から読む。
-    // 環境変数だと、関数の設定を見られる人全員に URL が平文で見えてしまう。
-    // AWS SDK v3 は Node.js 22 ランタイムに同梱されているので、パッケージには含めない。
+    // Webhook URL は Secrets Manager ではなく環境変数で渡す。
+    // ECS は自前で Secret を解決するが、Lambda から読むには AWS SDK が必要になるため。
     let slackNotifier: lambda.Function | undefined;
-    if (slackWebhookSecret) {
+    if (slackWebhookUrlParameter) {
       const slackNotifierLogGroup = new logs.LogGroup(
         this,
         'SlackAlarmNotifierLogGroup',
@@ -823,10 +824,9 @@ export class GuideStack extends cdk.Stack {
         memorySize: 128,
         logGroup: slackNotifierLogGroup,
         environment: {
-          SLACK_WEBHOOK_SECRET_ARN: slackWebhookSecret.secretArn,
+          SLACK_WEBHOOK_URL: slackWebhookUrlParameter.valueAsString,
         },
       });
-      slackWebhookSecret.grantRead(slackNotifier);
       alertTopic.addSubscription(
         new subscriptions.LambdaSubscription(slackNotifier),
       );
@@ -1169,15 +1169,10 @@ exports.handler = async () => {
     new cdk.CfnOutput(this, 'OperationsTopicArn', {
       value: alertTopic.topicArn,
     });
-    if (slackNotifier && slackWebhookSecret) {
+    if (slackNotifier) {
       new cdk.CfnOutput(this, 'SlackNotifierFunctionName', {
         value: slackNotifier.functionName,
         description: 'CloudWatch アラームを Slack へ転送する Lambda 関数名',
-      });
-      new cdk.CfnOutput(this, 'SlackWebhookSecretArn', {
-        value: slackWebhookSecret.secretArn,
-        description:
-          'デプロイ後に put-secret-value で Webhook URL を入れる Secret',
       });
     }
   }

@@ -35,7 +35,7 @@ GitHub Actions は `cdk deploy --exclusively` でアプリ側だけを更新し�
 
 | ユーザー | 使うタスク | できること | パスワード |
 |---|---|---|---|
-| `guide_admin`（マスター） | Migration タスクだけ | DDL を含むすべて | RDS が Secrets Manager で管理し、自動でローテーションする |
+| `guide_admin`（マスター） | Migration タスクだけ | DDL を含むすべて | CDK が生成した Secret（自動ローテーションはしない） |
 | `guide_app` | Web タスク | テーブルの SELECT / INSERT / UPDATE / DELETE と連番の利用だけ | Secret `guide/<環境名>/database-app`（CDK が生成） |
 
 Migration タスクは毎回、`php artisan db:provision-app-user`（`guide_app` を作成し、権限とパスワードを Secret の値に合わせ直す）を流してから `php artisan migrate` を実行します。
@@ -176,8 +176,8 @@ npx cdk deploy GuideStack --exclusively \
   --parameters GuideStack:AlertEmail=<通知先メール>
 ```
 
-Slack へも通知する場合は `-c enableSlackAlerts=true` を足し、デプロイ後に Webhook URL を Secret へ入れます（`docs/SLACK_ALERTS.md`）。
-`-c enableSlackAlerts=true` は以降の**手動の** `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 関連のリソース（Secret・Lambda）が削除され、Slack 通知が外れます。
+Slack へも通知する場合は、`-c enableSlackAlerts=true` と `--parameters GuideStack:SlackWebhookUrl=<Webhook URL>` を足します（省略すると Slack 関連のリソースは作られません。詳細は `docs/SLACK_ALERTS.md`）。秘密の値のうち、CloudFormation のパラメータで受け取るのはこの Webhook URL だけです。
+`-c enableSlackAlerts=true` は以降の**手動の** `cdk deploy GuideStack` でも毎回付けてください。付け忘れると Slack 関連のリソースが削除され、Slack 通知が外れます。
 GitHub Actions からの自動デプロイは、変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` としてそのまま渡します（未設定なら `false`）。Slack を有効にしたら、この変数も `true` に設定してください。
 この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りを入れると、CDK が `CDK context enableSlackAlerts must be true or false` で例外を投げ、**デプロイそのものが失敗**します（`infra/lib/guide-stack.ts` の `booleanContext`）。
 
@@ -280,7 +280,7 @@ Secrets Manager の Secret は削除予約（既定 30 日）に入り、その�
 ## 未対応・今後の検討
 
 - CloudFormation 実行 Role の権限を絞る、または production を別アカウントへ分ける（「cdk bootstrap と GitHub Actions の権限」を参照）
-- `guide_app` のパスワードの自動ローテーション（現状は上の手順で手動。マスターユーザーは RDS が自動でローテーションする）
+- DB パスワードの自動ローテーション（`guide_app` もマスターユーザーも、現状は手動。`guide_app` は上の手順で替えられる）
 - 復元訓練の実施（`docs/AWS_RESTORE_RUNBOOK.md` の手順は、まだ実際の AWS 環境で通していない）
 - バックアップの別リージョンへのコピー
 - 負荷が増えた場合、セッションとキャッシュの ElastiCache（Valkey）への移行

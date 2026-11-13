@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { createHandler } from '../lambda/slack-alarm-notifier/index.mjs';
+import { handler } from '../lambda/slack-alarm-notifier/index.mjs';
 
 const alarmMessage = {
   AlarmName: 'guide-production-no-healthy-targets',
@@ -17,18 +17,9 @@ function snsEvent(message: unknown) {
   };
 }
 
-const secretArn = 'arn:aws:secretsmanager:ap-northeast-1:123456789012:secret:slack-AbCdEf';
-const webhookSecret = JSON.stringify({ url: 'https://hooks.slack.com/services/T/B/x' });
-
 describe('slack-alarm-notifier', () => {
-  // Secrets Manager の代わりに、テストごとに差し替えられる読み込み関数を渡す。
-  let loadSecret: ReturnType<typeof vi.fn<(arn: string) => Promise<string | undefined>>>;
-  let handler: (event: unknown) => Promise<void>;
-
   beforeEach(() => {
-    process.env.SLACK_WEBHOOK_SECRET_ARN = secretArn;
-    loadSecret = vi.fn(async () => webhookSecret);
-    handler = createHandler(loadSecret);
+    process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/T/B/x';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('ok', { status: 200 })));
     // 送信失敗が console.error に記録されることを確認するため、出力を差し替える。
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -76,65 +67,12 @@ describe('slack-alarm-notifier', () => {
     expect(JSON.stringify(body)).toContain('アラームではない素のテキスト');
   });
 
-  test('Secret の ARN が未設定なら送信しない', async () => {
-    delete process.env.SLACK_WEBHOOK_SECRET_ARN;
+  test('Webhook URL 未設定なら送信しない', async () => {
+    delete process.env.SLACK_WEBHOOK_URL;
 
     await handler(snsEvent(alarmMessage));
 
-    expect(loadSecret).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
-  });
-
-  test('Webhook URL は環境変数からではなく Secret から読む', async () => {
-    process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/ENV/ENV/env';
-    try {
-      await handler(snsEvent(alarmMessage));
-    } finally {
-      delete process.env.SLACK_WEBHOOK_URL;
-    }
-
-    expect(loadSecret).toHaveBeenCalledWith(secretArn);
-    expect((globalThis.fetch as any).mock.calls[0][0]).toBe('https://hooks.slack.com/services/T/B/x');
-  });
-
-  // デプロイ直後の Secret には仮の値が入っている。URL を入れるまでは何も送らない。
-  test.each([
-    ['仮の値', JSON.stringify({ url: 'unset', placeholder: 'x' })],
-    ['url キーが無い', JSON.stringify({ other: 'https://hooks.slack.com/services/T/B/x' })],
-    ['JSON でない', 'https://hooks.slack.com/services/T/B/x'],
-    ['空', undefined],
-  ])('Secret に URL が入っていなければ送信しない（%s）', async (_label, secretString) => {
-    loadSecret.mockResolvedValue(secretString);
-
-    await expect(handler(snsEvent(alarmMessage))).resolves.toBeUndefined();
-
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-  });
-
-  test('Secret を読めなくても例外を投げず、次の通知で読み直す', async () => {
-    loadSecret.mockRejectedValueOnce(new Error('AccessDenied'));
-
-    await expect(handler(snsEvent(alarmMessage))).resolves.toBeUndefined();
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-
-    await handler(snsEvent(alarmMessage));
-    expect(loadSecret).toHaveBeenCalledTimes(2);
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  test('Secret は通知のたびには読まず、5 分を過ぎたら読み直す', async () => {
-    vi.useFakeTimers();
-    try {
-      await handler(snsEvent(alarmMessage));
-      await handler(snsEvent(alarmMessage));
-      expect(loadSecret).toHaveBeenCalledTimes(1);
-
-      vi.advanceTimersByTime(5 * 60 * 1000);
-      await handler(snsEvent(alarmMessage));
-      expect(loadSecret).toHaveBeenCalledTimes(2);
-    } finally {
-      vi.useRealTimers();
-    }
   });
 
   test('Records が配列でないイベントでも落ちず、送信しない', async () => {

@@ -32,7 +32,7 @@ export class GuideDataStack extends cdk.Stack {
   readonly vpc: ec2.Vpc;
   readonly databaseSecurityGroup: ec2.SecurityGroup;
   readonly database: rds.DatabaseInstance;
-  /** RDS が管理・自動ローテーションするマスターユーザーの Secret。Migration タスクだけが読む。 */
+  /** マスターユーザーの Secret（CDK が生成）。Migration タスクだけが読む。 */
   readonly databaseAdminSecret: secretsmanager.ISecret;
   /** Web タスクが接続に使う権限を絞ったユーザーの Secret。 */
   readonly databaseAppSecret: secretsmanager.Secret;
@@ -200,17 +200,19 @@ export class GuideDataStack extends cdk.Stack {
 
     // RDS PostgreSQL
     // Private DB Subnetへ配置する。production は Multi-AZ で、障害時はStandbyへFailoverする。
-    // マスターユーザーのパスワードは RDS 自身が Secrets Manager で管理し、自動でローテーションする。
     // マスターユーザーを使うのは Migration タスクだけで、Web タスクは databaseAppSecret の
     // ユーザー（テーブルの読み書きだけができる）で接続する。
+    // マスターのパスワードを RDS 管理（manageMasterUserPassword）にはしない。RDS 管理にすると
+    // Secret がインスタンスに紐づき、スナップショットから復元したときに Secret の ARN が変わって
+    // Migration タスクの参照が切れる。使うのが単発の Migration タスクだけなので、
+    // 自動ローテーションの利点より復元手順が単純なことを取る。
     this.database = new rds.DatabaseInstance(this, 'Database', {
       vpc: this.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_17,
       }),
-      credentials: rds.Credentials.fromUsername(DATABASE_ADMIN_USERNAME),
-      manageMasterUserPassword: true,
+      credentials: rds.Credentials.fromGeneratedSecret(DATABASE_ADMIN_USERNAME),
       databaseName: DATABASE_NAME,
       instanceType: ec2.InstanceType.of(
         ec2.InstanceClass.T4G,
@@ -234,7 +236,7 @@ export class GuideDataStack extends cdk.Stack {
     });
     const databaseAdminSecret = this.database.secret;
     if (!databaseAdminSecret) {
-      throw new Error('RDS managed master user secret was not created');
+      throw new Error('RDS credentials secret was not created');
     }
     this.databaseAdminSecret = databaseAdminSecret;
 

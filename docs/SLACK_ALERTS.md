@@ -5,7 +5,7 @@
 | 経路 | 送信元 | 設定先 | 有効になる条件 |
 | --- | --- | --- | --- |
 | Laravel | アプリの `error` 以上のログ（`slack` ログチャンネル） | Renderの環境変数 / ECSはCDKスタック | `LOG_STACK` に `slack` が含まれ、`LOG_SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
-| AWS | CloudWatchアラーム → SNS → Slack | `cdk deploy` のcontextとSecrets Manager | `-c enableSlackAlerts=true` でデプロイ済み（自動デプロイで維持するにはリポジトリ変数 `SLACK_ALERTS_ENABLED` も `true`。AWS本番は課金停止中） |
+| AWS | CloudWatchアラーム → SNS → Slack | `cdk deploy` のcontextとパラメータ | `-c enableSlackAlerts=true` でデプロイ済み（自動デプロイで維持するにはリポジトリ変数 `SLACK_ALERTS_ENABLED` も `true`。AWS本番は課金停止中） |
 | GitHub Actions | CI（`deploy.yml`）と依存監査（`dependency-security.yml`）の失敗 | リポジトリシークレット | シークレット `SLACK_WEBHOOK_URL` が登録されている |
 | Next.js | サーバー側の `onRequestError` | Renderの環境変数 / ECSはCDKスタック | 環境変数 `SLACK_WEBHOOK_URL` が設定されている（ECSでは `-c enableSlackAlerts=true`） |
 
@@ -19,7 +19,7 @@ AWS本番環境は課金を停止しているため、GitHub Actionsのデプロ
 4. **Add New Webhook to Workspace** を押し、通知先チャンネル（例: `#plagine-alerts`）を選んで許可する。
 5. 表示された `https://hooks.slack.com/services/...` 形式のURLを控える。このURLはパスワードと同じ扱いの秘密情報で、URLを知っていれば誰でもチャンネルへ投稿できる。
 
-Webhook URLはGitやソースコード、Next.jsのbuild成果物へ含めないでください。保管先は各サービスの秘密情報の仕組み（Renderの環境変数、GitHubのシークレット、AWS Secrets Manager）だけにします。チャンネルを変えたいときは新しいWebhookを発行してURLを差し替えます。
+Webhook URLはGitやソースコード、Next.jsのbuild成果物へ含めないでください。保管先は各サービスの秘密情報の仕組み（Renderの環境変数、GitHubのシークレット、CloudFormationのパラメータ）だけにします。チャンネルを変えたいときは新しいWebhookを発行してURLを差し替えます。
 
 ## 2. 経路ごとの設定先
 
@@ -44,40 +44,18 @@ Slackへの表示名とアイコンは `LOG_SLACK_USERNAME`（既定 `Laravel Lo
 
 ECSでは、`LOG_STACK` と `LOG_SLACK_LEVEL` はコンテナの環境変数として、`LOG_SLACK_WEBHOOK_URL` と `SLACK_WEBHOOK_URL` はSecrets Manager由来のシークレットとして、いずれもCDKスタック（`infra/lib/guide-stack.ts`）から渡されます。Renderのようにダッシュボードで個別に足す運用ではなく、4つすべてがスタックの管理下にあります。
 
-LaravelとNext.jsの通知をECSで入れるスイッチは `-c enableSlackAlerts=true` です。これを付けてデプロイすると、Webhook URLを入れるSecretと、CloudWatchアラームを転送するLambdaが作られます。切るときは `-c enableSlackAlerts=false` でデプロイし直します。このときWebhookのシークレットがタスク定義へ付かないため、両経路とも通知を送らなくなります（CloudWatchアラーム → SNS → Slackの経路も同じcontextで切り替わります）。
+LaravelとNext.jsの通知をECSで入れるスイッチは `-c enableSlackAlerts=true` と `GuideStack:SlackWebhookUrl` パラメータです。切るときは `-c enableSlackAlerts=false` でデプロイし直します。このときWebhookのシークレットがタスク定義へ付かないため、両経路とも通知を送らなくなります（CloudWatchアラーム → SNS → Slackの経路も同じcontextで切り替わります）。
 
-Webhook URLはCloudFormationのパラメータでは受け取りません。有効化は次の3段階です（productionの例。stagingは `GuideStagingStack`、`guide-staging-web`）。
-
-```bash
-# 1. Secret と Lambda を作る（Secret の中身はまだ仮の値 "unset"）
-npx cdk deploy GuideStack --exclusively \
-  -c appImageTag=<稼働中のSHA> \
-  -c enableSlackAlerts=true
+```sh
+cd infra
+npx cdk deploy GuideStack \
+  -c enableSlackAlerts=true \
+  --parameters GuideStack:SlackWebhookUrl=https://hooks.slack.com/services/...
 ```
 
-```bash
-# 2. Webhook URL を Secret に入れる。値は引数ではなくファイルから渡す（シェルの履歴に残さないため）
-cat > /tmp/slack-webhook.json   # {"url": "https://hooks.slack.com/services/..."} を貼り付けて Ctrl-D
-```
+Webhook URLはシェル履歴にも残るため、入力後に履歴を消すか、履歴へ残らない方法で渡してください。
 
-```bash
-aws secretsmanager put-secret-value \
-  --secret-id "$(aws cloudformation describe-stacks --stack-name GuideStack \
-    --query "Stacks[0].Outputs[?OutputKey=='SlackWebhookSecretArn'].OutputValue" --output text)" \
-  --secret-string file:///tmp/slack-webhook.json && rm /tmp/slack-webhook.json
-```
-
-```bash
-# 3. Web タスクを入れ替えて、新しい値を読み込ませる
-aws ecs update-service --cluster guide-production --service guide-production-web --force-new-deployment
-```
-
-- 値を入れるまでのあいだ、Laravel・Next.js・Lambdaはいずれも `http://` か `https://` で始まらない値を未設定として扱い、何も送りません。手順1だけを済ませた状態でも、ログ出力やアラームの処理が失敗することはありません。
-- ECSのタスクはSecretの値を起動時にだけ読みます。URLを差し替えたときも手順3が必要です。
-- LambdaはSecretを実行時に読み、5分間だけ覚えます。URLを差し替えると、遅くとも5分後の通知から新しい値が使われます。Webhook URLはLambdaの環境変数には入っていません（関数の設定画面に出さないため）。
-- `enableSlackAlerts` を切るとSecretは削除されます。入れ直したときは手順2からやり直してください。
-
-`enableSlackAlerts` は合成時に効くCDK contextなので、付けずに `cdk deploy` するとSlack関連のリソースが削除されます。`main` への push で走る自動デプロイは変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` として渡すため（未設定なら `false`）、手動で有効にしたあとはこの変数も `true` にしてください（リポジトリ変数、またはGitHubのEnvironmentの変数）。この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りだと、CDKが `CDK context enableSlackAlerts must be true or false` で例外を投げるため、Slack通知が静かに止まるのではなくデプロイ自体が失敗します（`infra/lib/guide-stack.ts` の `booleanContext`）。
+`enableSlackAlerts` は合成時に効くCDK contextなので、付けずに `cdk deploy` するとSlack関連のリソースが削除されます。`main` への push で走る自動デプロイはリポジトリ変数 `SLACK_ALERTS_ENABLED` の値を `-c enableSlackAlerts=<値>` として渡すため（未設定なら `false`）、手動で有効にしたあとはこの変数も `true` にしてください。この変数に入れられるのは小文字の `true` と `false` だけです。`True` や `TRUE` のような別の綴りだと、CDKが `CDK context enableSlackAlerts must be true or false` で例外を投げるため、Slack通知が静かに止まるのではなくデプロイ自体が失敗します（`infra/lib/guide-stack.ts` の `booleanContext`）。`SlackWebhookUrl` パラメータは `--parameters` を渡さなければCloudFormationが前回値を引き継ぐので、ワークフローからは渡していません。
 
 このECS側の配線はCDKの変更として本ブランチで入ります。あわせて、AWSへのデプロイ自体はリポジトリ変数 `AWS_DEPLOY_ENABLED` が `true` になるまで動かないため（`.github/workflows/deploy.yml`）、AWS経路は今日の時点では設定が用意されているだけで稼働していません。
 
@@ -143,7 +121,7 @@ Slackへの送信失敗はアプリの処理へ伝播しません。通知の送
 | 経路 | 止め方 |
 | --- | --- |
 | Laravel（Render） | 環境変数 `LOG_STACK` から `slack` を外す（`stderr` だけにする）。`LOG_SLACK_WEBHOOK_URL` を空にしても止まる。 |
-| AWS（CloudWatch・ECSのLaravel/Next.js） | `-c enableSlackAlerts=false` を付けて `cdk deploy` し直す。Webhookのシークレットがタスク定義へ付かなくなる。あわせて変数 `SLACK_ALERTS_ENABLED` も `false` にする（または削除する）。`true` のままだと、次の自動デプロイがSecretとLambdaを作り直す（Secretの中身は仮の値に戻るので、通知は送られないままになる）。 |
+| AWS（CloudWatch・ECSのLaravel/Next.js） | `-c enableSlackAlerts=false` を付けて `cdk deploy` し直す。Webhookのシークレットがタスク定義へ付かなくなる。あわせてリポジトリ変数 `SLACK_ALERTS_ENABLED` も `false` にする（または削除する）。`true` のままだと、次の自動デプロイが `SlackWebhookUrl` パラメータの値を持たないまま作り直そうとして失敗する。 |
 | GitHub Actions | リポジトリシークレット `SLACK_WEBHOOK_URL` を削除する。 |
 | Next.js（Render） | 環境変数 `SLACK_WEBHOOK_URL` を空にする、または削除する。 |
 

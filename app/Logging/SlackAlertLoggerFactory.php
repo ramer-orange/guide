@@ -33,9 +33,7 @@ class SlackAlertLoggerFactory
         $url = $config['url'] ?? null;
 
         // URL 未設定（本番で Slack を使わない構成）では何もしないハンドラだけを持つ。
-        // http(s):// で始まらない値も未設定として扱う。AWS では Webhook URL を入れる Secret を
-        // 仮の値（"unset"）で先に作り、あとから値を入れるため、その間に送信を試みないようにする。
-        if (! is_string($url) || preg_match('#^https?://#i', $url) !== 1) {
+        if (! is_string($url) || $url === '') {
             return new Logger('slack', [new NullHandler]);
         }
 

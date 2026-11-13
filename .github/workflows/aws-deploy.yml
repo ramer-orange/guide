@@ -174,7 +174,7 @@ jobs:
           cache-dependency-path: infra/package-lock.json
 
       # イメージタグだけを渡す。desiredCountを渡さないので、稼働中のタスク数は変わらない。
-      # CloudFormation Parameterは前回の値を引き継ぐ。
+      # CloudFormation Parameterは前回の値を引き継ぐ（SlackWebhookUrlも同じ）。
       # --exclusively でアプリ側のスタックだけを更新する。DB・S3・ECR を持つデータ側のスタック
       # （GuideDataStack / GuideStagingDataStack）は自動デプロイの対象にせず、変更は手動で反映する。
       # データ側に未反映の変更があり、アプリ側がそれに依存している場合、このステップは失敗する。
