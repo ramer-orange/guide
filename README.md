@@ -192,6 +192,10 @@ npm run e2e:next
 
 API の HTTP E2E と Playwright のブラウザ E2E は別々に出力されます。スクリーンショットは `/tmp/guide-next-e2e/` に保存されます。
 
+## AWS Emulator で添付ファイルを検証する
+
+AWS 用の Docker イメージを PostgreSQL 17 と AWS Emulator の S3 につなぎ、マイグレーション、`/healthz`、PDF のアップロードから削除までを確認できます。[実行手順と AWS 構成の検証結果](docs/AWS_EMULATOR.md)を参照してください。
+
 ## Renderの構成
 
 Renderでは `Dockerfile.render-next` がLaravelとNext.js standaloneを1つのコンテナにまとめ、Nginxが単一originでリクエストを振り分けます。`/api/`、`/sanctum/`、`/auth/`、`/login`、`/logout`、`/register`、`/up` はLaravelへ、`/_next/`、`/images/` とそれ以外の画面URLはNext.jsへ届きます。つまり、Renderでもユーザー向けの画面はNext.jsが担当し、Laravel画面へフォールバックしません。
