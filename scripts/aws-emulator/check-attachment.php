@@ -14,6 +14,8 @@ require '/var/www/html/vendor/autoload.php';
 $app = require '/var/www/html/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
+// テスト用ユーザーを作ってデータを書き換えるので、check-aws-emulator.sh が組んだ隔離環境
+// （local・guide-db・エミュレーターの S3）以外では動かない。本番のコンテナで誤って流しても止まる。
 if (! $app->environment('local') || config('database.connections.pgsql.host') !== 'guide-db'
     || config('database.default') !== 'pgsql' || config('filesystems.uploads') !== 's3'
     || config('filesystems.disks.s3.endpoint') !== 'https://127.0.0.1:9297') {
@@ -27,6 +29,8 @@ function expectResult(bool $result, string $message): void
     }
 }
 
+// Google OAuth を通さずにログイン済みの状態を作るため、セッションを直接保存し、
+// Laravel が暗号化して発行するのと同じ形の Cookie を組み立てて HTTP API に渡す。
 $owner = User::create(['name' => 'Emulator Owner', 'email' => 'owner@example.test', 'google_id' => 'emulator-owner']);
 $session = app('session')->driver();
 $session->start();
@@ -39,6 +43,7 @@ $headers = [
     'X-CSRF-TOKEN' => $session->token(),
 ];
 
+// Web コンテナ内の Nginx を経由させ、本番と同じ経路（Nginx → PHP-FPM）で API を叩く。
 $api = 'http://127.0.0.1/api/v1';
 $authenticated = Http::acceptJson()->timeout(10)->withHeaders($headers)->get("$api/session")->throw();
 expectResult($authenticated->json('user.email') === $owner->email, 'The owner session did not authenticate.');
@@ -71,6 +76,7 @@ expectResult($preview->ok() && $preview->body() === $pdf && $preview->header('Co
 $guest = Http::acceptJson()->timeout(10)->get($attachment);
 expectResult($guest->forbidden(), 'A guest must receive HTTP 403.');
 
+// 削除は単独の API ではなく、旅程の更新で removed_file_ids を渡す経路で行う（フロントエンドと同じ）。
 unset($plan['existing_file_ids']);
 $plan['id'] = $file->plan_id;
 $plan['removed_file_ids'] = [$file->id];

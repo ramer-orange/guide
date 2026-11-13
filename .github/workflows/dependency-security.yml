@@ -53,10 +53,10 @@ jobs:
   # pull_request はPR画面で見えるため除外し、workflow_dispatch は手で起動した本人が
   # 結果を見ているため除外する（on: の branches 指定により、pushはmain/masterに限られる）。
   #
-  # このステップは .github/workflows/deploy.yml の notify-failure と**意図的に同じ内容の複製**。
+  # このステップは .github/workflows/deploy.yml と aws-emulator.yml の notify-failure と**意図的に同じ内容の複製**。
   # reusable workflow（workflow_call）へ切り出していないのは、この環境でactionlintが
   # 実行できず（イメージを取得できない）、誰も検証できないYAML構造を持ち込まない判断。
-  # 片方を直すときはもう片方も直すこと。
+  # 1つを直すときは残りも直すこと。
   notify-failure:
     runs-on: ubuntu-latest
     needs: [npm-audit, composer-audit]

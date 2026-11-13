@@ -1,0 +1,84 @@
+name: AWS Emulator
+
+# scripts/check-aws-emulator.sh を CI で流す。手元でしか動かさないと、AWS Emulator や
+# アプリ側の変更で壊れても気づけないため。
+# アプリのイメージとエミュレーターを毎回ビルドするので重い（1回十数分）。PR では検証まわりの
+# ファイルを変えたときだけ動かし、アプリ側の退行は週1回の定期実行で拾う。
+on:
+  pull_request:
+    paths:
+      - docker/aws-emulator/**
+      - scripts/aws-emulator/**
+      - scripts/check-aws-emulator.sh
+      - .github/workflows/aws-emulator.yml
+  schedule:
+    - cron: "43 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        # ローカルの Docker ホストが Mac（Arm64）でも Linux（x86-64）でも動くことを前提にしている
+        # ため、Dockerfile が固定する両方の RPM ハッシュを CI で確かめる。
+        runner: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # スクリプトが必要とするコマンドが揃っているかを先に見せる（ランナーのイメージ更新で
+      # 消えたとき、原因がすぐ分かるように）。
+      - run: aws --version && docker version --format '{{.Server.Version}}' && jq --version && openssl version
+      - run: bash scripts/check-aws-emulator.sh
+
+  # 定期実行が失敗したとき Slack へ通知する。報告専用で、ワークフローの成否は変えない。
+  # 週次実行は誰も見ていないので、エミュレーターやアプリの変更で赤くなっても気づけないことが
+  # この通知の主目的。pull_request と workflow_dispatch は画面で結果を見ているため除外する。
+  #
+  # このステップは .github/workflows/deploy.yml と dependency-security.yml の notify-failure と
+  # **意図的に同じ内容の複製**。共通化しない理由は dependency-security.yml 側のコメントを参照。
+  # 片方を直すときは残りも直すこと。
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [check]
+    if: ${{ always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure') }}
+    steps:
+      - name: Slackへ失敗を通知
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # シークレットが未登録のあいだは何もせず正常終了する（通知の有無でCIを落とさない）。
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "シークレット SLACK_WEBHOOK_URL が未登録のため、Slack通知を省略します"
+            exit 0
+          fi
+
+          failed_jobs=$(printf '%s' "$NEEDS_JSON" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure") | .key)
+            | join(", ")')
+
+          payload=$(jq -n \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg jobs "$failed_jobs" \
+            --arg ref "$REF_NAME" \
+            --arg sha "$COMMIT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg url "$RUN_URL" \
+            '{text: ":rotating_light: \($workflow) が失敗しました\n失敗ジョブ: \($jobs)\nブランチ: \($ref)\nコミット: \($sha)\n実行者: \($actor)\n実行ログ: \($url)"}')
+
+          curl --fail --silent --show-error --max-time 5 \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$payload" \
+            "$SLACK_WEBHOOK_URL"

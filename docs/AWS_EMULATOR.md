@@ -15,9 +15,29 @@ AWS CLI はローカルエンドポイントとエミュレーターが発行し
 - Laravel の HTTP API から PDF を S3 にアップロードし、プレビューとダウンロードの内容を照合
 - 未ログインでの取得が `403`、削除後の取得が `404` となり、S3 のオブジェクトも消えることを確認
 
+## CI での定期実行
+
+`.github/workflows/aws-emulator.yml` が同じスクリプトを x86-64 と Arm64 の GitHub ホストランナーで実行します。起動条件は次の3つです。
+
+- 毎週月曜の定期実行（失敗したら Slack へ通知）
+- Actions 画面からの手動実行（`workflow_dispatch`）
+- エミュレーター検証まわりのファイル（`docker/aws-emulator/`、`scripts/aws-emulator/`、`scripts/check-aws-emulator.sh`、ワークフロー自身）を変えた PR
+
+アプリのコードを変えただけの PR では動きません。アプリ側の退行は週1回の定期実行で拾う想定です。
+
+## AWS Emulator のバージョンを上げる
+
+`docker/aws-emulator/Dockerfile` は、ダウンロードした RPM の SHA-256 をアーキテクチャごとに固定して照合します。バージョンを上げるときは次の手順で更新します。
+
+1. `EMULATOR_VERSION` を新しい値に変え、`EMULATOR_SHA256_X86_64` と `EMULATOR_SHA256_AARCH64` を空にする
+2. スクリプトを実行する（または PR を出して CI に流す）。ハッシュが一致しないと `expected` と `actual` を表示して止まる
+3. 表示された `actual` を Dockerfile に書き込む。AWS がチェックサムや署名を公開していれば、書き込む前に突き合わせる
+
+あわせて、`scripts/check-aws-emulator.sh` の `emulator_image` のタグとこのページのバージョン表記も更新します。
+
 ## CDK スタックの検証結果
 
-コミット `1075a86` と AWS Emulator 1.0.341 の組み合わせで、次の挙動を確認しました。
+`main` のコミット `1075a86`（Dependabot 更新の取り込み時点）で合成した CDK テンプレートを、AWS Emulator 1.0.341 の CloudFormation に流したときの結果です。上のスクリプトとは別に手作業で確かめたもので、スクリプトや CI では再現しません。CDK 側やエミュレーターのバージョンが変わったら結果も変わりうるので、再検証したときはコミットとバージョンを書き換えてください。
 
 | 構成 | 検証結果 |
 | --- | --- |
