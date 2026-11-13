@@ -1,0 +1,205 @@
+name: AWS deploy # deploy.yml から呼ばれる。1 つの環境（staging / production）へデプロイする
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub の Environment 名（staging / production）。AWS 側の Role はこの名前のジョブだけを信頼する
+        required: true
+        type: string
+      stack-name:
+        description: アプリ側の CloudFormation スタック名（GuideStack / GuideStagingStack）
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ECRへのイメージpush → Migrationタスク → cdk deploy（ECS更新）の順で反映する。
+  # 初回構築とデータ側のスタック、GuideGovernanceStackは手動でデプロイする（docs/AWS_DEPLOYMENT_DONE.md）。
+  deploy:
+    runs-on: ubuntu-latest
+    # AWS の Role は「この Environment を指定したジョブ」だけが引き受けられる
+    # （OIDC の sub が repo:<owner>/<repo>:environment:<名前> になる）。
+    # デプロイできるブランチの制限と承認者は、GitHub の Environment の保護ルールで設定する。
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: aws-${{ inputs.environment }}-deploy
+      cancel-in-progress: false
+    env:
+      AWS_REGION: ap-northeast-1
+      STACK_NAME: ${{ inputs.stack-name }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AWS認証
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Environment のシークレット。値は各環境のスタックの Output GitHubActionsRoleArn。
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Output取得
+        id: stack
+        run: |
+          if ! outputs=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].Outputs' \
+            --output json); then
+            echo "::error::$STACK_NAME がありません。初回構築は docs/AWS_DEPLOYMENT_DONE.md の手順で手動実行してください。"
+            exit 1
+          fi
+
+          get_output() {
+            value=$(echo "$outputs" | jq -r ".[] | select(.OutputKey == \"$1\") | .OutputValue")
+            if [ -z "$value" ]; then
+              echo "::error::Output $1 が見つかりません"
+              exit 1
+            fi
+            echo "$value"
+          }
+
+          {
+            echo "application_url=$(get_output ApplicationUrl)"
+            echo "repository_uri=$(get_output ApplicationRepositoryUri)"
+            echo "cluster=$(get_output EcsClusterName)"
+            echo "subnets=$(get_output PublicSubnetIds)"
+            echo "security_group=$(get_output TaskSecurityGroupId)"
+            echo "migration_log_group=$(get_output MigrationLogGroupName)"
+            echo "migration_family=$(get_output MigrationTaskDefinitionFamily)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: ECRログイン
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: QEMUセットアップ
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker Buildxセットアップ
+        uses: docker/setup-buildx-action@v3
+
+      # ECRのタグは上書き不可なので、同じコミットの再実行ではビルドを省略する。
+      - name: Docker imageをECRへpush
+        id: image
+        env:
+          REPOSITORY_URI: ${{ steps.stack.outputs.repository_uri }}
+          APPLICATION_URL: ${{ steps.stack.outputs.application_url }}
+        run: |
+          image_uri="${REPOSITORY_URI}:${IMAGE_TAG}"
+          repository_name="${REPOSITORY_URI#*/}"
+
+          if aws ecr describe-images \
+            --repository-name "$repository_name" \
+            --image-ids "imageTag=${IMAGE_TAG}" > /dev/null 2>&1; then
+            echo "${image_uri} は既にあるためビルドを省略します"
+          else
+            # NEXT_PUBLIC_* はビルド時に埋め込まれるため、本番URLを渡す。
+            docker buildx build \
+              --platform linux/arm64 \
+              --build-arg "NEXT_PUBLIC_SITE_URL=${APPLICATION_URL}" \
+              --tag "$image_uri" \
+              --push \
+              .
+          fi
+          echo "image_uri=${image_uri}" >> "$GITHUB_OUTPUT"
+
+      # 新しいイメージでMigrationタスクを1回だけ実行し、成功してからWebタスクを入れ替える。
+      # Migrationタスクは DB のマスターユーザーで接続し、Webタスク用の権限を絞ったユーザーを
+      # 用意してから migrate する（コマンドは infra/lib/guide-stack.ts のタスク定義にある）。
+      # マイグレーションは旧コードと新コードの両方で動く形（追加→移行→削除の段階的変更）で書くこと。
+      - name: Migrationタスク実行
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
+          CLUSTER: ${{ steps.stack.outputs.cluster }}
+          SUBNETS: ${{ steps.stack.outputs.subnets }}
+          SECURITY_GROUP: ${{ steps.stack.outputs.security_group }}
+          LOG_GROUP: ${{ steps.stack.outputs.migration_log_group }}
+          MIGRATION_FAMILY: ${{ steps.stack.outputs.migration_family }}
+        run: |
+          task_definition=$(aws ecs describe-task-definition \
+            --task-definition "$MIGRATION_FAMILY" \
+            --query taskDefinition \
+            --output json \
+            | jq --arg image "$IMAGE_URI" '
+                .containerDefinitions[0].image = $image
+                | {family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions,
+                   volumes, placementConstraints, requiresCompatibilities, cpu, memory, runtimePlatform}
+                | with_entries(select(.value != null))')
+
+          task_definition_arn=$(aws ecs register-task-definition \
+            --cli-input-json "$task_definition" \
+            --query taskDefinition.taskDefinitionArn \
+            --output text)
+
+          task_arn=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --launch-type FARGATE \
+            --task-definition "$task_definition_arn" \
+            --network-configuration "awsvpcConfiguration={subnets=[${SUBNETS}],securityGroups=[${SECURITY_GROUP}],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' \
+            --output text)
+          echo "Migration task: $task_arn"
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task_arn"
+
+          task_id="${task_arn##*/}"
+          aws logs get-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "migration/migration/${task_id}" \
+            --start-from-head \
+            --query 'events[].message' \
+            --output text || true
+
+          exit_code=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" \
+            --tasks "$task_arn" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+          if [ "$exit_code" != "0" ]; then
+            aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task_arn" \
+              --query 'tasks[0].{stoppedReason: stoppedReason, containers: containers[].{name: name, exitCode: exitCode, reason: reason}}'
+            echo "::error::Migrationが失敗しました（exit code: ${exit_code}）"
+            exit 1
+          fi
+
+      - name: Node.jsセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+
+      # イメージタグだけを渡す。desiredCountを渡さないので、稼働中のタスク数は変わらない。
+      # CloudFormation Parameterは前回の値を引き継ぐ（SlackWebhookUrlも同じ）。
+      # --exclusively でアプリ側のスタックだけを更新する。DB・S3・ECR を持つデータ側のスタック
+      # （GuideDataStack / GuideStagingDataStack）は自動デプロイの対象にせず、変更は手動で反映する。
+      # データ側に未反映の変更があり、アプリ側がそれに依存している場合、このステップは失敗する。
+      # enableSlackAlertsは合成時に効くcontextなので、付けずにデプロイするとSlack関連のリソースが削除される。
+      # 手動で有効化した状態を維持するため、変数 SLACK_ALERTS_ENABLED の値をそのまま引き継ぐ
+      # （Environment の変数があればそれを、無ければリポジトリ変数を使う）。
+      # 変数は env: 経由で渡す。run: の本文へ直接展開すると、引用符や改行を含む値が
+      # バックスラッシュ継続のコマンドを壊す（CDK側で弾かれず、意図しない形で実行される）。
+      # 受け付けるのは小文字の true / false だけで、それ以外はCDKが例外を投げてデプロイが失敗する。
+      - name: CDKデプロイ（ECS Serviceの更新）
+        working-directory: infra
+        env:
+          SLACK_ALERTS_ENABLED: ${{ vars.SLACK_ALERTS_ENABLED || 'false' }}
+        run: |
+          npm ci
+          npx cdk deploy "$STACK_NAME" \
+            --exclusively \
+            -c "appImageTag=${IMAGE_TAG}" \
+            -c "enableSlackAlerts=${SLACK_ALERTS_ENABLED}" \
+            --require-approval never
+
+      - name: 疎通確認
+        env:
+          APPLICATION_URL: ${{ steps.stack.outputs.application_url }}
+        run: |
+          curl --fail --silent --show-error \
+            --retry 10 --retry-delay 10 --retry-all-errors \
+            "${APPLICATION_URL}/healthz"
