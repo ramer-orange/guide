@@ -46,7 +46,7 @@ services:
             - sail
         restart: unless-stopped
     next-gateway:
-        image: nginx:1.27-alpine
+        image: nginx:1.30.7-alpine
         ports:
             - '${NEXT_GATEWAY_PORT:-8081}:80'
         volumes:

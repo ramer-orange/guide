@@ -37,7 +37,7 @@ RUN apk add --no-cache \
         libxml2 \
         libxslt \
         libzip \
-        nginx \
+        'nginx>=1.28.3-r8' \
         libstdc++ \
         oniguruma \
         supervisor \
