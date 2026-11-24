@@ -54,7 +54,7 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN php8.2 -r 'if (version_compare(PHP_VERSION, "8.2.35", "<")) { fwrite(STDERR, "Patched PHP 8.2.35+ is required\n"); exit(1); }' \
+RUN php8.2 -r 'if (version_compare(PHP_VERSION, "8.2.36", "<")) { fwrite(STDERR, "Patched PHP 8.2.36+ is required\n"); exit(1); }' \
     && node -e 'const [a,b,c]=process.versions.node.split(".").map(Number); if(a!==22 || b<23 || (b===23 && c<4)) process.exit(1)'
 
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.2

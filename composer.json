@@ -8,8 +8,8 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "~8.2.35 || ~8.3.36 || ~8.4.27 || ~8.5.12",
-        "laravel/framework": "^12.69",
+        "php": "~8.2.36 || ~8.3.37 || ~8.4.28 || ~8.5.13",
+        "laravel/framework": "^12.71",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.28",
         "laravel/tinker": "^2.9",
@@ -78,7 +78,7 @@
             "php-http/discovery": true
         },
         "platform": {
-            "php": "8.3.36"
+            "php": "8.3.37"
         }
     },
     "minimum-stability": "stable",

@@ -36,7 +36,7 @@ jobs: # 実行するジョブの一覧
       - name: PHPセットアップ
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3.36'
+          php-version: '8.3.37'
           extensions: pdo_sqlite, pdo_pgsql
 
       - name: Node.jsセットアップ
