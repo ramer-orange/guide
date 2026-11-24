@@ -131,8 +131,8 @@ jobs: # 実行するジョブの一覧
   # 通知をmainに限るのは意図的。pull_requestの失敗はPR画面で見えるので除いているが、
   # PRブランチへのpushはpushイベントも起こすため、ref を絞らないと同じコミットが結局通知され、
   # 障害用チャンネルが日常の開発CI失敗で埋まる。feature ブランチの失敗はActions画面で見る。
-  # （同じ理由の通知を .github/workflows/dependency-security.yml にも置いている。
-  #   共通化せず意図的に複製している。理由はあちら側のコメントを参照。）
+  # （同じ理由の通知を .github/workflows/dependency-security.yml と aws-emulator.yml にも置いている。
+  #   共通化せず意図的に複製している。理由は dependency-security.yml 側のコメントを参照。）
   # このジョブがgreenの実行を赤くすることはない。needsのどれかが既にfailureのときだけ走り、
   # かつこのファイルのどのジョブも continue-on-error を使っていないため（使うと失敗が
   # success扱いになり、この前提が崩れる）。continue-on-error は足さない。送信失敗を隠してしまう。

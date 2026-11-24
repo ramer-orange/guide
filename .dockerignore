@@ -16,6 +16,7 @@ frontend/e2e.sqlite
 frontend/e2e.sqlite-*
 frontend/*.sqlite
 scripts/e2e
+scripts/aws-emulator
 database/*.sqlite*
 storage/app/e2e-fixture.json
 storage/app/public/e2e
