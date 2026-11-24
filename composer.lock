@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9320657f7c7c54c5d60a4116df79335c",
+    "content-hash": "7bf7f69c35b46f5b03f5830c723464f2",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1288,16 +1288,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v12.70.1",
+            "version": "v12.73.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "e09fc54263d1a56cfe1709958fcbb22a4159b1e3"
+                "reference": "d091054fca4761e109b477bdca364dc93c7fd6df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/e09fc54263d1a56cfe1709958fcbb22a4159b1e3",
-                "reference": "e09fc54263d1a56cfe1709958fcbb22a4159b1e3",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/d091054fca4761e109b477bdca364dc93c7fd6df",
+                "reference": "d091054fca4761e109b477bdca364dc93c7fd6df",
                 "shasum": ""
             },
             "require": {
@@ -1506,7 +1506,8 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2026-10-21T12:55:36+00:00"
+            "time": "2026-11-17T14:54:52+00:00",
+            "published-time": "2026-11-17T14:55:03+00:00"
         },
         {
             "name": "laravel/prompts",
@@ -10382,11 +10383,11 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "~8.2.35 || ~8.3.36 || ~8.4.27 || ~8.5.12"
+        "php": "~8.2.36 || ~8.3.37 || ~8.4.28 || ~8.5.13"
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.3.36"
+        "php": "8.3.37"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }

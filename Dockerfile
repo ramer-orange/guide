@@ -14,7 +14,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 
 RUN npm run build
 
-FROM php:8.3.36-fpm-alpine3.23 AS runtime
+FROM php:8.3.37-fpm-alpine3.23 AS runtime
 
 ARG NEXT_PUBLIC_SITE_URL=https://guide-2s9j.onrender.com
 

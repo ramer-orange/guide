@@ -9,7 +9,7 @@
 **公開URL:** [https://guide-2s9j.onrender.com](https://guide-2s9j.onrender.com)
 
 <p align="center">
-  <img alt="Next.js 16.4.2" src="https://img.shields.io/badge/Next.js-16.4.2-000000?logo=nextdotjs&logoColor=white">
+  <img alt="Next.js 16.4.6" src="https://img.shields.io/badge/Next.js-16.4.6-000000?logo=nextdotjs&logoColor=white">
   <img alt="Laravel 12.70.1" src="https://img.shields.io/badge/Laravel-12.70.1-FF2D20?logo=laravel&logoColor=white">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Render-4169E1?logo=postgresql&logoColor=white">
   <img alt="Render" src="https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=black">
@@ -109,7 +109,7 @@ flowchart LR
     Edge --> Render[Render Web Service<br/>Dockerコンテナ]
     subgraph App[コンテナ内の構成]
         Nginx[Nginx<br/>同一オリジンの振り分け]
-        Next[Next.js 16.4.2<br/>公開ページ・しおり画面]
+        Next[Next.js 16.4.6<br/>公開ページ・しおり画面]
         Laravel[Laravel 12.70.1<br/>API・認証・セッション]
         Nginx -->|ホーム・規約・ポリシー・しおり画面| Next
         Nginx -->|API・ログイン・添付| Laravel
@@ -125,8 +125,8 @@ flowchart LR
 
 | 分類 | 技術・構成 | バージョン |
 | --- | --- | --- |
-| フロントエンド | Next.js、React、TypeScript | 16.4.2、19.3.0、5.9.3 |
-| バックエンド | Laravel、PHP | 12.70.1、8.3.36 |
+| フロントエンド | Next.js、React、TypeScript | 16.4.6、19.3.0、5.9.3 |
+| バックエンド | Laravel、PHP | 12.73.0、8.3.37 |
 | Webサーバー | Nginx | Render用Dockerイメージに同梱 |
 | データベース | PostgreSQL | Renderマネージドデータベース |
 | 添付ファイル | Cloudflare R2 | 非公開バケット |
